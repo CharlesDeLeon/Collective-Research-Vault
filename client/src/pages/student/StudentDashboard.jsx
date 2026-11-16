@@ -32,7 +32,6 @@ export default function StudentDashboard() {
         firstName={firstName}
         query={query}
         onQueryChange={setQuery}
-        onUpload={goUpload}
       />
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">

@@ -58,8 +58,12 @@ Collective-Research-Vault
 │  │  │  │  └─ ProfileTrigger.jsx
 │  │  │  ├─ ProtectedRoute.jsx
 │  │  │  ├─ StatusBadge.jsx
-│  │  │  └─ ui
-│  │  │     └─ ModalShell.jsx
+│  │  │  ├─ ui
+│  │  │  │  └─ ModalShell.jsx
+│  │  │  └─ upload
+│  │  │     ├─ Field.jsx
+│  │  │     ├─ FileDropzone.jsx
+│  │  │     └─ programs.js
 │  │  ├─ context
 │  │  │  ├─ AuthContext.jsx
 │  │  │  ├─ forumContext.js
@@ -101,7 +105,8 @@ Collective-Research-Vault
 │  │  │     ├─ StudentDashboard.jsx
 │  │  │     ├─ StudentDashboardOld.jsx
 │  │  │     ├─ StudentLayout.jsx
-│  │  │     └─ UploadForm.jsx
+│  │  │     ├─ UploadForm.jsx
+│  │  │     └─ UploadFormOld.jsx
 │  │  ├─ services
 │  │  │  ├─ adminService.js
 │  │  │  ├─ api.js
@@ -110,7 +115,8 @@ Collective-Research-Vault
 │  │  │  ├─ forumPlaceholder.js
 │  │  │  ├─ galleryData.js
 │  │  │  ├─ notificationService.js
-│  │  │  └─ paperService.js
+│  │  │  ├─ paperService.js
+│  │  │  └─ uploadService.js
 │  │  └─ utils
 │  │     ├─ avatarColors.js
 │  │     ├─ formatDate.js

@@ -1,129 +1,36 @@
-import { useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
-import useAuth from '../../context/useAuth'
-import { getRoleHome } from '../../utils/roleHome'
+import { Link } from 'react-router-dom'
 import Logo from '../Logo'
-import { MenuIcon, CloseIcon } from '../dashboard/icons'
-
-const LINKS = [
-  { label: 'Home', to: '/', disabled: true },
-  { label: 'Gallery', to: '/gallery' },
-  { label: 'About', to: '/about', disabled: true },
-]
-
-const linkBase = 'rounded-lg px-3 py-2 text-base transition-colors'
-
-function NavItem({ label, to, disabled, onClick }) {
-  if (disabled) {
-    return (
-      <span aria-disabled="true" className={`${linkBase} cursor-not-allowed text-white/40`}>
-        {label}
-      </span>
-    )
-  }
-  return (
-    <NavLink
-      to={to}
-      onClick={onClick}
-      className={({ isActive }) =>
-        `${linkBase} ${isActive ? 'text-gold' : 'text-white hover:text-gold'}`
-      }
-    >
-      {label}
-    </NavLink>
-  )
-}
-
-function AuthActions({ user, onLogout, onNavigate, className = '' }) {
-  if (user) {
-    return (
-      <div className={`items-center gap-3 ${className}`}>
-        <button
-          type="button"
-          onClick={() => {
-            onNavigate?.()
-            onLogout()
-          }}
-          className="rounded-lg border border-gold px-6 py-2 text-center text-base text-gold transition-colors hover:bg-gold/10"
-        >
-          Logout
-        </button>
-        <Link
-          to={getRoleHome(user.role)}
-          onClick={onNavigate}
-          className="rounded-lg bg-gold px-6 py-2 text-center text-base font-medium text-ink transition-colors hover:bg-gold-light"
-        >
-          Dashboard
-        </Link>
-      </div>
-    )
-  }
-
-  return (
-    <div className={`items-center gap-3 ${className}`}>
-      <Link
-        to="/login"
-        onClick={onNavigate}
-        className="rounded-lg border border-gold px-6 py-2 text-center text-base text-gold transition-colors hover:bg-gold/10"
-      >
-        Login
-      </Link>
-      <span
-        aria-disabled="true"
-        className="cursor-not-allowed rounded-lg bg-gold px-6 py-2 text-center text-base font-medium text-ink opacity-60"
-      >
-        Sign Up
-      </span>
-    </div>
-  )
-}
+import useAuth from '../../context/useAuth'
+import UserMenu from './UserMenu'
 
 export default function GalleryNavbar() {
-  const { user, logout } = useAuth()
-  const [open, setOpen] = useState(false)
-  const close = () => setOpen(false)
+  const { user } = useAuth()
 
   return (
-    <header className="py-4 sm:py-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 lg:gap-10">
-          <Link to="/gallery" aria-label="CORE V gallery" className="text-gold">
-            <Logo className="size-10 sm:size-12" />
+    <header className="flex flex-wrap items-center justify-between gap-4 py-4 sm:py-6">
+      <div className="flex items-center gap-4 sm:gap-6">
+        <Link to="/gallery" aria-label="CORE V gallery" className="flex text-gold">
+          <Logo className="size-10 sm:size-11" />
+        </Link>
+        <nav aria-label="Main" className="hidden sm:block">
+          <Link
+            to="/gallery"
+            aria-current="page"
+            className="inline-flex min-h-11 items-center rounded-full border-[0.094rem] border-gold bg-gold/10 px-5 text-base font-semibold text-gold"
+          >
+            Gallery
           </Link>
-          <nav className="hidden items-center gap-2 md:flex lg:gap-6" aria-label="Main">
-            {LINKS.map((l) => (
-              <NavItem key={l.label} {...l} />
-            ))}
-          </nav>
-        </div>
-
-        <AuthActions user={user} onLogout={logout} className="hidden md:flex" />
-
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          className="grid size-11 place-items-center rounded-lg border border-white/15 text-white md:hidden"
-        >
-          {open ? <CloseIcon className="size-5" /> : <MenuIcon className="size-5" />}
-        </button>
+        </nav>
       </div>
-
-      {open && (
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.07] p-4 md:hidden">
-          <nav className="flex flex-col gap-1" aria-label="Mobile">
-            {LINKS.map((l) => (
-              <NavItem key={l.label} {...l} onClick={close} />
-            ))}
-          </nav>
-          <AuthActions
-            user={user}
-            onLogout={logout}
-            onNavigate={close}
-            className="mt-4 grid grid-cols-2"
-          />
-        </div>
+      {user ? (
+        <UserMenu user={user} />
+      ) : (
+        <Link
+          to="/login"
+          className="inline-flex min-h-11 items-center rounded-xl border-[0.094rem] border-gold px-6 text-base font-medium text-gold hover:bg-gold/10 sm:px-7"
+        >
+          Login
+        </Link>
       )}
     </header>
   )
