@@ -2,8 +2,7 @@ export const ROUTES = {
   home: '/student',
   forum: '/student/forum',
   group: '/student/group',
-  archive: '/student/archive',
-  upload: '/student/upload',
+  gallery: '/gallery',  upload: '/student/upload',
   history: '/student/history',
   paper: (id) => `/student/paper/${id}`,
 }

@@ -3,7 +3,7 @@ import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import ResearchGallery from './pages/ResearchGallery'
-
+import GalleryPaper from './pages/GalleryPaper'
 // Student
 import StudentLayout from './pages/student/StudentLayout'
 import StudentDashboard from './pages/student/StudentDashboard'
@@ -42,6 +42,7 @@ function App() {
           <Route path="/" element={<Navigate to="/gallery" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/gallery" element={<ResearchGallery />} />
+          <Route path="/gallery/:paperId" element={<GalleryPaper />} />
 
           <Route
             path="/student"

@@ -9,7 +9,7 @@ import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon } from './icons'
 export const NAV = [
   { label: 'Home', to: ROUTES.home, icon: HomeIcon, end: true },
   { label: 'Forum', to: ROUTES.forum, icon: UsersIcon },
-  { label: 'Research Archive', to: ROUTES.archive, icon: BookIcon, disabled: true },
+  { label: 'Gallery', to: ROUTES.gallery, icon: BookIcon },
   { label: 'Notifications', to: ROUTES.history, icon: BellIcon },
 ]
 
