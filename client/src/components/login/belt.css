@@ -1,0 +1,32 @@
+@keyframes belt-slide-up {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+@keyframes belt-slide-down {
+  from { transform: translateY(-50%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes belt-pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgb(255 255 255 / 0.55); }
+  70% { box-shadow: 0 0 0 1rem rgb(255 255 255 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(255 255 255 / 0); }
+}
+
+.belt-up { animation: belt-slide-up 36s linear infinite; }
+.belt-down { animation: belt-slide-down 42s linear infinite; }
+.belt-pulse { animation: belt-pulse-ring 2.6s ease-out infinite; }
+
+.belt-dots {
+  background-image: radial-gradient(rgb(255 255 255 / 0.1) 0.0625rem, transparent 0.0625rem);
+  background-size: 1.375rem 1.375rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .belt-up,
+  .belt-down,
+  .belt-pulse {
+    animation: none;
+  }
+}
