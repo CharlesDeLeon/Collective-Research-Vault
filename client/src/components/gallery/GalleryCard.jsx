@@ -1,15 +1,26 @@
 import { Link } from 'react-router-dom'
 import { monthYear } from '../../utils/formatDate'
 
-export default function GalleryCard({ paper, featured = false }) {
+export const cardClass = (large, starred = false) =>
+  `flex flex-col gap-3 overflow-hidden rounded-[1.25rem] border transition hover:-translate-y-0.5 ${
+    starred
+      ? 'border-gold/70 bg-field/35 hover:bg-field/55'
+      : 'border-white/12 bg-field/35 hover:bg-field/55'
+  } ${large ? 'p-6' : 'p-5'}`
+
+export function GalleryCardBody({ paper, featured = false }) {
   const extra = paper.keywords.length - 2
   return (
-    <Link
-      to={`/gallery/${paper.id}`}
-      className={`flex flex-col gap-3 rounded-[1.25rem] border bg-field/35 transition hover:-translate-y-0.5 hover:bg-field/55 ${
-        featured ? 'border-gold/45 p-6' : 'border-white/12 p-5'
-      }`}
-    >
+    <>
+      {paper.featured && (
+        <div
+          className={`flex items-center gap-1.5 bg-linear-to-r from-gold to-gold-soft py-1 text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-ink ${
+            featured ? '-mx-6 -mt-6 px-6' : '-mx-5 -mt-5 px-5'
+          }`}
+        >
+          <span aria-hidden="true">★</span> Featured
+        </div>
+      )}
       <span className="self-start rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold">
         {paper.program} · {paper.schoolYear}
       </span>
@@ -31,6 +42,14 @@ export default function GalleryCard({ paper, featured = false }) {
       >
         {featured ? `${paper.authors} · Published ${monthYear(paper.publishedAt)}` : `Published ${monthYear(paper.publishedAt)}`}
       </p>
+    </>
+  )
+}
+
+export default function GalleryCard({ paper, featured = false }) {
+  return (
+    <Link to={`/gallery/${paper.id}`} className={cardClass(featured, paper.featured)}>
+      <GalleryCardBody paper={paper} featured={featured} />
     </Link>
   )
 }

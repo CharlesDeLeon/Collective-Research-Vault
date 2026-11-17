@@ -1,227 +1,232 @@
 import { useState } from 'react'
-  import useAuth from '../context/useAuth'
-  import { Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import useAuth from '../context/useAuth'
+import { useLoginShowcase } from '../hooks/useLoginShowcase'
+import Logo from '../components/Logo'
+import ShowcaseBelt from '../components/login/ShowcaseBelt'
 
-  const Login = () => {
-    const { login } = useAuth()
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [error, setError] = useState('')
-    const [loading, setLoading] = useState(false)
-    
-
-    const handleLogin = async (e) => {
-  e.preventDefault();
-  setError('');
-  setLoading(true);
-
-  try {
-
-    const response = await login(email, password);
-    if (response?.user?.status === 'deactivated' || response?.user?.isActive === false) {
-      // If your useAuth saves a token automatically, you may need to call a logout/clear function here
-      throw new Error('DEACTIVATED_ACCOUNT');
-    }
-
-    // Success! The app will likely redirect via the AuthContext logic.
-
-  } catch (err) {
-    // 3. ERROR CATEGORIZATION
-    if (err.message === 'DEACTIVATED_ACCOUNT') {
-      setError('This account has been deactivated. Please contact an administrator.');
-    } else if (err.response?.status === 403) {
-      setError('Access denied. Your account may be disabled.');
-    } else if (err.response?.status === 401) {
-      setError('Invalid email or password.');
-    } else {
-      setError(err.response?.data?.message || 'An unexpected error occurred.');
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-
-  return (
-    <div style={styles.page}>
-
-      <div style={styles.yellowSide} />
-      <div style={styles.blueSide} />
-
-      <div style={styles.welcomeWrapper}>
-        <h1 style={styles.welcomeText}>Welcome,<br />Scholar!</h1>
-      </div>
-
-      <div style={styles.cardWrapper}>
-        <div style={styles.card}>
-
-          <p style={styles.cardLabel}>Sign in to CORE-V</p>
-
-          <form onSubmit={handleLogin} style={styles.form}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={styles.input}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={styles.input}
-              required
-            />
-
-            {error && <div style={styles.error}>{error}</div>}
-
-            <div style={styles.btnRow}>
-              <button type="submit" style={styles.loginBtn} disabled={loading}>
-                {loading ? 'Logging in...' : 'Login'}
-              </button>
-            </div>
-          </form>
-
-          <Link to="/gallery" style={styles.galleryLink}>
-            Browse the research gallery
-          </Link>
-
-        </div>
-      </div>
-
-    </div>
-  )
+const inputCls =
+  'w-full rounded-xl border border-white/25 bg-[#1f3586]/50 py-3 pl-12 text-sm text-white placeholder:text-indigo-100/50 transition focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/40'
+const iconCls = 'pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-indigo-100/70'
+const labelCls = 'mb-1.5 block text-sm font-medium text-indigo-50'
+const stroke = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  viewBox: '0 0 24 24',
+  'aria-hidden': true,
 }
 
-const styles = {
-  page: {
-    position: 'relative',
-    width: '100vw',
-    height: '100vh',
-    overflow: 'hidden',
-    display: 'flex',
-    alignItems: 'center',
-    fontFamily: 'sans-serif',
-  },
+const Login = () => {
+  const { login } = useAuth()
+  const cards = useLoginShowcase()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  yellowSide: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    background: '#FFBE4F',
-    clipPath: 'polygon(0 0, 58% 0, 38% 100%, 0 100%)',
-    zIndex: 0,
-  },
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
 
-  blueSide: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    background: 'linear-gradient(135deg, #3B4BC8 0%, #2C3A9E 100%)',
-    zIndex: -1,
-  },
+    try {
+      const response = await login(email, password)
+      if (response?.user?.status === 'deactivated' || response?.user?.isActive === false) {
+        throw new Error('DEACTIVATED_ACCOUNT')
+      }
+    } catch (err) {
+      if (err.message === 'DEACTIVATED_ACCOUNT' || err.message === 'INACTIVE_ACCOUNT') {
+        setError('This account has been deactivated. Please contact an administrator.')
+      } else if (err.response?.status === 403) {
+        setError(err.response?.data?.message || 'Access denied. Your account may be disabled.')
+      } else if (err.response?.status === 401) {
+        setError('Invalid email or password.')
+      } else {
+        setError(err.response?.data?.message || 'An unexpected error occurred.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  welcomeWrapper: {
-    position: 'relative',
-    zIndex: 1,
-    flex: 1,
-    paddingLeft: '5%',
-  },
+  return (
+    <div className="flex min-h-screen w-full flex-col bg-[#243d9a] font-display text-white antialiased lg:flex-row">
+      <section className="relative h-72 w-full overflow-hidden bg-linear-to-br from-[#2c47a6] via-[#3a5cc0] to-[#4d77dc] lg:h-screen lg:w-[58%]">
+        <div className="absolute -left-24 -top-24 size-[28rem] rounded-full bg-sky-400/20 blur-3xl" />
+        <div className="belt-dots absolute inset-0 opacity-60" />
 
-  welcomeText: {
-    fontSize: 'clamp(2rem, 4vw, 3.5rem)',
-    fontWeight: '800',
-    color: 'white',
-    lineHeight: 1.2,
-    textShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  },
+        <ShowcaseBelt cards={cards} />
 
-  cardWrapper: {
-    position: 'relative',
-    zIndex: 1,
-    width: '38%',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: '4%',
-  },
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1/5 bg-linear-to-b from-[#2c47a6]/80 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-1/2 bg-linear-to-t from-[#1f3586] via-[#1f3586]/85 to-transparent lg:h-3/5" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 hidden w-40 bg-linear-to-r from-transparent to-[#243d9a]/60 lg:block" />
 
-  card: {
-    width: '100%',
-    maxWidth: '360px',
-    background: 'rgba(255, 255, 255, 0.12)',
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
-    border: '1px solid rgba(255, 255, 255, 0.25)',
-    borderRadius: '20px',
-    padding: '2.5rem 2rem',
-  },
+        <div className="absolute left-6 top-6 z-30 flex items-center gap-3">
+          <div className="flex size-11 items-center justify-center rounded-xl border border-amber-400/60 bg-[#1f3586]/70 backdrop-blur">
+            <Logo className="size-6 text-amber-400" />
+          </div>
+        </div>
 
-  cardLabel: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: '13px',
-    marginBottom: '1.5rem',
-    marginTop: 0,
-    letterSpacing: '0.03em',
-  },
+        <div className="absolute inset-x-6 bottom-6 z-30 max-w-md lg:bottom-10 lg:left-8">
+          <p className="m-0 hidden text-2xl font-semibold leading-snug lg:block">
+            Explore student research from every field.
+          </p>
+          <Link
+            to="/gallery"
+            className="belt-pulse group mt-0 inline-flex items-center gap-4 rounded-full bg-white py-2 pl-6 pr-2 font-semibold text-[#1f3586] shadow-xl shadow-[#142058]/40 transition hover:-translate-y-0.5 hover:bg-indigo-50 focus:outline-none focus:ring-4 focus:ring-white/40 lg:mt-5"
+          >
+            Browse the gallery
+            <span className="flex size-10 items-center justify-center rounded-full bg-[#1f3586] text-white">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                aria-hidden="true"
+              >
+                <path d="M7 17 17 7M8 7h9v9" />
+              </svg>
+            </span>
+          </Link>
+          <p className="mb-0 ml-2 mt-3 text-sm text-indigo-50/90">Open to everyone. No login needed.</p>
+        </div>
+      </section>
 
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
-  },
+      <section className="relative flex flex-1 items-center justify-center overflow-hidden bg-[#243d9a] p-6 sm:p-12 lg:border-l lg:border-white/20">
+        <div className="absolute -bottom-32 -right-24 size-96 rounded-full bg-amber-400/10 blur-3xl" />
+        <div className="absolute -left-24 -top-32 size-80 rounded-full bg-sky-300/20 blur-3xl" />
 
-  input: {
-    width: '100%',
-    padding: '14px 16px',
-    fontSize: '14px',
-    border: 'none',
-    borderRadius: '10px',
-    background: 'rgba(220, 220, 220, 0.75)',
-    color: '#333',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
+        <div className="relative w-full max-w-sm">
+          <div className="rounded-[1.75rem] bg-linear-to-br from-white/60 via-white/10 to-amber-300/60 p-px shadow-2xl shadow-[#142058]/50">
+            <div className="overflow-hidden rounded-[1.6875rem] bg-linear-to-b from-[#3a56b8] to-[#2a449f]">
+              <div className="p-8">
+                <div className="flex items-center gap-4">
+                  <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-amber-300 to-amber-500 shadow-lg shadow-amber-500/30">
+                    <Logo className="size-8 text-[#16246b]" />
+                  </div>
+                  <div>
+                    <h1 className="m-0 text-2xl font-bold leading-tight tracking-tight">Sign in</h1>
+                    <p className="mb-0 mt-0.5 text-sm text-indigo-100/85">Welcome to CORE-V.</p>
+                  </div>
+                </div>
 
-  error: {
-    fontSize: '13px',
-    color: '#ffe0e0',
-    background: 'rgba(255,80,80,0.2)',
-    border: '1px solid rgba(255,80,80,0.3)',
-    borderRadius: '8px',
-    padding: '8px 12px',
-  },
+                <form onSubmit={handleLogin} className="mt-7 space-y-5">
+                  <div>
+                    <label htmlFor="email" className={labelCls}>
+                      Email
+                    </label>
+                    <div className="relative">
+                      <svg {...stroke} className={iconCls}>
+                        <rect x="3" y="5" width="18" height="14" rx="3" />
+                        <path d="m4 7 8 6 8-6" />
+                      </svg>
+                      <input
+                        id="email"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        placeholder="you@school.edu"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className={`${inputCls} pr-4`}
+                      />
+                    </div>
+                  </div>
 
-  btnRow: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginTop: '0.5rem',
-  },
+                  <div>
+                    <label htmlFor="password" className={labelCls}>
+                      Password
+                    </label>
+                    <div className="relative">
+                      <svg {...stroke} className={iconCls}>
+                        <rect x="4" y="10" width="16" height="10" rx="3" />
+                        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                      </svg>
+                      <input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        autoComplete="current-password"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={`${inputCls} pr-12`}
+                      />
+                      <button
+                        type="button"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        aria-pressed={showPassword}
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute inset-y-0 right-0 px-4 text-indigo-100/70 hover:text-white focus:text-amber-300 focus:outline-none"
+                      >
+                        <svg {...stroke} className="size-5">
+                          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                          <circle cx="12" cy="12" r="3" />
+                          {showPassword && <path d="M4 4l16 16" />}
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
 
-  loginBtn: {
-    padding: '12px 32px',
-    fontSize: '14px',
-    fontWeight: '600',
-    background: '#FFBE4F',
-    color: 'white',
-    border: 'none',
-    borderRadius: '10px',
-    cursor: 'pointer',
-  },
+                  <div className="flex items-center justify-between text-sm">
+                    <label className="flex cursor-not-allowed items-center gap-2 text-indigo-50 opacity-50">
+                      <input type="checkbox" disabled className="size-4 rounded accent-amber-400" />
+                      Remember me
+                    </label>
+                    <span aria-disabled="true" className="cursor-not-allowed text-indigo-100 opacity-50">
+                      Forgot password?
+                    </span>
+                  </div>
 
-  galleryLink: {
-    display: 'block',
-    marginTop: '1.25rem',
-    textAlign: 'center',
-    fontSize: '0.875rem',
-    color: 'rgba(255,255,255,0.85)',
-    textDecoration: 'underline',
-  },
+                  {error && (
+                    <div
+                      role="alert"
+                      className="rounded-lg border border-rose-300/30 bg-rose-500/20 px-3 py-2 text-[0.8125rem] text-rose-100"
+                    >
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-linear-to-r from-amber-400 to-amber-200 py-3.5 font-semibold text-[#16246b] shadow-lg shadow-amber-500/30 transition hover:-translate-y-0.5 hover:brightness-105 focus:outline-none focus:ring-4 focus:ring-amber-300/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {loading ? 'Logging in...' : 'Log in'}
+                    {!loading && (
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="size-4 transition-transform group-hover:translate-x-1"
+                        aria-hidden="true"
+                      >
+                        <path d="M5 12h14m-6-6 6 6-6 6" />
+                      </svg>
+                    )}
+                  </button>
+                </form>
+              </div>
+
+              <div className="border-t border-white/15 bg-[#1f3586]/60 px-8 py-4 text-center text-sm text-indigo-100/85">
+                No account yet? Your system administrator creates accounts. Contact them to get access.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
 }
 
 export default Login
