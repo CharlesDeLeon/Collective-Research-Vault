@@ -62,7 +62,7 @@ const Login = () => {
         <ShowcaseBelt cards={cards} />
 
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1/5 bg-linear-to-b from-[#2c47a6]/80 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-2/5 bg-linear-to-t from-[#1f3586]/90 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-1/2 bg-linear-to-t from-[#1f3586] via-[#1f3586]/85 to-transparent lg:h-3/5" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-20 hidden w-40 bg-linear-to-r from-transparent to-[#243d9a]/60 lg:block" />
 
         <div className="absolute left-6 top-6 z-30 flex items-center gap-3">

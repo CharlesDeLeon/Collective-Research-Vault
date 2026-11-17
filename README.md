@@ -33,9 +33,18 @@ Collective-Research-Vault
 │  │  │  │  ├─ LinkifiedText.jsx
 │  │  │  │  └─ NotificationsPreview.jsx
 │  │  │  ├─ gallery
-│  │  │  │  ├─ FilterPanel.jsx
+│  │  │  │  ├─ AccessRequestModal.jsx
+│  │  │  │  ├─ FeaturedRow.jsx
+│  │  │  │  ├─ FilterFields.jsx
+│  │  │  │  ├─ FilterSheet.jsx
 │  │  │  │  ├─ GalleryCard.jsx
-│  │  │  │  └─ GalleryNavbar.jsx
+│  │  │  │  ├─ GalleryNavbar.jsx
+│  │  │  │  ├─ SortSelect.jsx
+│  │  │  │  └─ UserMenu.jsx
+│  │  │  ├─ login
+│  │  │  │  ├─ belt.css
+│  │  │  │  ├─ fallbackCards.js
+│  │  │  │  └─ ShowcaseBelt.jsx
 │  │  │  ├─ Logo.jsx
 │  │  │  ├─ Navbar.jsx
 │  │  │  ├─ notifications
@@ -69,8 +78,10 @@ Collective-Research-Vault
 │  │  │  ├─ forumContext.js
 │  │  │  ├─ ForumProvider.jsx
 │  │  │  ├─ useAuth.js
-│  │  │  └─ useForum.js
+│  │  │  ├─ useForum.js
+│  │  │  └─ useLoginShowcase.js
 │  │  ├─ hooks
+│  │  │  ├─ useLoginShowcase.js
 │  │  │  ├─ useNotifications.js
 │  │  │  ├─ usePaperDetail.js
 │  │  │  ├─ useResearchGallery.js
@@ -96,6 +107,7 @@ Collective-Research-Vault
 │  │  │  │  ├─ FacultyDashboard.jsx
 │  │  │  │  ├─ FacultyLayout.jsx
 │  │  │  │  └─ SubmissionDetail.jsx
+│  │  │  ├─ GalleryPaper.jsx
 │  │  │  ├─ Login.jsx
 │  │  │  ├─ ResearchGallery.jsx
 │  │  │  └─ student
@@ -108,12 +120,14 @@ Collective-Research-Vault
 │  │  │     ├─ UploadForm.jsx
 │  │  │     └─ UploadFormOld.jsx
 │  │  ├─ services
+│  │  │  ├─ accessRequestService.js
 │  │  │  ├─ adminService.js
 │  │  │  ├─ api.js
 │  │  │  ├─ authService.js
 │  │  │  ├─ dashboardMocks.js
 │  │  │  ├─ forumPlaceholder.js
 │  │  │  ├─ galleryData.js
+│  │  │  ├─ loginShowcase.js
 │  │  │  ├─ notificationService.js
 │  │  │  ├─ paperService.js
 │  │  │  └─ uploadService.js
