@@ -1,12 +1,26 @@
 import { useRef, useState } from 'react'
 import { CloseIcon, PaperclipIcon } from '../dashboard/icons'
 
+export const MAX_ATTACH_MB = 20
+
 export default function AttachField({ label, accept, onChange }) {
   const inputRef = useRef(null)
   const [name, setName] = useState('')
+  const [error, setError] = useState('')
 
   const handleChange = (e) => {
     const file = e.target.files?.[0] ?? null
+    setError('')
+    if (file && accept?.endsWith('/*') && !file.type.startsWith(accept.slice(0, -1))) {
+      e.target.value = ''
+      setError('Please choose a video file.')
+      return
+    }
+    if (file && file.size > MAX_ATTACH_MB * 1024 * 1024) {
+      e.target.value = ''
+      setError(`File is larger than ${MAX_ATTACH_MB} MB.`)
+      return
+    }
     setName(file ? file.name : '')
     onChange(file)
   }
@@ -14,6 +28,7 @@ export default function AttachField({ label, accept, onChange }) {
   const clear = () => {
     if (inputRef.current) inputRef.current.value = ''
     setName('')
+    setError('')
     onChange(null)
   }
 
@@ -41,6 +56,11 @@ export default function AttachField({ label, accept, onChange }) {
         >
           <CloseIcon className="size-4" />
         </button>
+      )}
+      {error && (
+        <p role="alert" className="mb-0 mt-1 text-xs text-danger-ink">
+          {error}
+        </p>
       )}
     </div>
   )

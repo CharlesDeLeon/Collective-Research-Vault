@@ -3,35 +3,23 @@ import { Link, useParams } from 'react-router-dom'
 import GalleryNavbar from '../components/gallery/GalleryNavbar'
 import GalleryCard from '../components/gallery/GalleryCard'
 import AccessRequestModal from '../components/gallery/AccessRequestModal'
+import CitationCard from '../components/public/CitationCard'
 import { getGalleryPaper, getRelatedPapers } from '../services/galleryData'
+import { copyText } from '../utils/clipboard'
 import { longDate } from '../utils/formatDate'
 
 const dt = 'text-xs font-semibold uppercase tracking-[0.06em] text-gold'
-const outlineBtn =
-  'min-h-11 rounded-xl border-[0.094rem] border-gold bg-transparent px-5 text-[0.9375rem] font-medium text-gold hover:bg-gold/10'
-
-const citationFor = (p) =>
-  `${p.authors}. (${new Date(p.publishedAt).getFullYear()}). ${p.title}. CORE V Research Vault.`
-
-async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text)
-    return true
-  } catch {
-    return false
-  }
-}
 
 export default function GalleryPaper() {
-  const { paperId } = useParams()
-  const paper = getGalleryPaper(paperId)
-  const [copied, setCopied] = useState('')
+  const { slug } = useParams()
+  const paper = getGalleryPaper(slug)
+  const [copied, setCopied] = useState(false)
   const [requesting, setRequesting] = useState(false)
 
-  const flash = async (key, text) => {
-    if (await copyText(text)) {
-      setCopied(key)
-      setTimeout(() => setCopied(''), 2000)
+  const shareLink = async () => {
+    if (await copyText(window.location.href)) {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
     }
   }
 
@@ -61,10 +49,10 @@ export default function GalleryPaper() {
             <div className="mt-4 flex flex-col items-start gap-8 lg:flex-row">
               <main className="w-full min-w-0 flex-1">
                 <span className="inline-block rounded-full bg-gold/15 px-3.5 py-1 text-[0.8125rem] font-semibold text-gold">
-                  {paper.program} · {paper.schoolYear}
+                  {paper.strand} · {paper.section} · {paper.schoolYear}
                 </span>
-                <h1 className="mb-0 mt-4 text-[1.625rem] font-semibold leading-tight sm:text-[2.5rem]">{paper.title}</h1>
-                <p className="mb-0 mt-4 text-base text-white/85">{paper.authors}</p>
+                <h1 className="mb-0 mt-4 text-[1.625rem] font-semibold leading-tight wrap-break-word sm:text-[2.5rem]">{paper.title}</h1>
+                <p className="mb-0 mt-4 text-base text-white/85">{paper.authors.join(', ')}</p>
 
                 <section className="mt-9" aria-labelledby="abs-h">
                   <h2 id="abs-h" className="mb-3 mt-0 text-xl font-semibold">Abstract</h2>
@@ -88,12 +76,7 @@ export default function GalleryPaper() {
 
                 <section className="mt-8" aria-labelledby="cite-h">
                   <h2 id="cite-h" className="mb-3 mt-0 text-xl font-semibold">Cite this paper</h2>
-                  <div className="max-w-3xl rounded-[0.875rem] border border-white/15 bg-field/40 px-4 py-4 text-sm leading-[1.7] text-white/90">
-                    {citationFor(paper)}
-                  </div>
-                  <button type="button" onClick={() => flash('cite', citationFor(paper))} className={`mt-3 ${outlineBtn}`}>
-                    {copied === 'cite' ? 'Copied' : 'Copy citation'}
-                  </button>
+                  <CitationCard paper={paper} />
                 </section>
               </main>
 
@@ -104,15 +87,23 @@ export default function GalleryPaper() {
                 <dl className="m-0 grid gap-4">
                   <div>
                     <dt className={dt}>Published</dt>
-                    <dd className="m-0 mt-1 text-base">{longDate(paper.publishedAt).replace(/\s\d+,/, '')}</dd>
+                    <dd className="m-0 mt-1 text-base">{longDate(paper.publishedAt)}</dd>
                   </div>
                   <div>
-                    <dt className={dt}>Program</dt>
-                    <dd className="m-0 mt-1 text-base">{paper.program}</dd>
+                    <dt className={dt}>Strand</dt>
+                    <dd className="m-0 mt-1 text-base">{paper.strand}</dd>
+                  </div>
+                  <div>
+                    <dt className={dt}>Section</dt>
+                    <dd className="m-0 mt-1 text-base">{paper.section}</dd>
                   </div>
                   <div>
                     <dt className={dt}>School year</dt>
                     <dd className="m-0 mt-1 text-base">{paper.schoolYear}</dd>
+                  </div>
+                  <div>
+                    <dt className={dt}>Adviser</dt>
+                    <dd className="m-0 mt-1 text-base">{paper.adviser}</dd>
                   </div>
                 </dl>
                 <button
@@ -124,10 +115,10 @@ export default function GalleryPaper() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => flash('link', window.location.href)}
+                  onClick={shareLink}
                   className="mt-2.5 min-h-12 w-full rounded-xl border-[0.094rem] border-white/35 bg-transparent text-[0.9375rem] font-medium text-white hover:bg-white/10"
                 >
-                  {copied === 'link' ? 'Link copied' : 'Share link'}
+                  {copied ? 'Link copied' : 'Share link'}
                 </button>
               </aside>
             </div>

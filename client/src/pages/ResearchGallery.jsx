@@ -58,9 +58,9 @@ export default function ResearchGallery() {
               )}
             </div>
             <FilterFields
-              years={g.yearOptions}
+              groups={g.groups}
+              onToggle={g.toggle}
               keywords={g.keywordOptions}
-              onYear={g.toggleYear}
               onKeyword={g.toggleKeyword}
             />
           </aside>

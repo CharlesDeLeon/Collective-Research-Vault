@@ -29,9 +29,11 @@ Collective-Research-Vault
 │  │  │  │  ├─ StartDraftCard.jsx
 │  │  │  │  └─ StatusPill.jsx
 │  │  │  ├─ forum
+│  │  │  │  ├─ AttachmentList.jsx
 │  │  │  │  ├─ ForumPostCard.jsx
 │  │  │  │  ├─ LinkifiedText.jsx
-│  │  │  │  └─ NotificationsPreview.jsx
+│  │  │  │  ├─ NotificationsPreview.jsx
+│  │  │  │  └─ VideoEmbed.jsx
 │  │  │  ├─ gallery
 │  │  │  │  ├─ AccessRequestModal.jsx
 │  │  │  │  ├─ FeaturedRow.jsx
@@ -135,7 +137,9 @@ Collective-Research-Vault
 │  │     ├─ avatarColors.js
 │  │     ├─ formatDate.js
 │  │     ├─ helpers.js
-│  │     └─ roleHome.js
+│  │     ├─ roleHome.js
+│  │     ├─ roles.js
+│  │     └─ videoLinks.js
 │  └─ vite.config.js
 ├─ database
 │  ├─ migrations

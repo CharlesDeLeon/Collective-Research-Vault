@@ -4,6 +4,10 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import ResearchGallery from './pages/ResearchGallery'
 import GalleryPaper from './pages/GalleryPaper'
+import About from './pages/public/About'
+import RequestSubmitted from './pages/public/RequestSubmitted'
+import RequestStatus from './pages/public/RequestStatus'
+import AccessLink from './pages/public/AccessLink'
 // Student
 import StudentLayout from './pages/student/StudentLayout'
 import StudentDashboard from './pages/student/StudentDashboard'
@@ -42,7 +46,12 @@ function App() {
           <Route path="/" element={<Navigate to="/gallery" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/gallery" element={<ResearchGallery />} />
-          <Route path="/gallery/:paperId" element={<GalleryPaper />} />
+          <Route path="/paper/:slug" element={<GalleryPaper />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/request/submitted" element={<RequestSubmitted />} />
+          <Route path="/access/status" element={<RequestStatus />} />
+          <Route path="/access/status/:ref" element={<RequestStatus />} />
+          <Route path="/access/:token" element={<AccessLink />} />
 
           <Route
             path="/student"

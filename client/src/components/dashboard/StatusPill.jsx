@@ -2,7 +2,7 @@ import { STATUS_STYLES } from './constants'
 
 export default function StatusPill({ status, className = '' }) {
   const s = STATUS_STYLES[status] ?? {
-    label: status,
+    label: status?.replace(/_/g, ' ') ?? 'Unknown',
     cls: 'bg-white/10 text-white/70 border-white/20',
   }
   return (
