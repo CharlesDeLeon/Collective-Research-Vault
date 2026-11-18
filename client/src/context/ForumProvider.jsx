@@ -1,13 +1,41 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useAuth from './useAuth'
 import { ForumContext } from './forumContext'
 import { forumPlaceholderPosts } from '../services/forumPlaceholder'
 import AddPostModal from '../components/paper/AddPostModal'
 
+function kindOf(file) {
+  if (file.type.startsWith('video/')) return 'video'
+  if (file.type.startsWith('image/')) return 'image'
+  return 'file'
+}
+
 export default function ForumProvider({ children }) {
   const { user } = useAuth()
   const [posts, setPosts] = useState(forumPlaceholderPosts)
   const [composing, setComposing] = useState(false)
+  const objectUrls = useRef(new Set())
+
+  useEffect(() => {
+    const urls = objectUrls.current
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url))
+      urls.clear()
+    }
+  }, [])
+
+  const toAttachment = useCallback((file) => {
+    const url = URL.createObjectURL(file)
+    objectUrls.current.add(url)
+    return {
+      id: `${Date.now()}-${file.name}`,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      kind: kindOf(file),
+      url,
+    }
+  }, [])
 
   const authorName = user?.name ?? user?.full_name ?? 'You'
   const firstName = authorName.split(' ')[0]
@@ -23,7 +51,7 @@ export default function ForumProvider({ children }) {
           authorName,
           text,
           createdAt: new Date().toISOString(),
-          attachments: [file?.name, video?.name].filter(Boolean),
+          attachments: [file, video].filter(Boolean).map(toAttachment),
           liked: false,
           replies: [],
         },
@@ -31,7 +59,7 @@ export default function ForumProvider({ children }) {
       ])
       setComposing(false)
     },
-    [authorName]
+    [authorName, toAttachment]
   )
 
   const addReply = useCallback(

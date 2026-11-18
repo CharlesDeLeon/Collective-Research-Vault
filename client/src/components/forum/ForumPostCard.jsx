@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { glass } from '../dashboard/constants'
-import { CommentIcon, HeartIcon, PaperclipIcon } from '../dashboard/icons'
+import { CommentIcon, HeartIcon } from '../dashboard/icons'
 import Avatar from '../paper/Avatar'
 import LinkifiedText from './LinkifiedText'
+import AttachmentList from './AttachmentList'
+import VideoEmbed from './VideoEmbed'
+import { findVideoLink } from '../../utils/videoLinks'
 import { longDate } from '../../utils/formatDate'
 
 export default function ForumPostCard({ post, onLike, onReply }) {
   const [draft, setDraft] = useState('')
+  const videoLink = findVideoLink(post.text)
 
   const submitReply = (e) => {
     e.preventDefault()
@@ -27,19 +31,13 @@ export default function ForumPostCard({ post, onLike, onReply }) {
         <LinkifiedText text={post.text} />
       </p>
 
-      {post.attachments?.length > 0 && (
-        <ul className="mt-3 flex flex-wrap gap-2">
-          {post.attachments.map((name) => (
-            <li
-              key={name}
-              className="flex max-w-full items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/70"
-            >
-              <PaperclipIcon className="size-3.5 shrink-0" />
-              <span className="truncate">{name}</span>
-            </li>
-          ))}
-        </ul>
+      {videoLink && (
+        <div className="mt-3">
+          <VideoEmbed link={videoLink} />
+        </div>
       )}
+
+      <AttachmentList attachments={post.attachments} />
 
       <div className="mt-4 flex items-center justify-between gap-3 border-b border-white/10 pb-4">
         <span className="text-xs text-white/40">{longDate(post.createdAt)}</span>

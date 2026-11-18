@@ -1,0 +1,1 @@
+export const STRANDS = ['STEM', 'ABM', 'HUMSS', 'GAS']

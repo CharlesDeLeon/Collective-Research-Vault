@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { monthYear } from '../../utils/formatDate'
+import { shortAuthors } from '../../utils/citation'
 
 export const cardClass = (large, starred = false) =>
   `flex flex-col gap-3 overflow-hidden rounded-[1.25rem] border transition hover:-translate-y-0.5 ${
@@ -22,10 +23,10 @@ export function GalleryCardBody({ paper, featured = false }) {
         </div>
       )}
       <span className="self-start rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold">
-        {paper.program} · {paper.schoolYear}
+        {paper.strand} · {paper.schoolYear}
       </span>
       <h3 className={`m-0 font-semibold leading-snug ${featured ? 'text-xl' : 'text-lg'}`}>{paper.title}</h3>
-      {!featured && <p className="m-0 text-[0.8125rem] text-white/75">{paper.authors}</p>}
+      {!featured && <p className="m-0 text-[0.8125rem] text-white/75">{shortAuthors(paper.authors)}</p>}
       <p className="m-0 line-clamp-3 text-sm leading-relaxed text-white/80">{paper.abstract}</p>
       {!featured && (
         <div className="flex flex-wrap gap-1.5">
@@ -40,7 +41,7 @@ export function GalleryCardBody({ paper, featured = false }) {
       <p
         className={`m-0 mt-auto text-[0.8125rem] text-white/70 ${featured ? '' : 'border-t border-white/10 pt-3'}`}
       >
-        {featured ? `${paper.authors} · Published ${monthYear(paper.publishedAt)}` : `Published ${monthYear(paper.publishedAt)}`}
+        {featured ? `${shortAuthors(paper.authors)} · Published ${monthYear(paper.publishedAt)}` : `Published ${monthYear(paper.publishedAt)}`}
       </p>
     </>
   )
@@ -48,7 +49,7 @@ export function GalleryCardBody({ paper, featured = false }) {
 
 export default function GalleryCard({ paper, featured = false }) {
   return (
-    <Link to={`/gallery/${paper.id}`} className={cardClass(featured, paper.featured)}>
+    <Link to={`/paper/${paper.slug}`} className={cardClass(featured, paper.featured)}>
       <GalleryCardBody paper={paper} featured={featured} />
     </Link>
   )

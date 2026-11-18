@@ -48,9 +48,9 @@ export default function FilterSheet({ open, onClose, g }) {
         </div>
         <div className="overflow-auto px-5 pb-2">
           <FilterFields
-            years={g.yearOptions}
+            groups={g.groups}
+            onToggle={g.toggle}
             keywords={g.keywordOptions}
-            onYear={g.toggleYear}
             onKeyword={g.toggleKeyword}
             rowClass="min-h-12 text-base"
             boxClass="size-5.5"
