@@ -100,7 +100,12 @@ export default function RequestStatus() {
                     <dd className="m-0 mt-1">{longDate(data.createdAt)}</dd>
                   </div>
                 </dl>
-                <Link to="/gallery" className={`${outlineBtn} mt-6`}>Back to gallery</Link>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {paper && data.status !== 'pending' && (
+                    <Link to={`/paper/${paper.slug}`} className={primaryBtn}>Request again</Link>
+                  )}
+                  <Link to="/gallery" className={outlineBtn}>Back to gallery</Link>
+                </div>
               </div>
             )}
           </StatePanel>

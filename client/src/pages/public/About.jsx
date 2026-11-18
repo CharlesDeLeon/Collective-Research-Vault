@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import GalleryNavbar from '../../components/gallery/GalleryNavbar'
+import { SITE_INFO } from '../../utils/siteInfo'
 
 const STEPS = [
   ['Browse', 'Search the vault by strand, section, school year, adviser or keyword.'],
@@ -9,6 +10,7 @@ const STEPS = [
 ]
 
 export default function About() {
+  const { contactEmail, contactOffice } = SITE_INFO
   return (
     <div className="min-h-screen bg-linear-to-br from-navy-900 to-navy-500 font-display text-white">
       <div className="mx-auto max-w-5xl px-4 pb-16 sm:px-8">
@@ -35,6 +37,20 @@ export default function About() {
         <p className="m-0 max-w-3xl text-base leading-[1.75] text-white/90">
           Every paper page has a ready-made APA citation. You can copy it without requesting access.
         </p>
+
+        <h2 className="mb-3 mt-10 text-xl font-semibold">Contact</h2>
+        {contactEmail || contactOffice ? (
+          <div className="grid gap-1 text-base leading-relaxed text-white/90">
+            {contactOffice && <p className="m-0">{contactOffice}</p>}
+            {contactEmail && (
+              <a href={`mailto:${contactEmail}`} className="w-fit underline decoration-gold/60 underline-offset-2">
+                {contactEmail}
+              </a>
+            )}
+          </div>
+        ) : (
+          <p className="m-0 text-base text-white/75">Contact details will be added here.</p>
+        )}
 
         <div className="mt-10 flex flex-wrap gap-3">
           <Link
