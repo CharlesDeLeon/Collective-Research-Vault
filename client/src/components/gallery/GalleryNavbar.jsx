@@ -18,7 +18,7 @@ export default function GalleryNavbar() {
 
   return (
     <header className="flex flex-wrap items-center gap-x-6 gap-y-2 py-4 sm:py-6">
-      <Link to="/gallery" aria-label="CORE V gallery" className="flex text-gold">
+      <Link to="/" aria-label="CORE V home" className="flex text-gold">
         <Logo className="size-10 sm:size-11" />
       </Link>
       <nav aria-label="Main" className="order-last flex w-full gap-2 overflow-x-auto sm:order-none sm:w-auto">

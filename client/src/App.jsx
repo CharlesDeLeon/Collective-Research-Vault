@@ -8,6 +8,9 @@ import About from './pages/public/About'
 import RequestSubmitted from './pages/public/RequestSubmitted'
 import RequestStatus from './pages/public/RequestStatus'
 import AccessLink from './pages/public/AccessLink'
+import AccessView from './pages/public/AccessView'
+import AccessDownload from './pages/public/AccessDownload'
+import Landing from './pages/public/Landing'
 // Student
 import StudentLayout from './pages/student/StudentLayout'
 import StudentDashboard from './pages/student/StudentDashboard'
@@ -43,7 +46,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/gallery" />} />
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/gallery" element={<ResearchGallery />} />
           <Route path="/paper/:slug" element={<GalleryPaper />} />
@@ -52,6 +55,8 @@ function App() {
           <Route path="/access/status" element={<RequestStatus />} />
           <Route path="/access/status/:ref" element={<RequestStatus />} />
           <Route path="/access/:token" element={<AccessLink />} />
+          <Route path="/access/:token/view" element={<AccessView />} />
+          <Route path="/access/:token/download" element={<AccessDownload />} />
 
           <Route
             path="/student"
