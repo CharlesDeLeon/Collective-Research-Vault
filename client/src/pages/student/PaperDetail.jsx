@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { usePaperDetail } from '../../hooks/usePaperDetail'
-import { forumPlaceholderPosts } from '../../services/forumPlaceholder'
 import { glass, ROUTES } from '../../components/dashboard/constants'
 import { DocIcon, ExternalLinkIcon } from '../../components/dashboard/icons'
 import PaperSummaryCard from '../../components/paper/PaperSummaryCard'
@@ -133,7 +132,7 @@ function PaperDetailContent({ paperId }) {
 
         <FeedbackNotes notes={notes} onDismiss={dismissNote} onResolve={toggleResolved} />
 
-        <ForumSection posts={forumPlaceholderPosts} />
+        <ForumSection paper={paper} />
       </div>
 
       <aside className="min-w-0 space-y-8">

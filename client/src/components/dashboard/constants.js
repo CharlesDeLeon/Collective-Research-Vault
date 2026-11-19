@@ -1,12 +1,14 @@
 export const ROUTES = {
   home: '/student',
-  forum: '/student/forum',
-  group: '/student/group',
+  forum: '/student/feed',
+  groups: '/student/groups',
+  group: (id) => `/student/groups/${id}`,
+  profile: '/student/profile',
   gallery: '/gallery',
   upload: '/student/upload',
   myPapers: '/student/my-papers',
   editPaper: (id) => `/student/my-papers/${id}/edit`,
-  history: '/student/history',
+  history: '/student/notifications',
   paper: (id) => `/student/paper/${id}`,
 }
 

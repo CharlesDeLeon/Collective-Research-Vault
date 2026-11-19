@@ -25,9 +25,14 @@ Collective-Research-Vault
 │  │  │  │  └─ StatusPill.jsx
 │  │  │  ├─ forum
 │  │  │  │  ├─ AttachmentList.jsx
+│  │  │  │  ├─ CommentThread.jsx
+│  │  │  │  ├─ FeedFilters.jsx
+│  │  │  │  ├─ FeedList.jsx
 │  │  │  │  ├─ ForumPostCard.jsx
 │  │  │  │  ├─ LinkifiedText.jsx
 │  │  │  │  ├─ NotificationsPreview.jsx
+│  │  │  │  ├─ PostMenu.jsx
+│  │  │  │  ├─ RoleBadge.jsx
 │  │  │  │  └─ VideoEmbed.jsx
 │  │  │  ├─ gallery
 │  │  │  │  ├─ AccessRequestModal.jsx
@@ -53,10 +58,13 @@ Collective-Research-Vault
 │  │  │  │  ├─ AttachField.jsx
 │  │  │  │  ├─ AuthorsCard.jsx
 │  │  │  │  ├─ Avatar.jsx
+│  │  │  │  ├─ ConsentCard.jsx
 │  │  │  │  ├─ FeedbackNotes.jsx
 │  │  │  │  ├─ ForumSection.jsx
 │  │  │  │  ├─ PaperSummaryCard.jsx
+│  │  │  │  ├─ ResubmitModal.jsx
 │  │  │  │  ├─ SectionHeading.jsx
+│  │  │  │  ├─ StatusHistory.jsx
 │  │  │  │  └─ VersionHistory.jsx
 │  │  │  ├─ profile
 │  │  │  │  ├─ ProfileModal.jsx
@@ -67,8 +75,11 @@ Collective-Research-Vault
 │  │  │  │  ├─ CitationCard.jsx
 │  │  │  │  ├─ PublicShell.jsx
 │  │  │  │  └─ StatePanel.jsx
+│  │  │  ├─ SessionExpiredModal.jsx
 │  │  │  ├─ StatusBadge.jsx
 │  │  │  ├─ ui
+│  │  │  │  ├─ ConfirmModal.jsx
+│  │  │  │  ├─ ErrorScreen.jsx
 │  │  │  │  └─ ModalShell.jsx
 │  │  │  └─ upload
 │  │  │     ├─ Field.jsx
@@ -78,8 +89,11 @@ Collective-Research-Vault
 │  │  │  ├─ AuthContext.jsx
 │  │  │  ├─ forumContext.js
 │  │  │  ├─ ForumProvider.jsx
+│  │  │  ├─ toastContext.js
+│  │  │  ├─ ToastProvider.jsx
 │  │  │  ├─ useAuth.js
-│  │  │  └─ useForum.js
+│  │  │  ├─ useForum.js
+│  │  │  └─ useToast.js
 │  │  ├─ hooks
 │  │  │  ├─ useAccessGate.js
 │  │  │  ├─ useLoginShowcase.js
@@ -108,8 +122,10 @@ Collective-Research-Vault
 │  │  │  │  ├─ FacultyDashboard.jsx
 │  │  │  │  ├─ FacultyLayout.jsx
 │  │  │  │  └─ SubmissionDetail.jsx
+│  │  │  ├─ Forbidden.jsx
 │  │  │  ├─ GalleryPaper.jsx
 │  │  │  ├─ Login.jsx
+│  │  │  ├─ NotFoundPage.jsx
 │  │  │  ├─ public
 │  │  │  │  ├─ About.jsx
 │  │  │  │  ├─ AccessDownload.jsx
@@ -121,10 +137,14 @@ Collective-Research-Vault
 │  │  │  ├─ ResearchGallery.jsx
 │  │  │  └─ student
 │  │  │     ├─ ActivityHistory.jsx
+│  │  │     ├─ Feed.jsx
 │  │  │     ├─ Forum.jsx
+│  │  │     ├─ GroupDetail.jsx
+│  │  │     ├─ Groups.jsx
 │  │  │     ├─ MyPapers.jsx
+│  │  │     ├─ NotFound.jsx
 │  │  │     ├─ PaperDetail.jsx
-│  │  │     ├─ ResubmitModal.jsx
+│  │  │     ├─ Profile.jsx
 │  │  │     ├─ StudentDashboard.jsx
 │  │  │     ├─ StudentLayout.jsx
 │  │  │     └─ UploadForm.jsx
@@ -135,6 +155,7 @@ Collective-Research-Vault
 │  │  │  ├─ api.js
 │  │  │  ├─ authService.js
 │  │  │  ├─ dashboardMocks.js
+│  │  │  ├─ feedData.js
 │  │  │  ├─ forumPlaceholder.js
 │  │  │  ├─ galleryData.js
 │  │  │  ├─ loginShowcase.js
