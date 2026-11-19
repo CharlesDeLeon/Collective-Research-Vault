@@ -18,7 +18,7 @@ import { timeAgo } from '../../utils/formatDate'
 const TYPE_LABEL = { update: 'Update', video: 'Video', paper: 'Paper' }
 
 export default function ForumPostCard({ post, showGroup = true }) {
-  const { me, myGroup, editPost, deletePost, toggleLike, reportPost } = useForum()
+  const { me, myGroup, editPost, deletePost, toggleLike, reportPost, loadPost } = useForum()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(post.text)
@@ -161,7 +161,10 @@ export default function ForumPostCard({ post, showGroup = true }) {
         </button>
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => {
+            if (!open && (post.comments?.length ?? 0) === 0) loadPost?.(post.id)
+            setOpen((v) => !v)
+          }}
           aria-expanded={open}
           aria-label="Comments"
           className="flex h-10 items-center gap-2 rounded-full border border-white/25 bg-white/5 px-4 text-sm text-white/80 transition hover:bg-white/10"

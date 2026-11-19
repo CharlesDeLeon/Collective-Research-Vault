@@ -51,8 +51,12 @@ CREATE TABLE research_groups (
   group_id    SERIAL PRIMARY KEY,
   group_name  VARCHAR(200)  NOT NULL,
   program     VARCHAR(100)  DEFAULT NULL,
+  strand      VARCHAR(20)   DEFAULT NULL,
+  section     VARCHAR(50)   DEFAULT NULL,
+  year_level  SMALLINT      DEFAULT NULL,
   school_year VARCHAR(20)   DEFAULT NULL,
   created_by  INT           NOT NULL REFERENCES users(user_id),
+  adviser_id  INT           REFERENCES users(user_id),
   created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
@@ -71,20 +75,30 @@ CREATE TABLE group_members (
 -- submissions
 -- ============================================================
 CREATE TABLE submissions (
-  submission_id   SERIAL PRIMARY KEY,
-  group_id        INT                NOT NULL REFERENCES research_groups(group_id),
-  title           VARCHAR(300)       NOT NULL,
-  abstract        TEXT               DEFAULT NULL,
-  keywords        VARCHAR(300)       DEFAULT NULL,
-  authors         VARCHAR(300)       DEFAULT NULL,
-  program         VARCHAR(100)       DEFAULT NULL,
-  school_year     VARCHAR(20)        DEFAULT NULL,
-  stage           submission_stage   NOT NULL DEFAULT 'proposal',
-  status          submission_status  NOT NULL DEFAULT 'submitted',
-  is_published    BOOLEAN            NOT NULL DEFAULT FALSE,
-  submitted_by    INT                NOT NULL REFERENCES users(user_id),
-  created_at      TIMESTAMPTZ        NOT NULL DEFAULT NOW(),
-  updated_at      TIMESTAMPTZ        NOT NULL DEFAULT NOW()
+  submission_id     SERIAL PRIMARY KEY,
+  group_id          INT                NOT NULL REFERENCES research_groups(group_id),
+  title             VARCHAR(300)       NOT NULL,
+  abstract          TEXT               DEFAULT NULL,
+  keywords          VARCHAR(300)       DEFAULT NULL,
+  authors           VARCHAR(300)       DEFAULT NULL,
+  program           VARCHAR(100)       DEFAULT NULL,
+  strand            VARCHAR(20)        DEFAULT NULL,
+  section           VARCHAR(50)        DEFAULT NULL,
+  year_level        SMALLINT           DEFAULT NULL,
+  school_year       VARCHAR(20)        DEFAULT NULL,
+  stage             submission_stage   NOT NULL DEFAULT 'proposal',
+  status            submission_status  NOT NULL DEFAULT 'submitted',
+  is_published      BOOLEAN            NOT NULL DEFAULT FALSE,
+  public_visible    BOOLEAN            NOT NULL DEFAULT FALSE,
+  featured          BOOLEAN            NOT NULL DEFAULT FALSE,
+  slug              VARCHAR(200)       DEFAULT NULL,
+  citation          TEXT               DEFAULT NULL,
+  author_consent_at TIMESTAMPTZ        DEFAULT NULL,
+  adviser_name      VARCHAR(150)       DEFAULT NULL,
+  published_at      TIMESTAMPTZ        DEFAULT NULL,
+  submitted_by      INT                NOT NULL REFERENCES users(user_id),
+  created_at        TIMESTAMPTZ        NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ        NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================
@@ -169,6 +183,108 @@ CREATE TABLE audit_logs (
   correlation_id VARCHAR(100) DEFAULT NULL,
   request_id     VARCHAR(100) DEFAULT NULL,
   created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- forum_posts
+-- ============================================================
+CREATE TABLE forum_posts (
+  post_id     SERIAL PRIMARY KEY,
+  author_id   INT          NOT NULL REFERENCES users(user_id),
+  group_id    INT          REFERENCES research_groups(group_id) ON DELETE SET NULL,
+  post_type   VARCHAR(20)  NOT NULL DEFAULT 'update',
+  title       VARCHAR(300) DEFAULT NULL,
+  body        TEXT         NOT NULL,
+  media_url   VARCHAR(500) DEFAULT NULL,
+  strand      VARCHAR(20)  DEFAULT NULL,
+  section     VARCHAR(50)  DEFAULT NULL,
+  year_level  SMALLINT     DEFAULT NULL,
+  school_year VARCHAR(20)  DEFAULT NULL,
+  submission_id INT        REFERENCES submissions(submission_id) ON DELETE SET NULL,
+  paper_title VARCHAR(300) DEFAULT NULL,
+  status      VARCHAR(30)  DEFAULT NULL,
+  likes_count INT          NOT NULL DEFAULT 0,
+  reported    BOOLEAN      NOT NULL DEFAULT FALSE,
+  hidden      BOOLEAN      NOT NULL DEFAULT FALSE,
+  removed     BOOLEAN      NOT NULL DEFAULT FALSE,
+  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- forum_post_likes
+-- ============================================================
+CREATE TABLE forum_post_likes (
+  post_id    INT NOT NULL REFERENCES forum_posts(post_id) ON DELETE CASCADE,
+  user_id    INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (post_id, user_id)
+);
+
+-- ============================================================
+-- forum_comments
+-- ============================================================
+CREATE TABLE forum_comments (
+  comment_id SERIAL PRIMARY KEY,
+  post_id    INT         NOT NULL REFERENCES forum_posts(post_id) ON DELETE CASCADE,
+  parent_id  INT         REFERENCES forum_comments(comment_id) ON DELETE CASCADE,
+  author_id  INT         NOT NULL REFERENCES users(user_id),
+  body       TEXT        NOT NULL,
+  edited     BOOLEAN     NOT NULL DEFAULT FALSE,
+  reported   BOOLEAN     NOT NULL DEFAULT FALSE,
+  hidden     BOOLEAN     NOT NULL DEFAULT FALSE,
+  removed    BOOLEAN     NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- paper_access_requests
+-- ============================================================
+CREATE TABLE paper_access_requests (
+  request_id       SERIAL PRIMARY KEY,
+  submission_id    INT          NOT NULL REFERENCES submissions(submission_id) ON DELETE CASCADE,
+  name             VARCHAR(150) NOT NULL,
+  email            VARCHAR(150) NOT NULL,
+  institution      VARCHAR(200) DEFAULT NULL,
+  purpose          TEXT         DEFAULT NULL,
+  status           VARCHAR(20)  NOT NULL DEFAULT 'pending',
+  reference_code   VARCHAR(20)  NOT NULL UNIQUE,
+  verify_token     VARCHAR(100) DEFAULT NULL,
+  verify_expires_at TIMESTAMPTZ DEFAULT NULL,
+  verified_at      TIMESTAMPTZ  DEFAULT NULL,
+  decided_by       INT          REFERENCES users(user_id),
+  decision_note    TEXT         DEFAULT NULL,
+  created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- paper_access_links
+-- ============================================================
+CREATE TABLE paper_access_links (
+  link_id       SERIAL PRIMARY KEY,
+  request_id    INT          NOT NULL REFERENCES paper_access_requests(request_id) ON DELETE CASCADE,
+  submission_id INT          NOT NULL REFERENCES submissions(submission_id) ON DELETE CASCADE,
+  token_hash    VARCHAR(128) NOT NULL UNIQUE,
+  expires_at    TIMESTAMPTZ  NOT NULL,
+  used_at       TIMESTAMPTZ  DEFAULT NULL,
+  revoked_at    TIMESTAMPTZ  DEFAULT NULL,
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- paper_access_logs
+-- ============================================================
+CREATE TABLE paper_access_logs (
+  log_id        SERIAL PRIMARY KEY,
+  link_id       INT          REFERENCES paper_access_links(link_id) ON DELETE SET NULL,
+  request_id    INT          REFERENCES paper_access_requests(request_id) ON DELETE SET NULL,
+  submission_id INT          REFERENCES submissions(submission_id) ON DELETE SET NULL,
+  action        VARCHAR(30)  NOT NULL,
+  ip            VARCHAR(64)  DEFAULT NULL,
+  user_agent    VARCHAR(500) DEFAULT NULL,
+  created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================

@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom'
 import useForum from '../../context/useForum'
-import { FEED_GROUPS } from '../../services/feedData'
 import { glass, ROUTES } from '../../components/dashboard/constants'
 import { UsersIcon } from '../../components/dashboard/icons'
 import Avatar from '../../components/paper/Avatar'
 
 export default function Groups() {
-  const { posts } = useForum()
-  const groups = FEED_GROUPS.filter((g) => g.mine)
+  const { posts, groups: ctxGroups } = useForum()
+  const groups = (ctxGroups || []).filter((g) => g.mine !== false)
 
   return (
     <div className="space-y-6 font-display">

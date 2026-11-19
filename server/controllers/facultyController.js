@@ -45,7 +45,7 @@ const getAssignedSubmissions = async (req, res) => {
        LEFT JOIN reviews r ON s.submission_id = r.submission_id AND r.reviewer_id = ?
        LEFT JOIN review_comments rc ON s.submission_id = rc.submission_id
        WHERE pa.faculty_id = ? AND (pa.role_in_panel = 'adviser' OR pa.role_in_panel = 'panelist')
-       GROUP BY s.submission_id
+       GROUP BY s.submission_id, s.program, s.school_year, s.stage, s.status, s.created_at, s.updated_at, rg.group_name, u.name, r.status_assigned, r.review_id
        ORDER BY s.updated_at DESC`
       , [facultyId, facultyId]
     )
@@ -372,7 +372,7 @@ const getSubmissionComments = async (req, res) => {
          )
        LEFT JOIN review_comments rc ON s.submission_id = rc.submission_id
        WHERE s.submission_id = ?
-       GROUP BY s.submission_id`,
+       GROUP BY s.submission_id, s.group_id, s.title, s.abstract, s.keywords, s.authors, s.program, s.school_year, s.stage, s.status, s.created_at, s.updated_at, rg.group_name, u.name, r.status_assigned, r.review_id, dv.file_path, dv.file_name, dv.file_size, dv.file_type, dv.uploaded_at`,
       [facultyId, submission_id]
     )
 

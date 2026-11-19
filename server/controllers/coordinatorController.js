@@ -38,7 +38,7 @@ const getGroups = async (req, res) => {
       params.push(school_year)
     }
 
-    sql += ` GROUP BY rg.group_id ORDER BY rg.created_at DESC`
+    sql += ` GROUP BY rg.group_id, rg.group_name, rg.program, rg.school_year, rg.created_at ORDER BY rg.created_at DESC`
 
     const [rows] = await db.query(sql, params)
     res.json({ data: rows })
@@ -351,7 +351,7 @@ const getSubmissions = async (req, res) => {
     if (program) { sql += ` AND s.program = ?`; params.push(program) }
     if (search)  { sql += ` AND (s.title LIKE ? OR s.authors LIKE ?)`; params.push(`%${search}%`, `%${search}%`) }
 
-    sql += ` GROUP BY s.submission_id ORDER BY s.updated_at DESC LIMIT ? OFFSET ?`
+    sql += ` GROUP BY s.submission_id, rg.group_name, rg.group_id, u.name, s.title, s.stage, s.status, s.program, s.school_year, s.created_at, s.updated_at ORDER BY s.updated_at DESC LIMIT ? OFFSET ?`
     params.push(Number(limit), Number(offset))
 
     const [rows] = await db.query(sql, params)

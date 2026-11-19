@@ -184,7 +184,7 @@ const getAuditSummary = async (filters = {}) => {
     const [usersCounts] = await pool.query(
       `SELECT u.name, COUNT(*) as count FROM audit_logs al
        LEFT JOIN users u ON al.user_id = u.user_id ${dateFilter}
-       GROUP BY al.user_id ORDER BY count DESC`,
+       GROUP BY al.user_id, u.name ORDER BY count DESC`,
       dateParams
     )
 
