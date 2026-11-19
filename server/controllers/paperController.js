@@ -353,4 +353,67 @@ const getPaperDetail = async (req, res) => {
   }
 }
 
-module.exports = { getMyGroups, uploadPaper, uploadPaperVersion, getMyPapers, getPaperDetail }
+const updatePaper = async (req, res) => {
+  const { paperId } = req.params
+  const userId = req.user.user_id
+  const { title, abstract, keywords, authors, program, school_year } = req.body
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT submission_id FROM submissions WHERE submission_id = ? AND submitted_by = ?`,
+      [paperId, userId]
+    )
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Paper not found or not owned by you' })
+    }
+
+    await pool.query(
+      `UPDATE submissions
+       SET title = COALESCE(?, title),
+           abstract = COALESCE(?, abstract),
+           keywords = COALESCE(?, keywords),
+           authors = COALESCE(?, authors),
+           program = COALESCE(?, program),
+           school_year = COALESCE(?, school_year),
+           updated_at = NOW()
+       WHERE submission_id = ?`,
+      [title || null, abstract || null, keywords || null, authors || null, program || null, school_year || null, paperId]
+    )
+
+    res.json({ message: 'Paper updated', paperId })
+  } catch (err) {
+    console.error('updatePaper error:', err)
+    res.status(500).json({ message: 'Failed to update paper' })
+  }
+}
+
+const resubmitPaper = async (req, res) => {
+  const { paperId } = req.params
+  const userId = req.user.user_id
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT submission_id, status FROM submissions WHERE submission_id = ? AND submitted_by = ?`,
+      [paperId, userId]
+    )
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Paper not found or not owned by you' })
+    }
+    const status = rows[0].status
+    if (status !== 'needs_revision' && status !== 'for_revision') {
+      return res.status(400).json({ message: 'Only papers needing revision can be resubmitted' })
+    }
+
+    await pool.query(
+      `UPDATE submissions SET status = 'under_review', updated_at = NOW() WHERE submission_id = ?`,
+      [paperId]
+    )
+
+    res.json({ message: 'Paper resubmitted for review', paperId, status: 'under_review' })
+  } catch (err) {
+    console.error('resubmitPaper error:', err)
+    res.status(500).json({ message: 'Failed to resubmit paper' })
+  }
+}
+
+module.exports = { getMyGroups, uploadPaper, uploadPaperVersion, getMyPapers, getPaperDetail, updatePaper, resubmitPaper }

@@ -9,14 +9,24 @@ export async function getMyGroups() {
   return Array.isArray(res.data?.data) ? res.data.data : []
 }
 
-export async function uploadPaper({ title, authors, program, year, groupId, file }) {
+export async function uploadPaper({ title, authors, program, year, schoolYear, groupId, abstract, keywords, file }) {
   const body = new FormData()
   body.append('title', title)
   body.append('authors', authors)
   body.append('program', program)
-  body.append('year', year)
+  if (year) body.append('year', year)
+  if (schoolYear) body.append('school_year', schoolYear)
+  if (abstract) body.append('abstract', abstract)
+  if (keywords) body.append('keywords', keywords)
   body.append('group_id', groupId)
   body.append(FILE_FIELD, file)
   const res = await api.post('/papers/upload', body)
+  return res.data
+}
+
+export async function uploadPaperVersion({ paperId, file }) {
+  const body = new FormData()
+  body.append(FILE_FIELD, file)
+  const res = await api.post(`/papers/${paperId}/versions`, body)
   return res.data
 }

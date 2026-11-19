@@ -4,8 +4,9 @@ import useAuth from '../../context/useAuth'
 import { glass, ROUTES } from '../../components/dashboard/constants'
 import { ChevronDownIcon } from '../../components/dashboard/icons'
 import Field, { inputCls } from '../../components/upload/Field'
-import { createPaper, getMyGroups, getMyPaper, updatePaper } from '../../services/studentPapers'
-import { canEdit, splitList } from '../../utils/paperRules'
+import { getMyGroups as fetchMyGroups, uploadPaper, uploadPaperVersion } from '../../services/uploadService'
+import { getPaperDetail, updatePaper } from '../../services/paperService'
+import { splitList } from '../../utils/paperRules'
 
 const TITLE_MAX = 300
 const ABSTRACT_MIN = 50
@@ -35,12 +36,20 @@ function PaperFormBody({ groups, paper }) {
   const navigate = useNavigate()
   const { user } = useAuth()
   const editing = Boolean(paper)
-  const [groupId, setGroupId] = useState(paper?.groupId ?? (groups.length === 1 ? groups[0].id : ''))
+  const [groupId, setGroupId] = useState(() => {
+    if (paper?._groupName) {
+      const g = groups.find((x) => x.name === paper._groupName)
+      if (g) return g.id
+    }
+    if (paper?.groupId) return paper.groupId
+    return groups.length === 1 ? groups[0].id : ''
+  })
   const [title, setTitle] = useState(paper?.title ?? '')
   const [authors, setAuthors] = useState(paper ? paper.authors.join(', ') : (user?.name ?? ''))
   const [abstract, setAbstract] = useState(paper?.abstract ?? '')
   const [keywords, setKeywords] = useState(paper ? paper.keywords.join(', ') : '')
-  const [videoUrl, setVideoUrl] = useState(paper?.videoUrl ?? '')
+
+  const [file, setFile] = useState(null)
   const [showErrors, setShowErrors] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -60,7 +69,7 @@ function PaperFormBody({ groups, paper }) {
         : keywordList.length > KEYWORDS_MAX
           ? `Use up to ${KEYWORDS_MAX} keywords.`
           : '',
-    videoUrl: !videoUrl.trim() || URL_PATTERN.test(videoUrl.trim()) ? '' : 'Enter a link that starts with https://',
+    file: !editing && !file ? 'A file is required for new submissions.' : '',
   }
   const hasErrors = Object.values(errors).some(Boolean)
   const show = (key) => (showErrors ? errors[key] : '')
@@ -72,21 +81,43 @@ function PaperFormBody({ groups, paper }) {
       setShowErrors(true)
       return
     }
-    setSubmitting(true)
-    const payload = {
-      groupId,
-      title: title.trim(),
-      authors: authorList,
-      abstract: abstract.trim(),
-      keywords: keywordList,
-      videoUrl: videoUrl.trim(),
+    if (!editing && !file) {
+      setSubmitError('A file (PDF/DOC/DOCX) is required for a new submission.')
+      setShowErrors(true)
+      return
     }
+    setSubmitting(true)
+    const group = groups.find((g) => g.id === groupId)
+    const year = group?.schoolYear ? group.schoolYear.split('-')[0] : ''
     try {
-      if (editing) await updatePaper(paper.id, payload)
-      else await createPaper(payload)
+      if (editing) {
+        if (file) {
+          await uploadPaperVersion({ paperId: paper.id, file })
+        }
+        await updatePaper(paper.id, {
+          title: title.trim(),
+          authors: authorList,
+          abstract: abstract.trim(),
+          keywords: keywordList,
+          program: group?.strand || group?.program,
+          schoolYear: group?.schoolYear,
+        })
+      } else {
+        await uploadPaper({
+          title: title.trim(),
+          authors: authorList.join(', '),
+          program: group?.strand || group?.program || '',
+          year,
+          schoolYear: group?.schoolYear || '',
+          abstract: abstract.trim(),
+          keywords: keywordList.join(', '),
+          groupId,
+          file,
+        })
+      }
       navigate(ROUTES.myPapers, { state: { notice: editing ? 'Changes saved.' : 'Proposal submitted.' } })
-    } catch {
-      setSubmitError('Could not save your paper. Please try again.')
+    } catch (err) {
+      setSubmitError(err?.response?.data?.message || 'Could not save your paper. Please try again.')
       setSubmitting(false)
     }
   }
@@ -182,17 +213,22 @@ function PaperFormBody({ groups, paper }) {
         </div>
 
         <div>
-          <Field label="Video link (optional)" error={show('videoUrl')}>
+          <Field label={editing ? 'Replace file (optional)' : 'Paper file (PDF/DOC/DOCX)'} error={show('file')}>
             <input
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              inputMode="url"
-              placeholder="E.g. https://www.youtube.com/watch?v=..."
-              className={`${inputCls} ${border(show('videoUrl'))}`}
+              type="file"
+              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className={`${inputCls} ${border(show('file'))}`}
             />
           </Field>
-          <p className="mb-0 mt-2 text-xs text-white/50">A YouTube or Vimeo link to a demo or presentation.</p>
+          <p className="mb-0 mt-2 text-xs text-white/50">
+            {editing ? 'Leave empty to keep the existing file.' : 'Required for new submissions (max 20 MB).'}
+          </p>
+          {file && (
+            <p className="mb-0 mt-1 text-xs text-white/70">Selected: {file.name}</p>
+          )}
         </div>
+
       </div>
 
       {submitError && (
@@ -227,7 +263,32 @@ export default function UploadForm() {
 
   useEffect(() => {
     let live = true
-    Promise.all([getMyGroups(), paperId ? getMyPaper(paperId) : Promise.resolve(null)])
+    const groupsPromise = fetchMyGroups().then((rows) =>
+      (rows || []).map((g) => ({
+        id: g.group_id,
+        name: g.group_name,
+        strand: g.program || g.strand || '',
+        section: g.section || '',
+        schoolYear: g.school_year || '',
+        adviser: '',
+      }))
+    )
+    const paperPromise = paperId
+      ? getPaperDetail(paperId).then((p) => ({
+          id: p.id,
+          title: p.title,
+          authors: p.authors || [],
+          abstract: p.abstract || '',
+          keywords: p.keywords || [],
+          groupId: null,
+          _groupName: p.groupName,
+          status: p.status,
+          groupName: p.groupName,
+          program: p.program,
+          schoolYear: p.schoolYear,
+        }))
+      : Promise.resolve(null)
+    Promise.all([groupsPromise, paperPromise])
       .then(([groups, paper]) => {
         if (live) setState({ key, groups, paper, error: false })
       })

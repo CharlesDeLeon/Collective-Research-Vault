@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CloseIcon, CommentPlusIcon } from '../dashboard/icons'
-import { listMyPapers } from '../../services/studentPapers'
+import { getMyPapers } from '../../services/paperService'
 
 const FOCUSABLE = 'button:not([disabled]), textarea, input, select'
 const TYPES = [
@@ -27,7 +27,7 @@ export default function AddPostModal({ firstName, preset = {}, onClose, onSubmit
 
   useEffect(() => {
     let cancelled = false
-    listMyPapers().then((list) => {
+    getMyPapers().then((list) => {
       if (!cancelled) setPapers(list)
     })
     return () => {
