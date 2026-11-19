@@ -1,17 +1,39 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CloseIcon, CommentPlusIcon } from '../dashboard/icons'
-import AttachField from './AttachField'
+import { listMyPapers } from '../../services/studentPapers'
 
-const FOCUSABLE = 'button:not([disabled]), textarea, input'
+const FOCUSABLE = 'button:not([disabled]), textarea, input, select'
+const TYPES = [
+  { id: 'update', label: 'Update' },
+  { id: 'video', label: 'Video' },
+  { id: 'paper', label: 'Paper' },
+]
+const URL_RE = /^https?:\/\/[^\s]+\.[^\s]+$/i
 
-export default function AddPostModal({ firstName, onClose, onSubmit }) {
+const fieldCls =
+  'mt-1 w-full rounded-lg border bg-field px-3 text-sm text-white outline-none placeholder:text-field-ink focus:border-gold/60 focus:ring-2 focus:ring-gold/20'
+
+export default function AddPostModal({ firstName, preset = {}, onClose, onSubmit }) {
   const titleId = useId()
   const dialogRef = useRef(null)
   const textRef = useRef(null)
+  const [type, setType] = useState(preset.type ?? 'update')
   const [text, setText] = useState('')
-  const [file, setFile] = useState(null)
-  const [video, setVideo] = useState(null)
+  const [mediaUrl, setMediaUrl] = useState('')
+  const [papers, setPapers] = useState([])
+  const [paperId, setPaperId] = useState(preset.paperId ? String(preset.paperId) : '')
+  const [showErrors, setShowErrors] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    listMyPapers().then((list) => {
+      if (!cancelled) setPapers(list)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     const previous = document.activeElement
@@ -46,12 +68,36 @@ export default function AddPostModal({ firstName, onClose, onSubmit }) {
     }
   }, [onClose])
 
-  const canPost = text.trim().length > 0
+  const trimmed = text.trim()
+  const url = mediaUrl.trim()
+  const errors = {}
+  if (type === 'update' && !trimmed) errors.text = 'Write something to share.'
+  if (type === 'video') {
+    if (!url) errors.url = 'Add the video link.'
+    else if (!URL_RE.test(url)) errors.url = 'Use a link that starts with https://'
+  }
+  if (type === 'update' && url && !URL_RE.test(url)) errors.url = 'Use a link that starts with https://'
+  if (type === 'paper' && !paperId) errors.paper = 'Choose one of your papers.'
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!canPost) return
-    onSubmit({ text: text.trim(), file, video })
+    if (Object.keys(errors).length > 0) {
+      setShowErrors(true)
+      return
+    }
+    const paper = type === 'paper' ? papers.find((p) => String(p.id) === paperId) : null
+    onSubmit({
+      type,
+      text: trimmed || (paper ? `Sharing our paper: ${paper.title}` : ''),
+      mediaUrl: type === 'paper' ? '' : url,
+      paper: paper ? { id: paper.id, title: paper.title, status: paper.status } : null,
+    })
+  }
+
+  const placeholders = {
+    update: `What’s on your mind, ${firstName}?`,
+    video: 'Say something about the video (optional)',
+    paper: 'Add a note about this paper (optional)',
   }
 
   return createPortal(
@@ -67,13 +113,11 @@ export default function AddPostModal({ firstName, onClose, onSubmit }) {
         aria-modal="true"
         aria-labelledby={titleId}
         onSubmit={handleSubmit}
+        noValidate
         className="w-full max-w-[34rem] rounded-2xl border border-white/10 bg-modal p-4 shadow-2xl shadow-black/30"
       >
         <div className="flex items-center justify-between gap-3">
-          <h2
-            id={titleId}
-            className="flex min-w-0 items-center gap-3 px-1 text-base font-medium text-white/75"
-          >
+          <h2 id={titleId} className="flex min-w-0 items-center gap-3 px-1 text-base font-medium text-white/75">
             <CommentPlusIcon className="size-5 shrink-0" />
             <span className="truncate">Add New Post</span>
           </h2>
@@ -87,25 +131,90 @@ export default function AddPostModal({ firstName, onClose, onSubmit }) {
           </button>
         </div>
 
+        <div role="tablist" aria-label="Post type" className="mt-3 grid grid-cols-3 gap-1 rounded-xl bg-white/5 p-1">
+          {TYPES.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={type === t.id}
+              onClick={() => {
+                setType(t.id)
+                setShowErrors(false)
+              }}
+              className={`h-9 rounded-lg text-sm font-semibold transition ${
+                type === t.id ? 'bg-gold text-ink' : 'text-white/70 hover:text-white'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {type === 'paper' && (
+          <label className="mt-3 block text-xs font-semibold text-white/60">
+            Paper
+            <select
+              value={paperId}
+              onChange={(e) => setPaperId(e.target.value)}
+              aria-invalid={showErrors && !!errors.paper}
+              className={`${fieldCls} h-11 ${showErrors && errors.paper ? 'border-danger' : 'border-field-line'}`}
+            >
+              <option value="">Choose a paper</option>
+              {papers.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                </option>
+              ))}
+            </select>
+            {showErrors && errors.paper && (
+              <span role="alert" className="mt-1 block text-xs font-normal text-danger-ink">
+                {errors.paper}
+              </span>
+            )}
+          </label>
+        )}
+
         <textarea
           ref={textRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           maxLength={2000}
-          placeholder={`What’s on your mind, ${firstName}?`}
+          placeholder={placeholders[type]}
           aria-label="Post content"
-          className="mt-2 h-40 w-full resize-none rounded-lg border border-field-line bg-field p-3 text-sm text-white outline-none placeholder:text-field-ink focus:border-gold/60 focus:ring-2 focus:ring-gold/20 sm:h-44 sm:p-4"
+          aria-invalid={showErrors && !!errors.text}
+          className={`mt-3 h-32 w-full resize-none rounded-lg border bg-field p-3 text-sm text-white outline-none placeholder:text-field-ink focus:border-gold/60 focus:ring-2 focus:ring-gold/20 sm:h-36 sm:p-4 ${
+            showErrors && errors.text ? 'border-danger' : 'border-field-line'
+          }`}
         />
+        {showErrors && errors.text && (
+          <p role="alert" className="mt-1 text-xs text-danger-ink">
+            {errors.text}
+          </p>
+        )}
 
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <AttachField label="Attach File" onChange={setFile} />
-          <AttachField label="Attach Video" accept="video/*" onChange={setVideo} />
-        </div>
+        {type !== 'paper' && (
+          <label className="mt-3 block text-xs font-semibold text-white/60">
+            {type === 'video' ? 'Video link' : 'Media link (optional)'}
+            <input
+              value={mediaUrl}
+              onChange={(e) => setMediaUrl(e.target.value)}
+              placeholder="https://www.youtube.com/watch?v=…"
+              inputMode="url"
+              aria-invalid={showErrors && !!errors.url}
+              className={`${fieldCls} h-11 ${showErrors && errors.url ? 'border-danger' : 'border-field-line'}`}
+            />
+            {showErrors && errors.url && (
+              <span role="alert" className="mt-1 block text-xs font-normal text-danger-ink">
+                {errors.url}
+              </span>
+            )}
+          </label>
+        )}
 
         <button
           type="submit"
-          disabled={!canPost}
-          className="mt-5 h-12 w-full rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft text-base font-semibold text-ink transition enabled:hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-5 h-12 w-full rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft text-base font-semibold text-ink transition hover:brightness-105"
         >
           Post
         </button>

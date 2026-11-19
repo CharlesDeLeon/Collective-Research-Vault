@@ -168,3 +168,36 @@ export const ChevronDownIcon = (p) => (
     <path d="M6 9l6 6 6-6" />
   </Svg>
 )
+
+
+export const UserIcon = (p) => (
+  <Svg {...p}>
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
+  </Svg>
+)
+
+export const FilterIcon = (p) => (
+  <Svg {...p}>
+    <path d="M4 5h16l-6 8v6l-4-2v-4z" />
+  </Svg>
+)
+
+export const FlagIcon = (p) => (
+  <Svg {...p}>
+    <path d="M5 21V4" />
+    <path d="M5 4h12l-2 4 2 4H5" />
+  </Svg>
+)
+
+export const PencilIcon = (p) => (
+  <Svg {...p}>
+    <path d="M4 20l4-1 11-11-3-3L5 16z" />
+  </Svg>
+)
+
+export const TrashIcon = (p) => (
+  <Svg {...p}>
+    <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
+  </Svg>
+)

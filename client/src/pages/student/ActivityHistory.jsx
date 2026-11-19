@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNotifications } from '../../hooks/useNotifications'
 import NotificationSection from '../../components/notifications/NotificationSection'
 import NotificationRow from '../../components/notifications/NotificationRow'
@@ -20,6 +21,9 @@ function Alert({ children }) {
 
 export default function ActivityHistory() {
   const { unread, past, loading, error, actionError, markRead, markAllRead } = useNotifications()
+  const [filter, setFilter] = useState('all')
+  const showUnread = filter !== 'read'
+  const showPast = filter !== 'unread'
 
   return (
     <div className="space-y-8">
@@ -36,6 +40,27 @@ export default function ActivityHistory() {
         </button>
       </header>
 
+      <div role="tablist" aria-label="Filter notifications" className="flex gap-2">
+        {[
+          ['all', 'All'],
+          ['unread', `Unread${unread.length ? ` (${unread.length})` : ''}`],
+          ['read', 'Read'],
+        ].map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={filter === id}
+            onClick={() => setFilter(id)}
+            className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+              filter === id ? 'border-gold bg-gold/10 text-gold' : 'border-white/15 text-white/70 hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {error && <Alert>{error}</Alert>}
       {actionError && <Alert>{actionError}</Alert>}
 
@@ -46,7 +71,7 @@ export default function ActivityHistory() {
         </div>
       ) : (
         <>
-          <NotificationSection id="unread-heading" icon={BellIcon} title="Unread Notifications">
+          {showUnread && <NotificationSection id="unread-heading" icon={BellIcon} title="Unread Notifications">
             {unread.length === 0 ? (
               <EmptyState>You&apos;re all caught up.</EmptyState>
             ) : (
@@ -56,9 +81,9 @@ export default function ActivityHistory() {
                 ))}
               </ul>
             )}
-          </NotificationSection>
+          </NotificationSection>}
 
-          <NotificationSection id="past-heading" icon={ClockIcon} title="Past notifications">
+          {showPast && <NotificationSection id="past-heading" icon={ClockIcon} title="Past notifications">
             {past.length === 0 ? (
               <EmptyState>No past notifications yet.</EmptyState>
             ) : (
@@ -68,7 +93,7 @@ export default function ActivityHistory() {
                 ))}
               </ul>
             )}
-          </NotificationSection>
+          </NotificationSection>}
         </>
       )}
     </div>

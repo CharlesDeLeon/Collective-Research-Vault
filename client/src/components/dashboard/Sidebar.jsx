@@ -4,14 +4,23 @@ import useAuth from '../../context/useAuth'
 import ProfileTrigger from '../profile/ProfileTrigger'
 import { ROUTES } from './constants'
 import Logo from '../Logo'
-import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon, DocIcon } from './icons'
+import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon, DocIcon, CommentIcon, UserIcon } from './icons'
 
 export const NAV = [
   { label: 'Home', to: ROUTES.home, icon: HomeIcon, end: true },
-  { label: 'Forum', to: ROUTES.forum, icon: UsersIcon },
+  { label: 'Feed', to: ROUTES.forum, icon: CommentIcon },
   { label: 'My Papers', to: ROUTES.myPapers, icon: DocIcon },
+  { label: 'Groups', to: ROUTES.groups, icon: UsersIcon },
   { label: 'Gallery', to: ROUTES.gallery, icon: BookIcon },
   { label: 'Notifications', to: ROUTES.history, icon: BellIcon },
+]
+
+const BOTTOM = [
+  { label: 'Feed', to: ROUTES.forum, icon: CommentIcon },
+  { label: 'My Papers', to: ROUTES.myPapers, icon: DocIcon },
+  { label: 'Groups', to: ROUTES.groups, icon: UsersIcon },
+  { label: 'Alerts', to: ROUTES.history, icon: BellIcon },
+  { label: 'Profile', to: ROUTES.profile, icon: UserIcon },
 ]
 
 const initials = (name = '') =>
@@ -79,7 +88,7 @@ export default function Sidebar({ user, onLogout }) {
         {onForum && (
           <button
             type="button"
-            onClick={openComposer}
+            onClick={() => openComposer({})}
             className={`${itemBase} mb-8 w-full text-white/75 hover:bg-white/5 hover:text-white`}
           >
             <span className="grid size-6 place-items-center rounded-full bg-white/10">
@@ -110,30 +119,44 @@ export default function Sidebar({ user, onLogout }) {
 }
 
 export function MobileNav() {
-  const { user } = useAuth()
-  const name = user?.name ?? user?.full_name ?? 'Student'
-
   return (
-    <div className="flex items-center gap-3 font-display lg:hidden">
-      <nav className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
-        {NAV.filter((n) => !n.disabled).map(({ label, to, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            className={({ isActive }) =>
-              `whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold ${
-                isActive ? 'border-gold bg-gold/10 text-gold' : 'border-white/15 text-white/70'
-              }`
-            }
-          >
-            {label}
-          </NavLink>
-        ))}
-      </nav>
-      <ProfileTrigger className="grid size-10 shrink-0 place-items-center rounded-full bg-gold text-sm font-bold text-ink transition hover:brightness-105">
-        {initials(name)}
-      </ProfileTrigger>
+    <div className="flex items-center justify-between font-display lg:hidden">
+      <NavLink to={ROUTES.home} end className="flex items-center gap-2" aria-label="Home">
+        <Logo className="size-9 shrink-0 text-gold" />
+        <span className="text-lg font-bold tracking-wide">
+          CORE <span className="text-gold">V</span>
+        </span>
+      </NavLink>
+      <NavLink
+        to={ROUTES.gallery}
+        className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 transition hover:text-white"
+      >
+        Gallery
+      </NavLink>
     </div>
+  )
+}
+
+export function BottomNav() {
+  return (
+    <nav
+      aria-label="Primary"
+      className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/10 bg-navy-900/95 px-1 pb-[env(safe-area-inset-bottom)] font-display backdrop-blur-md lg:hidden"
+    >
+      {BOTTOM.map(({ label, to, icon: Icon }) => (
+        <NavLink
+          key={to}
+          to={to}
+          className={({ isActive }) =>
+            `flex min-h-14 flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-medium transition ${
+              isActive ? 'text-gold' : 'text-white/60'
+            }`
+          }
+        >
+          <Icon className="size-5" />
+          {label}
+        </NavLink>
+      ))}
+    </nav>
   )
 }

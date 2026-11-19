@@ -11,6 +11,8 @@ import AccessLink from './pages/public/AccessLink'
 import AccessView from './pages/public/AccessView'
 import AccessDownload from './pages/public/AccessDownload'
 import Landing from './pages/public/Landing'
+import NotFoundPage from './pages/NotFoundPage'
+import SessionExpiredModal from './components/SessionExpiredModal'
 // Student
 import StudentLayout from './pages/student/StudentLayout'
 import StudentDashboard from './pages/student/StudentDashboard'
@@ -18,7 +20,11 @@ import UploadForm from './pages/student/UploadForm'
 import MyPapers from './pages/student/MyPapers'
 import PaperDetail from './pages/student/PaperDetail'
 import ActivityHistory from './pages/student/ActivityHistory'
-import Forum from './pages/student/Forum'
+import Feed from './pages/student/Feed'
+import Groups from './pages/student/Groups'
+import GroupDetail from './pages/student/GroupDetail'
+import Profile from './pages/student/Profile'
+import NotFound from './pages/student/NotFound'
 
 // Faculty
 import FacultyLayout from './pages/faculty/FacultyLayout'
@@ -72,8 +78,14 @@ function App() {
             <Route path="my-papers" element={<MyPapers />} />
             <Route path="my-papers/:paperId/edit" element={<UploadForm />} />
             <Route path="paper/:paperId" element={<PaperDetail />} />
-            <Route path="history" element={<ActivityHistory />} />
-            <Route path="forum" element={<Forum />} />
+            <Route path="feed" element={<Feed />} />
+            <Route path="groups" element={<Groups />} />
+            <Route path="groups/:groupId" element={<GroupDetail />} />
+            <Route path="notifications" element={<ActivityHistory />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="forum" element={<Navigate to="/student/feed" replace />} />
+            <Route path="history" element={<Navigate to="/student/notifications" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
 
           <Route
@@ -121,7 +133,9 @@ function App() {
             <Route path="manageUsers" element={<ManageUsers />} />
             <Route path="manageStorage" element={<ManageStorage />} />
           </Route>
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        <SessionExpiredModal />
       </AuthProvider>
     </BrowserRouter>
   )

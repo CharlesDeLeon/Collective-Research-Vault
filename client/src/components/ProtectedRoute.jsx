@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import useAuth from '../context/useAuth'
 import { normalizeRole } from '../utils/roles'
+import Forbidden from '../pages/Forbidden'
 
 const ProtectedRoute = ({ children, allowedRole }) => {
   const { user } = useAuth()
@@ -14,7 +15,7 @@ const ProtectedRoute = ({ children, allowedRole }) => {
     const allowedRoles = Array.isArray(allowedRole) ? allowedRole : [allowedRole]
     const normalizedRoles = allowedRoles.map(normalizeRole)
 
-    if (!normalizedRoles.includes(currentRole)) return <Navigate to="/login" />
+    if (!normalizedRoles.includes(currentRole)) return <Forbidden />
   }
 
   return children

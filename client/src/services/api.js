@@ -1,5 +1,7 @@
 import axios from 'axios'
 
+export const SESSION_EXPIRED_EVENT = 'corev:session-expired'
+
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || '/api',
 })
@@ -20,10 +22,9 @@ api.interceptors.response.use(
     (error) => {
         const message = error.response?.data?.message || ''
         const isLogin = error.config?.url?.includes('/auth/login')
-        if (!isLogin && /token/i.test(message)) {
-            localStorage.removeItem('token')
-            localStorage.removeItem('user')
-            window.location.assign('/login')
+        const expired = error.response?.status === 401 || /token/i.test(message)
+        if (!isLogin && expired && localStorage.getItem('token')) {
+            window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
         }
         return Promise.reject(error)
     }
