@@ -13,8 +13,9 @@ export default function About() {
   const { contactEmail, contactOffice } = SITE_INFO
   return (
     <div className="min-h-screen bg-linear-to-br from-navy-900 to-navy-500 font-display text-white">
-      <div className="mx-auto max-w-5xl px-4 pb-16 sm:px-8">
+      <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-8">
         <GalleryNavbar />
+        <div className="mx-auto max-w-5xl">
         <h1 className="mb-0 mt-6 text-[1.75rem] font-semibold leading-tight sm:text-[2.5rem]">About CORE-V</h1>
         <p className="mb-0 mt-4 max-w-3xl text-base leading-[1.75] text-white/90">
           CORE-V is the Collective Research Vault: a place where senior high school research is kept, reviewed by
@@ -67,6 +68,7 @@ export default function About() {
           </Link>
         </div>
       </div>
+        </div>
     </div>
   )
 }

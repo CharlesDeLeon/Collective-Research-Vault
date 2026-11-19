@@ -4,6 +4,8 @@ export const ROUTES = {
   group: '/student/group',
   gallery: '/gallery',
   upload: '/student/upload',
+  myPapers: '/student/my-papers',
+  editPaper: (id) => `/student/my-papers/${id}/edit`,
   history: '/student/history',
   paper: (id) => `/student/paper/${id}`,
 }

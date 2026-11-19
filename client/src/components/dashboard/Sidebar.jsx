@@ -4,11 +4,12 @@ import useAuth from '../../context/useAuth'
 import ProfileTrigger from '../profile/ProfileTrigger'
 import { ROUTES } from './constants'
 import Logo from '../Logo'
-import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon } from './icons'
+import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon, DocIcon } from './icons'
 
 export const NAV = [
   { label: 'Home', to: ROUTES.home, icon: HomeIcon, end: true },
   { label: 'Forum', to: ROUTES.forum, icon: UsersIcon },
+  { label: 'My Papers', to: ROUTES.myPapers, icon: DocIcon },
   { label: 'Gallery', to: ROUTES.gallery, icon: BookIcon },
   { label: 'Notifications', to: ROUTES.history, icon: BellIcon },
 ]
@@ -64,7 +65,7 @@ export default function Sidebar({ user, onLogout }) {
               to={to}
               end={end}
               className={({ isActive }) =>
-                linkCls({ isActive: isActive || (to === ROUTES.home && pathname.startsWith(ROUTES.upload)) })
+                linkCls({ isActive: isActive || (to === ROUTES.myPapers && pathname.startsWith(ROUTES.upload)) })
               }
             >
               <Icon className="size-5" />

@@ -58,9 +58,9 @@ export default function RequestStatus() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-navy-900 to-navy-500 font-display text-white">
-      <div className="mx-auto max-w-3xl px-4 pb-16 sm:px-8">
+      <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-8">
         <GalleryNavbar />
-        <div className="mt-6">
+        <div className="mx-auto mt-6 max-w-3xl">
           <StatePanel title="Request status" tone={copy ? copy[1] : 'neutral'}>
             <p className="m-0">Enter the reference code you received after sending your request.</p>
             <Lookup key={ref} initial={ref} />
