@@ -45,6 +45,7 @@ import AdviserLayout from './pages/adviser/AdviserLayout'
 import AdviserDashboard from './pages/adviser/AdviserDashboard'
 import AdviserGroups from './pages/adviser/AdviserGroups'
 import AdviserSubmissions from './pages/adviser/AdviserSubmissions'
+import AdviserInbox from './pages/adviser/AdviserInbox'
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -145,7 +146,7 @@ function App() {
             <Route path="notifications" element={<CoordinatorNotif />} />
             <Route path="profile" element={<Profile />} />
             <Route path="reviews" element={<AdviserSubmissions />} />
-            <Route path="inbox" element={<div style={{ padding: '2rem', color: '#fff' }}>Access Inbox — coming soon</div>} />
+            <Route path="inbox" element={<AdviserInbox />} />
             <Route path="moderation" element={<div style={{ padding: '2rem', color: '#fff' }}>Moderation — coming soon</div>} />
             <Route path="analytics" element={<div style={{ padding: '2rem', color: '#fff' }}>Analytics — coming soon</div>} />
             <Route path="reports" element={<div style={{ padding: '2rem', color: '#fff' }}>Reports — coming soon</div>} />
