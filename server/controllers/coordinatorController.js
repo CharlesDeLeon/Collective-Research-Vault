@@ -698,6 +698,121 @@ const setConsent = async (req, res) => {
   }
 }
 
+const getReports = async (req, res) => {
+  try {
+    const userId = req.user.user_id
+    const role = String(req.user?.role || '').toLowerCase()
+
+    // Scope to adviser's groups if adviser
+    let groupFilter = ''
+    const params = []
+    if (role === 'adviser') {
+      groupFilter = ' AND s.group_id IN (SELECT group_id FROM research_groups WHERE adviser_id = ? OR created_by = ?)'
+      params.push(userId, userId)
+    }
+
+    const [byStatus] = await db.query(
+      `SELECT status, COUNT(*)::int AS count FROM submissions s WHERE 1=1 ${groupFilter} GROUP BY status ORDER BY status`,
+      params
+    )
+    const [byStrand] = await db.query(
+      `SELECT COALESCE(strand, program) AS strand, COUNT(*)::int AS count FROM submissions s WHERE 1=1 ${groupFilter} GROUP BY COALESCE(strand, program) ORDER BY strand`,
+      params
+    )
+    const [byYear] = await db.query(
+      `SELECT school_year, COUNT(*)::int AS count FROM submissions s WHERE 1=1 ${groupFilter} GROUP BY school_year ORDER BY school_year DESC`,
+      params
+    )
+    const [published] = await db.query(
+      `SELECT s.submission_id, s.title, s.authors, s.strand, s.section, s.school_year, s.published_at, s.citation, rg.group_name
+       FROM submissions s JOIN research_groups rg ON rg.group_id = s.group_id
+       WHERE s.is_published = TRUE ${groupFilter.replace('s.group_id', 's.group_id')} ORDER BY s.published_at DESC`,
+      params
+    )
+    const [accessStats] = await db.query(
+      `SELECT r.status, COUNT(*)::int AS count FROM paper_access_requests r
+       JOIN submissions s ON s.submission_id = r.submission_id
+       WHERE 1=1 ${groupFilter} GROUP BY r.status`,
+      params
+    )
+
+    res.json({
+      data: {
+        byStatus,
+        byStrand,
+        byYear,
+        published,
+        accessStats,
+        totalSubmissions: byStatus.reduce((a, b) => a + b.count, 0),
+        totalPublished: published.length,
+      },
+    })
+  } catch (err) {
+    console.error('getReports error:', err)
+    res.status(500).json({ message: 'Failed to fetch reports' })
+  }
+}
+
+const getAnalytics = async (req, res) => {
+  try {
+    const userId = req.user.user_id
+    const role = String(req.user?.role || '').toLowerCase()
+
+    let groupFilter = ''
+    const params = []
+    if (role === 'adviser') {
+      groupFilter = ' AND s.group_id IN (SELECT group_id FROM research_groups WHERE adviser_id = ? OR created_by = ?)'
+      params.push(userId, userId)
+    }
+
+    const [postCounts] = await db.query(
+      `SELECT COUNT(*)::int AS total_posts FROM forum_posts fp
+       LEFT JOIN research_groups rg ON rg.group_id = fp.group_id
+       WHERE 1=1 ${groupFilter.replace('s.group_id', 'fp.group_id')}`,
+      params
+    )
+    const [commentCounts] = await db.query(
+      `SELECT COUNT(*)::int AS total_comments FROM forum_comments fc
+       JOIN forum_posts fp ON fp.post_id = fc.post_id
+       LEFT JOIN research_groups rg ON rg.group_id = fp.group_id
+       WHERE 1=1 ${groupFilter.replace('s.group_id', 'fp.group_id')}`,
+      params
+    )
+    const [likeCounts] = await db.query(
+      `SELECT COUNT(*)::int AS total_likes FROM forum_post_likes fpl
+       JOIN forum_posts fp ON fp.post_id = fpl.post_id
+       LEFT JOIN research_groups rg ON rg.group_id = fp.group_id
+       WHERE 1=1 ${groupFilter.replace('s.group_id', 'fp.group_id')}`,
+      params
+    )
+    const [accessCounts] = await db.query(
+      `SELECT COUNT(*)::int AS total_requests FROM paper_access_requests r
+       JOIN submissions s ON s.submission_id = r.submission_id
+       WHERE 1=1 ${groupFilter}`,
+      params
+    )
+    const [downloadCounts] = await db.query(
+      `SELECT COUNT(*)::int AS total_downloads FROM paper_access_logs l
+       JOIN submissions s ON s.submission_id = l.submission_id
+       WHERE l.action = 'download_success' ${groupFilter}`,
+      params
+    )
+
+    res.json({
+      data: {
+        totalPosts: postCounts[0]?.total_posts || 0,
+        totalComments: commentCounts[0]?.total_comments || 0,
+        totalLikes: likeCounts[0]?.total_likes || 0,
+        totalAccessRequests: accessCounts[0]?.total_requests || 0,
+        totalDownloads: downloadCounts[0]?.total_downloads || 0,
+      },
+    })
+  } catch (err) {
+    console.error('getAnalytics error:', err)
+    res.status(500).json({ message: 'Failed to fetch analytics' })
+  }
+}
+
 module.exports = {
   getGroups, getGroupById, createGroup, updateGroup, deleteGroup,
   getGroupMembers, addGroupMember, removeGroupMember,
@@ -707,4 +822,5 @@ module.exports = {
   updateStage, updateStatus,
   getDashboardStats,
   uploadSubmissionFile, publishSubmission, unpublishSubmission, setConsent,
+  getReports, getAnalytics,
 }

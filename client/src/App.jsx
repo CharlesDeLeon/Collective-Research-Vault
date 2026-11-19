@@ -49,6 +49,8 @@ import AdviserSubmissions from './pages/adviser/AdviserSubmissions'
 import AdviserReview from './pages/adviser/AdviserReview'
 import AdviserInbox from './pages/adviser/AdviserInbox'
 import AdviserModeration from './pages/adviser/AdviserModeration'
+import AdviserReports from './pages/adviser/AdviserReports'
+import AdviserAnalytics from './pages/adviser/AdviserAnalytics'
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -152,8 +154,8 @@ function App() {
             <Route path="reviews/:id" element={<AdviserReview />} />
             <Route path="inbox" element={<AdviserInbox />} />
             <Route path="moderation" element={<AdviserModeration />} />
-            <Route path="analytics" element={<div style={{ padding: '2rem', color: '#fff' }}>Analytics — coming soon</div>} />
-            <Route path="reports" element={<div style={{ padding: '2rem', color: '#fff' }}>Reports — coming soon</div>} />
+            <Route path="analytics" element={<AdviserAnalytics />} />
+            <Route path="reports" element={<AdviserReports />} />
           </Route>
 
           <Route

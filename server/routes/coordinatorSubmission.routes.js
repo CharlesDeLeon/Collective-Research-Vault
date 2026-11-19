@@ -9,6 +9,7 @@ const {
   getSubmissions, getSubmissionById, updateStage, updateStatus,
   removeFromPanel, getDashboardStats, getFacultyList, getStudentList,
   uploadSubmissionFile, publishSubmission, unpublishSubmission, setConsent,
+  getReports, getAnalytics,
 } = require('../controllers/coordinatorController')
 
 const uploadsDir = path.join(__dirname, '..', 'uploads')
@@ -22,6 +23,10 @@ const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } })
 
 router.use(authMiddleware)
 router.use(roleMiddleware('adviser'))
+
+// Reports & Analytics (must come before /:id)
+router.get('/reports', getReports)
+router.get('/analytics', getAnalytics)
 
 // Submissions
 router.get('/', getSubmissions)

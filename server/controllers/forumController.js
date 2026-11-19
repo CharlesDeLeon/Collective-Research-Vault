@@ -57,7 +57,6 @@ const listPosts = async (req, res) => {
     const params = []
 
     const role = String(req.user?.role || '').toLowerCase()
-    const userId = req.user.user_id
     if (role === 'adviser') {
       sql += ` AND (rg.adviser_id = ? OR rg.created_by = ? OR rg.group_id IS NULL)`
       params.push(userId, userId)
