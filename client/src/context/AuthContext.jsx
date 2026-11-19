@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
     const role = data.user?.role?.toLowerCase()
 
     if (role === 'student') navigate('/student')
-    else if (role === 'adviser') navigate('/faculty/dashboard')
+    else if (role === 'adviser') navigate('/adviser/dashboard')
     else if (role === 'external_panelist') navigate('/panelist/dashboard')
     else if (role === 'sysadmin' || role === 'admin') navigate('/admin')
     else navigate('/login')

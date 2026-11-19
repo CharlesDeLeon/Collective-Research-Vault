@@ -535,7 +535,7 @@ const getDashboardStats = async (req, res) => {
     const [[{ total_groups }]]      = await db.query(`SELECT COUNT(*) AS total_groups FROM research_groups`)
     const [[{ total_submissions }]] = await db.query(`SELECT COUNT(*) AS total_submissions FROM submissions`)
     const [[{ pending_review }]]    = await db.query(`SELECT COUNT(*) AS pending_review FROM submissions WHERE status = 'submitted'`)
-    const [[{ published }]]         = await db.query(`SELECT COUNT(*) AS published FROM submissions WHERE is_published = 1`)
+    const [[{ published }]]         = await db.query(`SELECT COUNT(*) AS published FROM submissions WHERE is_published = TRUE`)
 
     const [by_stage] = await db.query(
       `SELECT stage, COUNT(*) AS count FROM submissions GROUP BY stage`
