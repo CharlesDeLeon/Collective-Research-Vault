@@ -14,7 +14,7 @@ const {
 
 // All coordinator routes require auth + coordinator role
 router.use(authMiddleware)
-router.use(roleMiddleware('coordinator'))
+router.use(roleMiddleware('adviser'))
 
 // Dashboard
 router.get('/dashboard', getDashboardStats)

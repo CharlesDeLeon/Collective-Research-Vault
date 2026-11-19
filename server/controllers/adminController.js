@@ -5,7 +5,7 @@ const { rolePermissions, validRoles } = require('../constants/rbac')
 
 const roleAliases = {
   admin: 'sysadmin',
-  moderator: 'coordinator',
+  moderator: 'adviser',
   user: 'student'
 }
 
@@ -22,7 +22,7 @@ const getAllUsers = async (req, res) => {
     const offset = (page - 1) * limit
 
     let query = `SELECT user_id, name, email, role, is_active, 
-                        CASE WHEN is_active = 1 THEN 'active' ELSE 'inactive' END AS status,
+                        CASE WHEN is_active THEN 'active' ELSE 'inactive' END AS status,
                         program, created_at, updated_at 
                  FROM users 
                  WHERE 1=1`
@@ -40,9 +40,9 @@ const getAllUsers = async (req, res) => {
     }
 
     if (status === 'active') {
-      query += ` AND is_active = 1`
+      query += ` AND is_active = TRUE`
     } else if (status === 'inactive') {
-      query += ` AND is_active = 0`
+      query += ` AND is_active = FALSE`
     }
 
     query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
@@ -66,9 +66,9 @@ const getAllUsers = async (req, res) => {
     }
 
     if (status === 'active') {
-      countQuery += ` AND is_active = 1`
+      countQuery += ` AND is_active = TRUE`
     } else if (status === 'inactive') {
-      countQuery += ` AND is_active = 0`
+      countQuery += ` AND is_active = FALSE`
     }
 
     const [countResult] = await pool.query(countQuery, countParams)
@@ -360,7 +360,7 @@ const deleteUser = async (req, res) => {
 
     if (existingRole === 'sysadmin') {
       const [sysadmins] = await pool.query(
-        `SELECT COUNT(*) AS total FROM users WHERE role = 'sysadmin' AND is_active = 1`
+        `SELECT COUNT(*) AS total FROM users WHERE role = 'sysadmin' AND is_active = TRUE`
       )
 
       if (sysadmins[0].total <= 1 && Number(existingUser.is_active) === 1) {
@@ -373,7 +373,7 @@ const deleteUser = async (req, res) => {
     }
 
     await pool.query(
-      `UPDATE users SET is_active = 0, updated_at = NOW() WHERE user_id = ?`,
+      `UPDATE users SET is_active = FALSE, updated_at = NOW() WHERE user_id = ?`,
       [userId]
     )
 

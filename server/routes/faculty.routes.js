@@ -13,12 +13,12 @@ const {
 } = require('../controllers/facultyController')
 
 router.get('/list', authMiddleware, roleMiddleware('student'), listFaculties)
-router.get('/submissions', authMiddleware, roleMiddleware('faculty'), getAssignedSubmissions)
-router.get('/assignments', authMiddleware, roleMiddleware('faculty'), getPanelAssignments)
-router.get('/assignments/:group_id', authMiddleware, roleMiddleware('faculty'), getAssignmentDetail)
-router.get('/submissions/:submission_id/comments', authMiddleware, roleMiddleware('faculty'), getSubmissionComments)
+router.get('/submissions', authMiddleware, roleMiddleware('adviser'), getAssignedSubmissions)
+router.get('/assignments', authMiddleware, roleMiddleware('adviser'), getPanelAssignments)
+router.get('/assignments/:group_id', authMiddleware, roleMiddleware('adviser'), getAssignmentDetail)
+router.get('/submissions/:submission_id/comments', authMiddleware, roleMiddleware('adviser'), getSubmissionComments)
 
-router.post('/submissions/:submission_id/comment', authMiddleware, roleMiddleware('faculty'), addFeedbackComment)
-router.post('/submissions/:submission_id/review', authMiddleware, roleMiddleware('faculty'), submitReview)
+router.post('/submissions/:submission_id/comment', authMiddleware, roleMiddleware('adviser'), addFeedbackComment)
+router.post('/submissions/:submission_id/review', authMiddleware, roleMiddleware('adviser'), submitReview)
 
 module.exports = router

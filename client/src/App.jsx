@@ -40,6 +40,10 @@ import FacultyAssignment from './pages/coordinator/FacultyAssignment'
 import ManageGroups from './pages/coordinator/ManageGroups'
 import ManageSubmissions from './pages/coordinator/ManageSubmissions'
 
+// Adviser
+import AdviserLayout from './pages/adviser/AdviserLayout'
+import AdviserDashboard from './pages/adviser/AdviserDashboard'
+
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminLayout from './pages/admin/AdminLayout'
@@ -91,7 +95,7 @@ function App() {
           <Route
             path="/faculty"
             element={
-              <ProtectedRoute allowedRole="faculty">
+              <ProtectedRoute allowedRole="adviser">
                 <FacultyLayout />
               </ProtectedRoute>
             }
@@ -106,7 +110,7 @@ function App() {
           <Route
             path="/coordinator"
             element={
-              <ProtectedRoute allowedRole="coordinator">
+              <ProtectedRoute allowedRole="adviser">
                 <CoordinatorLayout />
               </ProtectedRoute>
             }
@@ -117,6 +121,32 @@ function App() {
             <Route path="facultyassignment" element={<FacultyAssignment />} />
             <Route path="managegroups" element={<ManageGroups />} />
             <Route path="managesubmissions" element={<ManageSubmissions />} />
+          </Route>
+
+          <Route
+            path="/adviser"
+            element={
+              <ProtectedRoute allowedRole="adviser">
+                <AdviserLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/adviser/dashboard" replace />} />
+            <Route path="dashboard" element={<AdviserDashboard />} />
+            <Route path="groups" element={<ManageGroups />} />
+            <Route path="groups/:groupId" element={<GroupDetail />} />
+            <Route path="submissions" element={<ManageSubmissions />} />
+            <Route path="submissions/:submission_id" element={<SubmissionDetail />} />
+            <Route path="assignments" element={<AssignmentsList />} />
+            <Route path="assignments/:group_id" element={<SubmissionDetail />} />
+            <Route path="faculty-assignment" element={<FacultyAssignment />} />
+            <Route path="notifications" element={<CoordinatorNotif />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="reviews" element={<ManageSubmissions />} />
+            <Route path="inbox" element={<div style={{ padding: '2rem', color: '#fff' }}>Access Inbox — coming soon</div>} />
+            <Route path="moderation" element={<div style={{ padding: '2rem', color: '#fff' }}>Moderation — coming soon</div>} />
+            <Route path="analytics" element={<div style={{ padding: '2rem', color: '#fff' }}>Analytics — coming soon</div>} />
+            <Route path="reports" element={<div style={{ padding: '2rem', color: '#fff' }}>Reports — coming soon</div>} />
           </Route>
 
           <Route

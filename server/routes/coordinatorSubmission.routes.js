@@ -9,7 +9,7 @@ const {
 } = require('../controllers/coordinatorController')
 
 router.use(authMiddleware)
-router.use(roleMiddleware('coordinator'))
+router.use(roleMiddleware('adviser'))
 
 // Submissions
 router.get('/',           getSubmissions)

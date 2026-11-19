@@ -172,7 +172,7 @@ const addGroupMember = async (req, res) => {
 
     // Verify the user exists and is a student
     const [[user]] = await db.query(
-      `SELECT user_id, role FROM users WHERE user_id = ? AND role = 'student' AND is_active = 1`,
+      `SELECT user_id, role FROM users WHERE user_id = ? AND role = 'student' AND is_active = TRUE`,
       [user_id]
     )
     if (!user) return res.status(404).json({ message: 'Active student not found' })
@@ -244,10 +244,10 @@ const assignPanel = async (req, res) => {
 
     // Verify faculty exists
     const [[faculty]] = await db.query(
-      `SELECT user_id FROM users WHERE user_id = ? AND role = 'faculty' AND is_active = 1`,
+      `SELECT user_id FROM users WHERE user_id = ? AND role = 'adviser' AND is_active = TRUE`,
       [faculty_id]
     )
-    if (!faculty) return res.status(404).json({ message: 'Active faculty not found' })
+    if (!faculty) return res.status(404).json({ message: 'Active adviser not found' })
 
     await db.query(
       `INSERT INTO panel_assignments (group_id, faculty_id, role_in_panel, assigned_by)
@@ -292,13 +292,13 @@ const getFacultyList = async (req, res) => {
   try {
     const [rows] = await db.query(
       `SELECT user_id, name, email FROM users
-       WHERE role = 'faculty' AND is_active = TRUE
+       WHERE role = 'adviser' AND is_active = TRUE
        ORDER BY name ASC`
     )
     res.json({ data: rows })
   } catch (err) {
     console.error('getFacultyList error:', err)
-    res.status(500).json({ message: 'Failed to fetch faculty' })
+    res.status(500).json({ message: 'Failed to fetch advisers' })
   }
 }
 
@@ -306,7 +306,7 @@ const getFacultyList = async (req, res) => {
 const getStudentList = async (req, res) => {
   try {
     const { search } = req.query
-    let sql = `SELECT user_id, name, email, program FROM users WHERE role = 'student' AND is_active = 1`
+    let sql = `SELECT user_id, name, email, program FROM users WHERE role = 'student' AND is_active = TRUE`
     const params = []
     if (search) {
       sql += ` AND (name LIKE ? OR email LIKE ?)`
@@ -535,7 +535,7 @@ const getDashboardStats = async (req, res) => {
     const [[{ total_groups }]]      = await db.query(`SELECT COUNT(*) AS total_groups FROM research_groups`)
     const [[{ total_submissions }]] = await db.query(`SELECT COUNT(*) AS total_submissions FROM submissions`)
     const [[{ pending_review }]]    = await db.query(`SELECT COUNT(*) AS pending_review FROM submissions WHERE status = 'submitted'`)
-    const [[{ published }]]         = await db.query(`SELECT COUNT(*) AS published FROM submissions WHERE is_published = 1`)
+    const [[{ published }]]         = await db.query(`SELECT COUNT(*) AS published FROM submissions WHERE is_published = TRUE`)
 
     const [by_stage] = await db.query(
       `SELECT stage, COUNT(*) AS count FROM submissions GROUP BY stage`
