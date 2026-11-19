@@ -91,7 +91,7 @@ function App() {
           <Route
             path="/faculty"
             element={
-              <ProtectedRoute allowedRole="faculty">
+              <ProtectedRoute allowedRole="adviser">
                 <FacultyLayout />
               </ProtectedRoute>
             }
@@ -106,7 +106,7 @@ function App() {
           <Route
             path="/coordinator"
             element={
-              <ProtectedRoute allowedRole="coordinator">
+              <ProtectedRoute allowedRole="adviser">
                 <CoordinatorLayout />
               </ProtectedRoute>
             }

@@ -22,7 +22,7 @@ DROP TYPE IF EXISTS panel_role         CASCADE;
 DROP TYPE IF EXISTS review_status      CASCADE;
 DROP TYPE IF EXISTS notification_type  CASCADE;
 
-CREATE TYPE user_role         AS ENUM ('student','faculty','coordinator','sysadmin');
+CREATE TYPE user_role         AS ENUM ('student','adviser','external_panelist','sysadmin','faculty','coordinator');
 CREATE TYPE submission_stage  AS ENUM ('proposal','defense','final_submission');
 CREATE TYPE submission_status AS ENUM ('submitted','under_review','needs_revision','approved','rejected','published');
 CREATE TYPE panel_role        AS ENUM ('adviser','panelist');

@@ -5,7 +5,7 @@ const listFaculties = async (_req, res) => {
     const [rows] = await pool.query(
       `SELECT user_id, name
        FROM users
-       WHERE LOWER(role) = 'faculty'
+       WHERE LOWER(role) = 'adviser'
        ORDER BY name ASC`
     )
     res.json(rows)
@@ -44,7 +44,7 @@ const getAssignedSubmissions = async (req, res) => {
        JOIN panel_assignments pa ON rg.group_id = pa.group_id
        LEFT JOIN reviews r ON s.submission_id = r.submission_id AND r.reviewer_id = ?
        LEFT JOIN review_comments rc ON s.submission_id = rc.submission_id
-       WHERE pa.faculty_id = ? AND (pa.role_in_panel = 'faculty' OR pa.role_in_panel = 'panelist')
+       WHERE pa.faculty_id = ? AND (pa.role_in_panel = 'adviser' OR pa.role_in_panel = 'panelist')
        GROUP BY s.submission_id
        ORDER BY s.updated_at DESC`
       , [facultyId, facultyId]
