@@ -43,6 +43,7 @@ import ManageSubmissions from './pages/coordinator/ManageSubmissions'
 // Adviser
 import AdviserLayout from './pages/adviser/AdviserLayout'
 import AdviserDashboard from './pages/adviser/AdviserDashboard'
+import AdviserGroups from './pages/adviser/AdviserGroups'
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -133,7 +134,7 @@ function App() {
           >
             <Route index element={<Navigate to="/adviser/dashboard" replace />} />
             <Route path="dashboard" element={<AdviserDashboard />} />
-            <Route path="groups" element={<ManageGroups />} />
+            <Route path="groups" element={<AdviserGroups />} />
             <Route path="groups/:groupId" element={<GroupDetail />} />
             <Route path="submissions" element={<ManageSubmissions />} />
             <Route path="submissions/:submission_id" element={<SubmissionDetail />} />
