@@ -4,7 +4,7 @@ import useAuth from '../../context/useAuth'
 import ProfileTrigger from '../profile/ProfileTrigger'
 import { ROUTES } from './constants'
 import Logo from '../Logo'
-import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon, DocIcon, CommentIcon, UserIcon } from './icons'
+import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon, DocIcon, CommentIcon, UserIcon, FilterIcon, FlagIcon, AlertIcon } from './icons'
 
 export const STUDENT_NAV = [
   { label: 'Home', to: ROUTES.home, icon: HomeIcon, end: true },
@@ -34,7 +34,7 @@ export const ADVISER_NAV = [
   { label: 'Access Inbox', to: '/adviser/inbox', icon: BellIcon },
   { label: 'Moderation', to: '/adviser/moderation', icon: CommentIcon },
   { label: 'Reports', to: '/adviser/reports', icon: BookIcon },
-  { label: 'Analytics', to: '/adviser/analytics', icon: ClockIcon },
+  { label: 'Analytics', to: '/adviser/analytics', icon: FilterIcon },
   { label: 'Notifications', to: '/adviser/notifications', icon: BellIcon },
   { label: 'Profile', to: '/adviser/profile', icon: UserIcon },
 ]
