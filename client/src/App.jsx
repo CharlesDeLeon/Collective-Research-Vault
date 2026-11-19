@@ -44,6 +44,7 @@ import ManageSubmissions from './pages/coordinator/ManageSubmissions'
 import AdviserLayout from './pages/adviser/AdviserLayout'
 import AdviserDashboard from './pages/adviser/AdviserDashboard'
 import AdviserGroups from './pages/adviser/AdviserGroups'
+import AdviserSubmissions from './pages/adviser/AdviserSubmissions'
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -136,14 +137,14 @@ function App() {
             <Route path="dashboard" element={<AdviserDashboard />} />
             <Route path="groups" element={<AdviserGroups />} />
             <Route path="groups/:groupId" element={<GroupDetail />} />
-            <Route path="submissions" element={<ManageSubmissions />} />
-            <Route path="submissions/:submission_id" element={<SubmissionDetail />} />
+            <Route path="submissions" element={<AdviserSubmissions />} />
+            <Route path="submissions/:submission_id" element={<AdviserSubmissions />} />
             <Route path="assignments" element={<AssignmentsList />} />
             <Route path="assignments/:group_id" element={<SubmissionDetail />} />
             <Route path="faculty-assignment" element={<FacultyAssignment />} />
             <Route path="notifications" element={<CoordinatorNotif />} />
             <Route path="profile" element={<Profile />} />
-            <Route path="reviews" element={<ManageSubmissions />} />
+            <Route path="reviews" element={<AdviserSubmissions />} />
             <Route path="inbox" element={<div style={{ padding: '2rem', color: '#fff' }}>Access Inbox — coming soon</div>} />
             <Route path="moderation" element={<div style={{ padding: '2rem', color: '#fff' }}>Moderation — coming soon</div>} />
             <Route path="analytics" element={<div style={{ padding: '2rem', color: '#fff' }}>Analytics — coming soon</div>} />
