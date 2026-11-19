@@ -15,6 +15,7 @@ import Landing from './pages/public/Landing'
 import StudentLayout from './pages/student/StudentLayout'
 import StudentDashboard from './pages/student/StudentDashboard'
 import UploadForm from './pages/student/UploadForm'
+import MyPapers from './pages/student/MyPapers'
 import PaperDetail from './pages/student/PaperDetail'
 import ActivityHistory from './pages/student/ActivityHistory'
 import Forum from './pages/student/Forum'
@@ -68,6 +69,8 @@ function App() {
           >
             <Route index element={<StudentDashboard />} />
             <Route path="upload" element={<UploadForm />} />
+            <Route path="my-papers" element={<MyPapers />} />
+            <Route path="my-papers/:paperId/edit" element={<UploadForm />} />
             <Route path="paper/:paperId" element={<PaperDetail />} />
             <Route path="history" element={<ActivityHistory />} />
             <Route path="forum" element={<Forum />} />

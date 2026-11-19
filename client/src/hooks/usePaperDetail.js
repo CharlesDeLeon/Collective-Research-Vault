@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getPaperDetail } from '../services/paperService'
+import { getMyPaper, resubmitPaper, setConsent } from '../services/studentPapers'
 
 export function usePaperDetail(paperId) {
   const [paper, setPaper] = useState(null)
@@ -12,10 +12,13 @@ export function usePaperDetail(paperId) {
 
     const load = async () => {
       try {
-        const data = await getPaperDetail(paperId)
-        if (!cancelled) setPaper(data)
-      } catch (err) {
-        if (!cancelled) setError(err.response?.data?.message || 'Could not load this paper.')
+        const data = await getMyPaper(paperId)
+        if (!cancelled) {
+          setPaper(data)
+          if (!data) setError('Paper not found.')
+        }
+      } catch {
+        if (!cancelled) setError('Could not load this paper.')
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -39,5 +42,8 @@ export function usePaperDetail(paperId) {
   const toggleResolved = (id) =>
     setNoteStates((s) => ({ ...s, [id]: s[id] === 'resolved' ? undefined : 'resolved' }))
 
-  return { paper, notes, loading, error, dismissNote, toggleResolved }
+  const changeConsent = async (granted) => setPaper(await setConsent(paperId, granted))
+  const resubmit = async () => setPaper(await resubmitPaper(paperId))
+
+  return { paper, notes, loading, error, dismissNote, toggleResolved, changeConsent, resubmit }
 }
