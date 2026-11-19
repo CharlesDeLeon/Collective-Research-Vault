@@ -180,6 +180,7 @@ CREATE TABLE audit_logs (
   changes        JSONB        DEFAULT NULL,
   details        TEXT         DEFAULT NULL,
   user_agent     VARCHAR(500) DEFAULT NULL,
+  ip_address     VARCHAR(64)  DEFAULT NULL,
   correlation_id VARCHAR(100) DEFAULT NULL,
   request_id     VARCHAR(100) DEFAULT NULL,
   created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()

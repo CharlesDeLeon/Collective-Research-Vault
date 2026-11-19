@@ -71,9 +71,10 @@ const addFeedbackComment = async (req, res) => {
       `SELECT s.submission_id 
        FROM submissions s
        JOIN research_groups rg ON s.group_id = rg.group_id
-       JOIN panel_assignments pa ON rg.group_id = pa.group_id
-       WHERE s.submission_id = ? AND pa.faculty_id = ?`,
-      [submission_id, author_id]
+       WHERE s.submission_id = ? AND (rg.adviser_id = ? OR rg.created_by = ? OR EXISTS (
+         SELECT 1 FROM panel_assignments pa WHERE pa.group_id = rg.group_id AND pa.faculty_id = ?
+       ))`,
+      [submission_id, author_id, author_id, author_id]
     )
     
     if (access.length === 0) {
@@ -327,9 +328,10 @@ const getSubmissionComments = async (req, res) => {
       `SELECT s.submission_id 
        FROM submissions s
        JOIN research_groups rg ON s.group_id = rg.group_id
-       JOIN panel_assignments pa ON rg.group_id = pa.group_id
-       WHERE s.submission_id = ? AND pa.faculty_id = ?`,
-      [submission_id, facultyId]
+       WHERE s.submission_id = ? AND (rg.adviser_id = ? OR rg.created_by = ? OR EXISTS (
+         SELECT 1 FROM panel_assignments pa WHERE pa.group_id = rg.group_id AND pa.faculty_id = ?
+       ))`,
+      [submission_id, facultyId, facultyId, facultyId]
     )
     
     if (access.length === 0) {
