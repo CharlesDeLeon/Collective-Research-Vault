@@ -6,7 +6,7 @@ import { ROUTES } from './constants'
 import Logo from '../Logo'
 import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon, DocIcon, CommentIcon, UserIcon } from './icons'
 
-export const NAV = [
+export const STUDENT_NAV = [
   { label: 'Home', to: ROUTES.home, icon: HomeIcon, end: true },
   { label: 'Feed', to: ROUTES.forum, icon: CommentIcon },
   { label: 'My Papers', to: ROUTES.myPapers, icon: DocIcon },
@@ -15,12 +15,36 @@ export const NAV = [
   { label: 'Notifications', to: ROUTES.history, icon: BellIcon },
 ]
 
-const BOTTOM = [
+export const STUDENT_BOTTOM = [
   { label: 'Feed', to: ROUTES.forum, icon: CommentIcon },
   { label: 'My Papers', to: ROUTES.myPapers, icon: DocIcon },
   { label: 'Groups', to: ROUTES.groups, icon: UsersIcon },
   { label: 'Alerts', to: ROUTES.history, icon: BellIcon },
   { label: 'Profile', to: ROUTES.profile, icon: UserIcon },
+]
+
+// Backwards-compat aliases
+export const NAV = STUDENT_NAV
+export const BOTTOM = STUDENT_BOTTOM
+
+export const ADVISER_NAV = [
+  { label: 'Dashboard', to: '/adviser/dashboard', icon: HomeIcon, end: true },
+  { label: 'Groups', to: '/adviser/groups', icon: UsersIcon },
+  { label: 'Reviews', to: '/adviser/reviews', icon: DocIcon },
+  { label: 'Access Inbox', to: '/adviser/inbox', icon: BellIcon },
+  { label: 'Moderation', to: '/adviser/moderation', icon: CommentIcon },
+  { label: 'Reports', to: '/adviser/reports', icon: BookIcon },
+  { label: 'Analytics', to: '/adviser/analytics', icon: ClockIcon },
+  { label: 'Notifications', to: '/adviser/notifications', icon: BellIcon },
+  { label: 'Profile', to: '/adviser/profile', icon: UserIcon },
+]
+
+export const ADVISER_BOTTOM = [
+  { label: 'Dashboard', to: '/adviser/dashboard', icon: HomeIcon },
+  { label: 'Groups', to: '/adviser/groups', icon: UsersIcon },
+  { label: 'Reviews', to: '/adviser/reviews', icon: DocIcon },
+  { label: 'Inbox', to: '/adviser/inbox', icon: BellIcon },
+  { label: 'Profile', to: '/adviser/profile', icon: UserIcon },
 ]
 
 const initials = (name = '') =>
@@ -41,7 +65,7 @@ const linkCls = ({ isActive }) =>
       : 'text-white/75 hover:bg-white/5 hover:text-white'
   }`
 
-export default function Sidebar({ user, onLogout }) {
+export default function Sidebar({ user, onLogout, navItems = STUDENT_NAV, bottomItems = STUDENT_BOTTOM, roleLabel = 'Student', showComposer = true }) {
   const name = user?.name ?? user?.full_name ?? 'Student'
   const { pathname } = useLocation()
   const { openComposer } = useForum()
@@ -57,7 +81,7 @@ export default function Sidebar({ user, onLogout }) {
       </div>
 
       <nav className="flex flex-col gap-1.5">
-        {NAV.map(({ label, to, icon: Icon, end, disabled }) =>
+        {navItems.map(({ label, to, icon: Icon, end, disabled }) =>
           disabled ? (
             <span
               key={label}
@@ -85,7 +109,7 @@ export default function Sidebar({ user, onLogout }) {
       </nav>
 
       <div className="mt-auto pt-6">
-        {onForum && (
+        {showComposer && onForum && (
           <button
             type="button"
             onClick={() => openComposer({})}
@@ -103,7 +127,7 @@ export default function Sidebar({ user, onLogout }) {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{name}</p>
-            <p className="text-xs text-white/50">Student</p>
+            <p className="text-xs text-white/50">{roleLabel}</p>
           </div>
         </ProfileTrigger>
         <button
@@ -137,13 +161,14 @@ export function MobileNav() {
   )
 }
 
-export function BottomNav() {
+export function BottomNav({ items = STUDENT_BOTTOM }) {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/10 bg-navy-900/95 px-1 pb-[env(safe-area-inset-bottom)] font-display backdrop-blur-md lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 grid border-t border-white/10 bg-navy-900/95 px-1 pb-[env(safe-area-inset-bottom)] font-display backdrop-blur-md lg:hidden"
+      style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
     >
-      {BOTTOM.map(({ label, to, icon: Icon }) => (
+      {items.map(({ label, to, icon: Icon }) => (
         <NavLink
           key={to}
           to={to}
