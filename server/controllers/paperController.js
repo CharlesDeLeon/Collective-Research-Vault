@@ -86,10 +86,10 @@ const uploadPaper = async (req, res) => {
     }
 
     const [versionRows] = await connection.query(
-      'SELECT COALESCE(MAX(version_number), 0) AS latestVersion FROM document_versions WHERE submission_id = ?',
+      'SELECT COALESCE(MAX(version_number), 0) AS latest_version FROM document_versions WHERE submission_id = ?',
       [submissionId]
     )
-    const nextVersion = Number(versionRows[0].latestVersion) + 1
+    const nextVersion = Number(versionRows[0].latest_version) + 1
 
     await connection.query(
       `INSERT INTO document_versions (submission_id, file_path, file_name, file_size, file_type, version_number, uploaded_by)
@@ -163,12 +163,12 @@ const uploadPaperVersion = async (req, res) => {
     const submission = submissionRows[0]
 
     const [versionRows] = await connection.query(
-      `SELECT COALESCE(MAX(version_number), 0) AS latestVersion
+      `SELECT COALESCE(MAX(version_number), 0) AS latest_version
        FROM document_versions
        WHERE submission_id = ?`,
       [paperId]
     )
-    const nextVersion = Number(versionRows[0].latestVersion) + 1
+    const nextVersion = Number(versionRows[0].latest_version) + 1
 
     await connection.query(
       `INSERT INTO document_versions
