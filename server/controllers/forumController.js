@@ -43,12 +43,12 @@ const normalizeComment = (row) => ({
 const listPosts = async (req, res) => {
   try {
     const userId = req.user.user_id
-    const { groupId, strand, section, yearLevel, schoolYear, status, search, page = 1, limit = 25 } = req.query
+    const { groupId, strand, section, yearLevel, schoolYear, status, search, reported, page = 1, limit = 25 } = req.query
     const offset = (Number(page) - 1) * Number(limit)
 
     let sql = `
       SELECT fp.*, u.name AS author_name, u.role AS author_role,
-             rg.group_name
+             rg.group_name, rg.adviser_id, rg.created_by AS group_created_by
       FROM forum_posts fp
       JOIN users u ON u.user_id = fp.author_id
       LEFT JOIN research_groups rg ON rg.group_id = fp.group_id
@@ -56,7 +56,15 @@ const listPosts = async (req, res) => {
     `
     const params = []
 
+    const role = String(req.user?.role || '').toLowerCase()
+    const userId = req.user.user_id
+    if (role === 'adviser') {
+      sql += ` AND (rg.adviser_id = ? OR rg.created_by = ? OR rg.group_id IS NULL)`
+      params.push(userId, userId)
+    }
+
     if (groupId) { sql += ` AND fp.group_id = ?`; params.push(groupId) }
+    if (reported === 'true') { sql += ` AND fp.reported = TRUE` }
     if (strand) { sql += ` AND fp.strand = ?`; params.push(strand) }
     if (section) { sql += ` AND fp.section = ?`; params.push(section) }
     if (yearLevel) { sql += ` AND fp.year_level = ?`; params.push(yearLevel) }
