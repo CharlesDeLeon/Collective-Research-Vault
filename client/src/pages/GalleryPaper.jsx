@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import GalleryNavbar from '../components/gallery/GalleryNavbar'
 import GalleryCard from '../components/gallery/GalleryCard'
 import AccessRequestModal from '../components/gallery/AccessRequestModal'
 import CitationCard from '../components/public/CitationCard'
-import { getGalleryPaper, getRelatedPapers } from '../services/galleryData'
+import { getGalleryPaper, getRelatedPapers, fetchGalleryPapers } from '../services/galleryService'
 import { copyText } from '../utils/clipboard'
 import { longDate } from '../utils/formatDate'
 
@@ -12,9 +12,25 @@ const dt = 'text-xs font-semibold uppercase tracking-[0.06em] text-gold'
 
 export default function GalleryPaper() {
   const { slug } = useParams()
-  const paper = getGalleryPaper(slug)
+  const [paper, setPaper] = useState(null)
+  const [related, setRelated] = useState([])
+  const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
   const [requesting, setRequesting] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    Promise.all([getGalleryPaper(slug), fetchGalleryPapers()])
+      .then(([p, all]) => {
+        if (cancelled) return
+        setPaper(p)
+        if (p) setRelated(getRelatedPapers(all, p))
+      })
+      .catch(() => { if (!cancelled) setPaper(null) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [slug])
 
   const shareLink = async () => {
     if (await copyText(window.location.href)) {
@@ -34,7 +50,11 @@ export default function GalleryPaper() {
           Back to results
         </Link>
 
-        {!paper ? (
+        {loading ? (
+          <div className="mt-6 rounded-[1.25rem] border-[0.094rem] border-dashed border-white/30 px-6 py-12 text-center text-white/60">
+            Loading paper…
+          </div>
+        ) : !paper ? (
           <div className="mt-6 rounded-[1.25rem] border-[0.094rem] border-dashed border-white/30 px-6 py-12 text-center">
             <p className="m-0 text-lg font-semibold">This paper could not be found</p>
             <Link
@@ -123,7 +143,7 @@ export default function GalleryPaper() {
               </aside>
             </div>
 
-            <RelatedSection paper={paper} />
+            <RelatedSection related={related} />
             {requesting && <AccessRequestModal paper={paper} onClose={() => setRequesting(false)} />}
           </>
         )}
@@ -132,9 +152,8 @@ export default function GalleryPaper() {
   )
 }
 
-function RelatedSection({ paper }) {
-  const related = getRelatedPapers(paper)
-  if (!related.length) return null
+function RelatedSection({ related }) {
+  if (!related || !related.length) return null
   return (
     <section className="mt-14" aria-labelledby="rel-h">
       <h2 id="rel-h" className="mb-4 mt-0 text-[1.375rem] font-semibold">Related research</h2>

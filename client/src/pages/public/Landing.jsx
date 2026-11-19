@@ -1,16 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import GalleryNavbar from '../../components/gallery/GalleryNavbar'
 import GalleryCard from '../../components/gallery/GalleryCard'
 import { SearchIcon } from '../../components/dashboard/icons'
-import { galleryPapers } from '../../services/galleryData'
+import { fetchGalleryPapers, normalizeGalleryPaper } from '../../services/galleryService'
 
 const FEATURED_COUNT = 3
 
 export default function Landing() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
-  const featured = galleryPapers.filter((p) => p.featured).slice(0, FEATURED_COUNT)
+  const [featured, setFeatured] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+    fetchGalleryPapers({ featured: 'true' })
+      .then((rows) => {
+        if (!cancelled) setFeatured(rows.map(normalizeGalleryPaper).slice(0, FEATURED_COUNT))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   const submit = (e) => {
     e.preventDefault()
