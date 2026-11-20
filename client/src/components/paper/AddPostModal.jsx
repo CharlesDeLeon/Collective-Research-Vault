@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { CloseIcon, CommentPlusIcon } from '../dashboard/icons'
 import { listMyPapers } from '../../services/studentPapers'
+import Select, { Option } from '../ui/Select'
 
 const FOCUSABLE = 'button:not([disabled]), textarea, input, select'
 const TYPES = [
@@ -154,19 +155,19 @@ export default function AddPostModal({ firstName, preset = {}, onClose, onSubmit
         {type === 'paper' && (
           <label className="mt-3 block text-xs font-semibold text-white/60">
             Paper
-            <select
+            <Select
               value={paperId}
               onChange={(e) => setPaperId(e.target.value)}
               aria-invalid={showErrors && !!errors.paper}
-              className={`${fieldCls} h-11 ${showErrors && errors.paper ? 'border-danger' : 'border-field-line'}`}
+              className={showErrors && errors.paper ? 'border-danger' : 'border-field-line'}
             >
-              <option value="">Choose a paper</option>
+              <Option value="">Choose a paper</Option>
               {papers.map((p) => (
-                <option key={p.id} value={p.id}>
+                <Option key={p.id} value={p.id}>
                   {p.title}
-                </option>
+                </Option>
               ))}
-            </select>
+            </Select>
             {showErrors && errors.paper && (
               <span role="alert" className="mt-1 block text-xs font-normal text-danger-ink">
                 {errors.paper}
