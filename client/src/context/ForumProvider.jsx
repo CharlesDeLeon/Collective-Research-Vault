@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import useAuth from './useAuth'
 import useToast from './useToast'
 import { ForumContext } from './forumContext'
