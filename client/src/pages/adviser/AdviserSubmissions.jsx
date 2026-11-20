@@ -192,13 +192,29 @@ export default function AdviserSubmissions() {
                     {s.updated_at ? new Date(s.updated_at).toLocaleDateString() : '—'}
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/adviser/reviews/${s.submission_id}`)}
-                      className="text-xs font-semibold text-gold hover:underline"
-                    >
-                      Review
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/adviser/reviews/${s.submission_id}`)}
+                        className="text-xs font-semibold text-gold hover:underline"
+                      >
+                        Review
+                      </button>
+                      {s.status === 'approved' && (
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/adviser/reviews/${s.submission_id}`)}
+                          className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[0.65rem] font-semibold text-emerald-300 transition hover:bg-emerald-500/30"
+                        >
+                          Publish
+                        </button>
+                      )}
+                      {s.status === 'published' && (
+                        <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[0.65rem] font-semibold text-emerald-300">
+                          Published
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
