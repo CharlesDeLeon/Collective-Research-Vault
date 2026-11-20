@@ -2,11 +2,16 @@ import api from './api'
 
 export function normalizePaper(row) {
   return {
-    id: row.paper_id,
+    id: row.paper_id ?? row.submission_id,
     title: row.title,
     status: row.status,
     groupName: row.group_name,
-    updatedAt: row.uploaded_at ?? row.created_at,
+    program: row.program,
+    schoolYear: row.school_year,
+    strand: row.strand || row.program,
+    section: row.section,
+    updatedAt: row.uploaded_at ?? row.updated_at ?? row.created_at,
+    createdAt: row.created_at,
   }
 }
 
@@ -33,6 +38,8 @@ export function normalizePaperDetail(d) {
     abstract: d.abstract,
     keywords: d.keywords,
     program: d.program,
+    strand: d.strand || d.program,
+    section: d.section,
     schoolYear: d.school_year,
     groupName: d.group_name,
     createdAt: d.created_at,
@@ -57,4 +64,22 @@ export function normalizePaperDetail(d) {
 export async function getPaperDetail(paperId) {
   const res = await api.get(`/papers/${paperId}`)
   return normalizePaperDetail(res.data)
+}
+
+export async function updatePaper(paperId, payload) {
+  const body = {
+    title: payload.title,
+    abstract: payload.abstract,
+    keywords: Array.isArray(payload.keywords) ? payload.keywords.join(', ') : payload.keywords,
+    authors: Array.isArray(payload.authors) ? payload.authors.join(', ') : payload.authors,
+    program: payload.program,
+    school_year: payload.schoolYear ?? payload.school_year,
+  }
+  const res = await api.patch(`/papers/${paperId}`, body)
+  return res.data
+}
+
+export async function resubmitPaper(paperId) {
+  const res = await api.post(`/papers/${paperId}/resubmit`)
+  return res.data
 }

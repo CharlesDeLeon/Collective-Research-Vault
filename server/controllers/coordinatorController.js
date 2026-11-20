@@ -38,7 +38,7 @@ const getGroups = async (req, res) => {
       params.push(school_year)
     }
 
-    sql += ` GROUP BY rg.group_id ORDER BY rg.created_at DESC`
+    sql += ` GROUP BY rg.group_id, rg.group_name, rg.program, rg.school_year, rg.created_at ORDER BY rg.created_at DESC`
 
     const [rows] = await db.query(sql, params)
     res.json({ data: rows })
@@ -172,7 +172,7 @@ const addGroupMember = async (req, res) => {
 
     // Verify the user exists and is a student
     const [[user]] = await db.query(
-      `SELECT user_id, role FROM users WHERE user_id = ? AND role = 'student' AND is_active = 1`,
+      `SELECT user_id, role FROM users WHERE user_id = ? AND role = 'student' AND is_active = TRUE`,
       [user_id]
     )
     if (!user) return res.status(404).json({ message: 'Active student not found' })
@@ -244,10 +244,10 @@ const assignPanel = async (req, res) => {
 
     // Verify faculty exists
     const [[faculty]] = await db.query(
-      `SELECT user_id FROM users WHERE user_id = ? AND role = 'faculty' AND is_active = 1`,
+      `SELECT user_id FROM users WHERE user_id = ? AND role = 'adviser' AND is_active = TRUE`,
       [faculty_id]
     )
-    if (!faculty) return res.status(404).json({ message: 'Active faculty not found' })
+    if (!faculty) return res.status(404).json({ message: 'Active adviser not found' })
 
     await db.query(
       `INSERT INTO panel_assignments (group_id, faculty_id, role_in_panel, assigned_by)
@@ -292,13 +292,13 @@ const getFacultyList = async (req, res) => {
   try {
     const [rows] = await db.query(
       `SELECT user_id, name, email FROM users
-       WHERE role = 'faculty' AND is_active = TRUE
+       WHERE role = 'adviser' AND is_active = TRUE
        ORDER BY name ASC`
     )
     res.json({ data: rows })
   } catch (err) {
     console.error('getFacultyList error:', err)
-    res.status(500).json({ message: 'Failed to fetch faculty' })
+    res.status(500).json({ message: 'Failed to fetch advisers' })
   }
 }
 
@@ -306,7 +306,7 @@ const getFacultyList = async (req, res) => {
 const getStudentList = async (req, res) => {
   try {
     const { search } = req.query
-    let sql = `SELECT user_id, name, email, program FROM users WHERE role = 'student' AND is_active = 1`
+    let sql = `SELECT user_id, name, email, program FROM users WHERE role = 'student' AND is_active = TRUE`
     const params = []
     if (search) {
       sql += ` AND (name LIKE ? OR email LIKE ?)`
@@ -351,7 +351,7 @@ const getSubmissions = async (req, res) => {
     if (program) { sql += ` AND s.program = ?`; params.push(program) }
     if (search)  { sql += ` AND (s.title LIKE ? OR s.authors LIKE ?)`; params.push(`%${search}%`, `%${search}%`) }
 
-    sql += ` GROUP BY s.submission_id ORDER BY s.updated_at DESC LIMIT ? OFFSET ?`
+    sql += ` GROUP BY s.submission_id, rg.group_name, rg.group_id, u.name, s.title, s.stage, s.status, s.program, s.school_year, s.created_at, s.updated_at ORDER BY s.updated_at DESC LIMIT ? OFFSET ?`
     params.push(Number(limit), Number(offset))
 
     const [rows] = await db.query(sql, params)
@@ -494,7 +494,7 @@ const updateStatus = async (req, res) => {
     )
     if (!submission) return res.status(404).json({ message: 'Submission not found' })
 
-    const isPublished = status === 'published' ? 1 : 0
+    const isPublished = status === 'published' ? true : false
 
     await db.query(
       `UPDATE submissions SET status = ?, is_published = ?, updated_at = NOW()
@@ -535,7 +535,7 @@ const getDashboardStats = async (req, res) => {
     const [[{ total_groups }]]      = await db.query(`SELECT COUNT(*) AS total_groups FROM research_groups`)
     const [[{ total_submissions }]] = await db.query(`SELECT COUNT(*) AS total_submissions FROM submissions`)
     const [[{ pending_review }]]    = await db.query(`SELECT COUNT(*) AS pending_review FROM submissions WHERE status = 'submitted'`)
-    const [[{ published }]]         = await db.query(`SELECT COUNT(*) AS published FROM submissions WHERE is_published = 1`)
+    const [[{ published }]]         = await db.query(`SELECT COUNT(*) AS published FROM submissions WHERE is_published = TRUE`)
 
     const [by_stage] = await db.query(
       `SELECT stage, COUNT(*) AS count FROM submissions GROUP BY stage`
@@ -567,6 +567,252 @@ const getDashboardStats = async (req, res) => {
   }
 }
 
+const uploadSubmissionFile = async (req, res) => {
+  const { id } = req.params
+  const userId = req.user.user_id
+  const role = String(req.file ? '' : '').toLowerCase()
+  const fileRole = (req.body.role_in_panel || req.body.file_role || 'final').toLowerCase()
+
+  if (!req.file) {
+    return res.status(400).json({ message: 'File is required' })
+  }
+
+  try {
+    const [subs] = await db.query('SELECT submission_id FROM submissions WHERE submission_id = ?', [id])
+    if (!subs.length) return res.status(404).json({ message: 'Submission not found' })
+
+    const [versionRows] = await db.query(
+      'SELECT COALESCE(MAX(version_number), 0) AS latest_version FROM document_versions WHERE submission_id = ?',
+      [id]
+    )
+    const nextVersion = Number(versionRows[0].latest_version) + 1
+
+    await db.query(
+      `INSERT INTO document_versions (submission_id, file_path, file_name, file_size, file_type, version_number, uploaded_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [id, req.file.path, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId]
+    )
+
+    res.status(201).json({ message: 'File uploaded', version: nextVersion, fileRole })
+  } catch (err) {
+    console.error('uploadSubmissionFile error:', err)
+    res.status(500).json({ message: 'Failed to upload file' })
+  }
+}
+
+const publishSubmission = async (req, res) => {
+  const { id } = req.params
+  const { citation, consentGranted } = req.body
+
+  try {
+    const [subs] = await db.query(
+      `SELECT submission_id, status, group_id FROM submissions WHERE submission_id = ?`, [id]
+    )
+    if (!subs.length) return res.status(404).json({ message: 'Submission not found' })
+    const sub = subs[0]
+
+    if (sub.status !== 'approved') {
+      return res.status(400).json({ message: 'Only approved papers can be published' })
+    }
+
+    const [files] = await db.query(
+      `SELECT COUNT(*)::int AS c FROM document_versions WHERE submission_id = ?`, [id]
+    )
+    if (!files[0] || files[0].c === 0) {
+      return res.status(400).json({ message: 'Upload at least one file before publishing' })
+    }
+
+    const consentAt = consentGranted ? new Date().toISOString() : null
+    if (consentGranted) {
+      await db.query(
+        `UPDATE submissions SET author_consent_at = COALESCE(author_consent_at, ?) WHERE submission_id = ?`,
+        [consentAt, id]
+      )
+    }
+
+    const [consentRows] = await db.query(
+      `SELECT author_consent_at FROM submissions WHERE submission_id = ?`, [id]
+    )
+    if (!consentRows[0]?.author_consent_at) {
+      return res.status(400).json({ message: 'Author consent is required before publishing' })
+    }
+
+    // Generate slug if missing
+    const [[sub2]] = await db.query(`SELECT title, slug FROM submissions WHERE submission_id = ?`, [id])
+    let slug = sub2.slug
+    if (!slug) {
+      slug = (sub2.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    }
+
+    await db.query(
+      `UPDATE submissions
+       SET status = 'published', is_published = TRUE, public_visible = TRUE,
+           published_at = NOW(), citation = COALESCE(?, citation), slug = COALESCE(slug, ?), updated_at = NOW()
+       WHERE submission_id = ?`,
+      [citation || null, slug, id]
+    )
+
+    res.json({ message: 'Published to gallery', submission_id: id })
+  } catch (err) {
+    console.error('publishSubmission error:', err)
+    res.status(500).json({ message: 'Failed to publish' })
+  }
+}
+
+const unpublishSubmission = async (req, res) => {
+  const { id } = req.params
+  const { reason } = req.body
+  try {
+    await db.query(
+      `UPDATE submissions SET status = 'approved', is_published = FALSE, public_visible = FALSE, updated_at = NOW()
+       WHERE submission_id = ?`,
+      [id]
+    )
+    res.json({ message: 'Unpublished', reason: reason || null })
+  } catch (err) {
+    console.error('unpublishSubmission error:', err)
+    res.status(500).json({ message: 'Failed to unpublish' })
+  }
+}
+
+const setConsent = async (req, res) => {
+  const { id } = req.params
+  const { granted } = req.body
+  try {
+    if (granted) {
+      await db.query(
+        `UPDATE submissions SET author_consent_at = COALESCE(author_consent_at, NOW()), updated_at = NOW()
+         WHERE submission_id = ?`,
+        [id]
+      )
+    } else {
+      await db.query(
+        `UPDATE submissions SET author_consent_at = NULL, updated_at = NOW() WHERE submission_id = ?`,
+        [id]
+      )
+    }
+    res.json({ message: 'Consent updated', granted: !!granted })
+  } catch (err) {
+    console.error('setConsent error:', err)
+    res.status(500).json({ message: 'Failed to update consent' })
+  }
+}
+
+const getReports = async (req, res) => {
+  try {
+    const userId = req.user.user_id
+    const role = String(req.user?.role || '').toLowerCase()
+
+    // Scope to adviser's groups if adviser
+    let groupFilter = ''
+    const params = []
+    if (role === 'adviser') {
+      groupFilter = ' AND s.group_id IN (SELECT group_id FROM research_groups WHERE adviser_id = ? OR created_by = ?)'
+      params.push(userId, userId)
+    }
+
+    const [byStatus] = await db.query(
+      `SELECT status, COUNT(*)::int AS count FROM submissions s WHERE 1=1 ${groupFilter} GROUP BY status ORDER BY status`,
+      params
+    )
+    const [byStrand] = await db.query(
+      `SELECT COALESCE(strand, program) AS strand, COUNT(*)::int AS count FROM submissions s WHERE 1=1 ${groupFilter} GROUP BY COALESCE(strand, program) ORDER BY strand`,
+      params
+    )
+    const [byYear] = await db.query(
+      `SELECT school_year, COUNT(*)::int AS count FROM submissions s WHERE 1=1 ${groupFilter} GROUP BY school_year ORDER BY school_year DESC`,
+      params
+    )
+    const [published] = await db.query(
+      `SELECT s.submission_id, s.title, s.authors, s.strand, s.section, s.school_year, s.published_at, s.citation, rg.group_name
+       FROM submissions s JOIN research_groups rg ON rg.group_id = s.group_id
+       WHERE s.is_published = TRUE ${groupFilter.replace('s.group_id', 's.group_id')} ORDER BY s.published_at DESC`,
+      params
+    )
+    const [accessStats] = await db.query(
+      `SELECT r.status, COUNT(*)::int AS count FROM paper_access_requests r
+       JOIN submissions s ON s.submission_id = r.submission_id
+       WHERE 1=1 ${groupFilter} GROUP BY r.status`,
+      params
+    )
+
+    res.json({
+      data: {
+        byStatus,
+        byStrand,
+        byYear,
+        published,
+        accessStats,
+        totalSubmissions: byStatus.reduce((a, b) => a + b.count, 0),
+        totalPublished: published.length,
+      },
+    })
+  } catch (err) {
+    console.error('getReports error:', err)
+    res.status(500).json({ message: 'Failed to fetch reports' })
+  }
+}
+
+const getAnalytics = async (req, res) => {
+  try {
+    const userId = req.user.user_id
+    const role = String(req.user?.role || '').toLowerCase()
+
+    let groupFilter = ''
+    const params = []
+    if (role === 'adviser') {
+      groupFilter = ' AND s.group_id IN (SELECT group_id FROM research_groups WHERE adviser_id = ? OR created_by = ?)'
+      params.push(userId, userId)
+    }
+
+    const [postCounts] = await db.query(
+      `SELECT COUNT(*)::int AS total_posts FROM forum_posts fp
+       LEFT JOIN research_groups rg ON rg.group_id = fp.group_id
+       WHERE 1=1 ${groupFilter.replace('s.group_id', 'fp.group_id')}`,
+      params
+    )
+    const [commentCounts] = await db.query(
+      `SELECT COUNT(*)::int AS total_comments FROM forum_comments fc
+       JOIN forum_posts fp ON fp.post_id = fc.post_id
+       LEFT JOIN research_groups rg ON rg.group_id = fp.group_id
+       WHERE 1=1 ${groupFilter.replace('s.group_id', 'fp.group_id')}`,
+      params
+    )
+    const [likeCounts] = await db.query(
+      `SELECT COUNT(*)::int AS total_likes FROM forum_post_likes fpl
+       JOIN forum_posts fp ON fp.post_id = fpl.post_id
+       LEFT JOIN research_groups rg ON rg.group_id = fp.group_id
+       WHERE 1=1 ${groupFilter.replace('s.group_id', 'fp.group_id')}`,
+      params
+    )
+    const [accessCounts] = await db.query(
+      `SELECT COUNT(*)::int AS total_requests FROM paper_access_requests r
+       JOIN submissions s ON s.submission_id = r.submission_id
+       WHERE 1=1 ${groupFilter}`,
+      params
+    )
+    const [downloadCounts] = await db.query(
+      `SELECT COUNT(*)::int AS total_downloads FROM paper_access_logs l
+       JOIN submissions s ON s.submission_id = l.submission_id
+       WHERE l.action = 'download_success' ${groupFilter}`,
+      params
+    )
+
+    res.json({
+      data: {
+        totalPosts: postCounts[0]?.total_posts || 0,
+        totalComments: commentCounts[0]?.total_comments || 0,
+        totalLikes: likeCounts[0]?.total_likes || 0,
+        totalAccessRequests: accessCounts[0]?.total_requests || 0,
+        totalDownloads: downloadCounts[0]?.total_downloads || 0,
+      },
+    })
+  } catch (err) {
+    console.error('getAnalytics error:', err)
+    res.status(500).json({ message: 'Failed to fetch analytics' })
+  }
+}
+
 module.exports = {
   getGroups, getGroupById, createGroup, updateGroup, deleteGroup,
   getGroupMembers, addGroupMember, removeGroupMember,
@@ -575,4 +821,6 @@ module.exports = {
   getSubmissions, getSubmissionById,
   updateStage, updateStatus,
   getDashboardStats,
+  uploadSubmissionFile, publishSubmission, unpublishSubmission, setConsent,
+  getReports, getAnalytics,
 }

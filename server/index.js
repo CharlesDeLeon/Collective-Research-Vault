@@ -16,12 +16,22 @@ const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
   .map((origin) => origin.trim().replace(/\/+$/, ''))
   .filter(Boolean)
 
+// Allow exact origins from CLIENT_URL plus Vercel preview deployments for this
+// project (their URLs are like collective-research-vault-<hash>-<team>.vercel.app)
+// and localhost during development.
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true // curl, health checks, same-origin
+  if (allowedOrigins.includes('*')) return true
+  if (allowedOrigins.includes(origin)) return true
+  if (/^https:\/\/collective-research-vault.*\.vercel\.app$/.test(origin)) return true
+  if (/^http:\/\/localhost:\d+$/.test(origin)) return true
+  return false
+}
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Requests without an Origin header (curl, health checks, same-origin) pass.
-    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-      return callback(null, true)
-    }
+    if (isAllowedOrigin(origin)) return callback(null, true)
+    console.warn('[CORS] blocked origin:', origin)
     return callback(null, false)
   },
   credentials: true
@@ -39,7 +49,11 @@ app.use('/api/coordinator/panel',       require('./routes/coordinatorSubmission.
 
 app.use('/api/auth', require('./routes/auth.routes'))
 app.use('/api/faculty', require('./routes/faculty.routes'))
+app.use('/api/groups', require('./routes/group.routes'))
+app.use('/api/forum', require('./routes/forum.routes'))
 app.use('/api/papers', require('./routes/paper.routes'))
+app.use('/api/public', require('./routes/public.routes'))
+app.use('/api/adviser', require('./routes/access.routes'))
 app.use('/api/reviews', require('./routes/review.routes'))
 app.use('/api/admin', require('./routes/admin.routes'))
 app.use('/api/notifications', require('./routes/notification.routes'))

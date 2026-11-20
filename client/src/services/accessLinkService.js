@@ -1,28 +1,23 @@
-const LINKS = {
-  'demo-token': { state: 'valid', paperSlug: 'ai-attendance-monitoring' },
-  'used-token': { state: 'used', paperSlug: 'ai-attendance-monitoring' },
-  'expired-token': { state: 'expired', paperSlug: 'ai-attendance-monitoring' },
-  'revoked-token': { state: 'revoked', paperSlug: 'ai-attendance-monitoring' },
-}
-
-const consumed = new Set()
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-const stateOf = (token) => {
-  const link = LINKS[token]
-  if (!link) return 'invalid'
-  return link.state === 'valid' && consumed.has(token) ? 'used' : link.state
-}
+import api from './api'
 
 export async function getAccessLink(token) {
-  await wait(300)
-  return { state: stateOf(token), paperSlug: LINKS[token]?.paperSlug ?? null }
+  try {
+    const res = await api.get(`/public/access/${encodeURIComponent(token)}`)
+    const d = res.data?.data
+    if (!d) return { state: 'invalid', paperSlug: null }
+    return { state: d.state, paperSlug: d.paperSlug }
+  } catch {
+    return { state: 'invalid', paperSlug: null }
+  }
 }
 
 export async function consumeAccessLink(token) {
-  await wait(300)
-  const state = stateOf(token)
-  if (state !== 'valid') return { state, paperSlug: LINKS[token]?.paperSlug ?? null, fileUrl: '' }
-  consumed.add(token)
-  return { state: 'success', paperSlug: LINKS[token].paperSlug, fileUrl: '' }
+  try {
+    const res = await api.get(`/public/access/${encodeURIComponent(token)}/view`)
+    const d = res.data?.data
+    if (!d) return { state: 'invalid', paperSlug: null, fileUrl: '' }
+    return { state: d.state, paperSlug: d.paperSlug, fileUrl: d.fileUrl || '' }
+  } catch {
+    return { state: 'invalid', paperSlug: null, fileUrl: '' }
+  }
 }

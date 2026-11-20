@@ -3,7 +3,7 @@ const router = express.Router()
 const path = require('path')
 const fs = require('fs')
 const multer = require('multer')
-const { uploadPaper, uploadPaperVersion, getMyGroups, getMyPapers, getPaperDetail } = require('../controllers/paperController')
+const { uploadPaper, uploadPaperVersion, getMyGroups, getMyPapers, getPaperDetail, updatePaper, resubmitPaper } = require('../controllers/paperController')
 const authMiddleware = require('../middleware/authMiddleware')
 const roleMiddleware = require('../middleware/roleMiddleware')
 
@@ -44,6 +44,8 @@ router.get('/', (req, res) => res.json({ message: 'paper routes ready' }))
 router.get('/my-groups', authMiddleware, roleMiddleware('Student'), getMyGroups)
 router.get('/my', authMiddleware, roleMiddleware('Student'), getMyPapers)
 router.get('/:paperId', authMiddleware, roleMiddleware('Student'), getPaperDetail)
+router.patch('/:paperId', authMiddleware, roleMiddleware('Student'), updatePaper)
+router.post('/:paperId/resubmit', authMiddleware, roleMiddleware('Student'), resubmitPaper)
 router.post(
   '/upload',
   authMiddleware,

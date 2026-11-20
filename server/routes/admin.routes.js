@@ -18,7 +18,7 @@ const {
 
 // All admin endpoints require authentication and sysadmin role
 router.use(authMiddleware)
-router.use(roleMiddleware('sysadmin', 'coordinator'))
+router.use(roleMiddleware('sysadmin', 'adviser'))
 
 // User management
 router.get('/users', getAllUsers)

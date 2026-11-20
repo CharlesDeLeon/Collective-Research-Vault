@@ -1,15 +1,23 @@
+import { useState, useEffect } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import PublicShell from '../../components/public/PublicShell'
 import StatePanel, { outlineBtn } from '../../components/public/StatePanel'
 import AccessBlocked, { AccessLoading } from '../../components/public/AccessBlocked'
 import { useAccessGate } from '../../hooks/useAccessGate'
-import { getGalleryPaper } from '../../services/galleryData'
+import { getGalleryPaper } from '../../services/galleryService'
 
 export default function AccessView() {
   const { token } = useParams()
   const { state } = useLocation()
   const gate = useAccessGate(token, state)
-  const paper = gate.paperSlug ? getGalleryPaper(gate.paperSlug) : null
+  const [paper, setPaper] = useState(null)
+
+  useEffect(() => {
+    if (!gate.paperSlug) { setPaper(null); return }
+    let cancelled = false
+    getGalleryPaper(gate.paperSlug).then((p) => { if (!cancelled) setPaper(p) }).catch(() => {})
+    return () => { cancelled = true }
+  }, [gate.paperSlug])
 
   if (gate.phase === 'loading') return <AccessLoading />
   if (gate.phase === 'confirm') return <Navigate to={`/access/${token}`} replace />

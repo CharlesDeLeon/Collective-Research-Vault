@@ -40,6 +40,18 @@ import FacultyAssignment from './pages/coordinator/FacultyAssignment'
 import ManageGroups from './pages/coordinator/ManageGroups'
 import ManageSubmissions from './pages/coordinator/ManageSubmissions'
 
+// Adviser
+import AdviserLayout from './pages/adviser/AdviserLayout'
+import AdviserDashboard from './pages/adviser/AdviserDashboard'
+import AdviserGroups from './pages/adviser/AdviserGroups'
+import AdviserGroupDetail from './pages/adviser/AdviserGroupDetail'
+import AdviserSubmissions from './pages/adviser/AdviserSubmissions'
+import AdviserReview from './pages/adviser/AdviserReview'
+import AdviserInbox from './pages/adviser/AdviserInbox'
+import AdviserModeration from './pages/adviser/AdviserModeration'
+import AdviserReports from './pages/adviser/AdviserReports'
+import AdviserAnalytics from './pages/adviser/AdviserAnalytics'
+
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminLayout from './pages/admin/AdminLayout'
@@ -91,7 +103,7 @@ function App() {
           <Route
             path="/faculty"
             element={
-              <ProtectedRoute allowedRole="faculty">
+              <ProtectedRoute allowedRole="adviser">
                 <FacultyLayout />
               </ProtectedRoute>
             }
@@ -106,7 +118,7 @@ function App() {
           <Route
             path="/coordinator"
             element={
-              <ProtectedRoute allowedRole="coordinator">
+              <ProtectedRoute allowedRole="adviser">
                 <CoordinatorLayout />
               </ProtectedRoute>
             }
@@ -117,6 +129,33 @@ function App() {
             <Route path="facultyassignment" element={<FacultyAssignment />} />
             <Route path="managegroups" element={<ManageGroups />} />
             <Route path="managesubmissions" element={<ManageSubmissions />} />
+          </Route>
+
+          <Route
+            path="/adviser"
+            element={
+              <ProtectedRoute allowedRole="adviser">
+                <AdviserLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/adviser/dashboard" replace />} />
+            <Route path="dashboard" element={<AdviserDashboard />} />
+            <Route path="groups" element={<AdviserGroups />} />
+            <Route path="groups/:groupId" element={<AdviserGroupDetail />} />
+            <Route path="groups/:groupId" element={<GroupDetail />} />
+            <Route path="submissions" element={<AdviserSubmissions />} />
+            <Route path="assignments" element={<AssignmentsList />} />
+            <Route path="assignments/:group_id" element={<SubmissionDetail />} />
+            <Route path="faculty-assignment" element={<FacultyAssignment />} />
+            <Route path="notifications" element={<CoordinatorNotif />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="reviews" element={<AdviserSubmissions />} />
+            <Route path="reviews/:id" element={<AdviserReview />} />
+            <Route path="inbox" element={<AdviserInbox />} />
+            <Route path="moderation" element={<AdviserModeration />} />
+            <Route path="analytics" element={<AdviserAnalytics />} />
+            <Route path="reports" element={<AdviserReports />} />
           </Route>
 
           <Route

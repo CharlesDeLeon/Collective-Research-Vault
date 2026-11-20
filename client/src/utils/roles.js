@@ -1,6 +1,6 @@
 const ROLE_ALIASES = {
-  adviser: 'faculty',
   admin: 'sysadmin',
+  coordinator: 'adviser',
 }
 
 export const normalizeRole = (role) => {

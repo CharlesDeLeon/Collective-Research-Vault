@@ -2,8 +2,8 @@ import { normalizeRole } from './roles'
 
 const ROLE_HOME = {
   student: '/student',
-  faculty: '/faculty/dashboard',
-  coordinator: '/coordinator/dashboard',
+  adviser: '/adviser/dashboard',
+  external_panelist: '/panelist/dashboard',
   sysadmin: '/admin/dashboard',
 }
 

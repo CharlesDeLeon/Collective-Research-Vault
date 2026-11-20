@@ -18,8 +18,8 @@ const ManageUsers = () => {
   const [statusFilter, setStatusFilter] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const adminCount = users.filter(u => u.role === 'sysadmin').length
-  const facultyCount = users.filter(u => u.role === 'faculty').length
-  const coordinatorCount = users.filter(u => u.role === 'coordinator').length
+  const adviserCount = users.filter(u => u.role === 'adviser').length
+  const panelistCount = users.filter(u => u.role === 'external_panelist').length
   const activeCount = users.filter(u => (u.status || (u.is_active ? 'active' : 'inactive')) === 'active').length
 
 
@@ -136,12 +136,12 @@ const ManageUsers = () => {
           <div style={styles.metricValue}>{adminCount}</div>
         </div>
         <div style={styles.metricCard}>
-          <div style={styles.metricLabel}>Faculty</div>
-          <div style={styles.metricValue}>{facultyCount}</div>
+          <div style={styles.metricLabel}>Advisers</div>
+          <div style={styles.metricValue}>{adviserCount}</div>
         </div>
         <div style={styles.metricCard}>
-          <div style={styles.metricLabel}>Coordinator</div>
-          <div style={styles.metricValue}>{coordinatorCount}</div>
+          <div style={styles.metricLabel}>Panelists</div>
+          <div style={styles.metricValue}>{panelistCount}</div>
         </div>
       </div>
 
@@ -161,8 +161,8 @@ const ManageUsers = () => {
         >
           <option value="">All Roles</option>
           <option value="sysadmin">SysAdmin</option>
-          <option value="faculty">Faculty</option>
-          <option value="coordinator">Coordinator</option>
+          <option value="adviser">Adviser</option>
+          <option value="external_panelist">External Panelist</option>
           <option value="student">Student</option>
         </select>
         <select
@@ -317,8 +317,8 @@ const ManageUsers = () => {
               >
                 <option value="student">Student</option>
                 <option value="sysadmin">SysAdmin</option>
-                <option value="faculty">Faculty</option>
-                <option value="coordinator">Coordinator</option>
+                <option value="adviser">Adviser</option>
+                <option value="external_panelist">External Panelist</option>
               </select>
             </div>
 
