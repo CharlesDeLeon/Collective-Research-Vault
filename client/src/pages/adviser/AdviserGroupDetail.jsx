@@ -1,0 +1,389 @@
+import React, { useEffect, useState, useCallback } from 'react'
+import { Link, useParams, useNavigate } from 'react-router-dom'
+import useForum from '../../context/useForum'
+import api from '../../services/api'
+import { glass } from '../../components/dashboard/constants'
+import { UsersIcon, DocIcon, CommentIcon, PlusIcon, PencilIcon, TrashIcon, UserIcon } from '../../components/dashboard/icons'
+import FeedList from '../../components/forum/FeedList'
+import ForumPostCard from '../../components/forum/ForumPostCard'
+import StatusPill from '../../components/dashboard/StatusPill'
+import { normalizeStatus } from '../../utils/paperRules'
+
+const TABS = ['Feed', 'Members', 'Panelists', 'Papers', 'Analytics']
+
+export default function AdviserGroupDetail() {
+  const { groupId } = useParams()
+  const navigate = useNavigate()
+  const { posts, openComposer } = useForum()
+
+  const [group, setGroup] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [tab, setTab] = useState('Feed')
+
+  const [members, setMembers] = useState([])
+  const [panel, setPanel] = useState([])
+  const [submissions, setSubmissions] = useState([])
+  const [loadingDetail, setLoadingDetail] = useState(false)
+
+  const [memberSearch, setMemberSearch] = useState('')
+  const [memberResults, setMemberResults] = useState([])
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviting, setInviting] = useState(false)
+
+  const fetchGroup = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await api.get(`/groups/${groupId}`)
+      setGroup(res.data?.data || null)
+    } catch (e) {
+      console.error(e)
+      setError('Failed to load group')
+    } finally {
+      setLoading(false)
+    }
+  }, [groupId])
+
+  const fetchDetail = useCallback(async () => {
+    setLoadingDetail(true)
+    try {
+      const [gRes, sRes] = await Promise.all([
+        api.get(`/coordinator/groups/${groupId}`),
+        api.get('/coordinator/submissions', { params: { limit: 100 } }),
+      ])
+      const g = gRes.data?.data
+      setMembers(g?.members || [])
+      setPanel(g?.panel || [])
+      const subs = (sRes.data?.data || []).filter((s) => String(s.group_id) === String(groupId))
+      setSubmissions(subs)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingDetail(false)
+    }
+  }, [groupId])
+
+  useEffect(() => { fetchGroup() }, [fetchGroup])
+  useEffect(() => { if (group) fetchDetail() }, [group, fetchDetail])
+
+  const searchMembers = async (q) => {
+    setMemberSearch(q)
+    if (!q.trim()) { setMemberResults([]); return }
+    try {
+      const res = await api.get('/coordinator/students', { params: { search: q } })
+      const list = res.data?.data || []
+      setMemberResults(list.filter((s) => !members.some((m) => m.user_id === s.user_id)))
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const addMember = async (s) => {
+    try {
+      await api.post(`/coordinator/groups/${groupId}/members`, { user_id: s.user_id })
+      setMemberResults((r) => r.filter((x) => x.user_id !== s.user_id))
+      setMemberSearch('')
+      fetchDetail()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const removeMember = async (uid) => {
+    if (!window.confirm('Remove this member?')) return
+    try {
+      await api.delete(`/coordinator/groups/${groupId}/members/${uid}`)
+      fetchDetail()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const invitePanelist = async () => {
+    if (!inviteEmail.trim()) return
+    setInviting(true)
+    try {
+      // Panelists are existing users with external_panelist role; adviser assigns them.
+      // For now, search by email is not available; show a placeholder.
+      alert('Panelist invitation by email will be available once email delivery is configured. For now, ask a System Admin to create the panelist account, then assign them here.')
+    } finally {
+      setInviting(false)
+    }
+  }
+
+  const revokePanelist = async (assignmentId) => {
+    if (!window.confirm('Revoke this panelist assignment?')) return
+    try {
+      await api.delete(`/coordinator/panel/${assignmentId}`)
+      fetchDetail()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  if (loading) {
+    return <div className="p-8 text-center text-sm text-white/60">Loading group…</div>
+  }
+  if (error || !group) {
+    return (
+      <div className="space-y-4">
+        <Link to="/adviser/groups" className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white">
+          ‹ Back to groups
+        </Link>
+        <div role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-6">
+          <p className="m-0 text-sm text-rose-200">{error || 'Group not found.'}</p>
+        </div>
+      </div>
+    )
+  }
+
+  const groupPosts = (posts || []).filter((p) => String(p.groupId) === String(groupId))
+
+  return (
+    <div className="space-y-6 sm:space-y-8">
+      <Link to="/adviser/groups" className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white">
+        ‹ Groups
+      </Link>
+
+      <header className={`${glass} flex flex-col gap-4 p-5 sm:p-6 md:flex-row md:items-center md:justify-between`}>
+        <div className="min-w-0 space-y-3">
+          <h1 className="wrap-break-word text-2xl font-bold sm:text-3xl">{group.group_name}</h1>
+          <div className="flex flex-wrap gap-2">
+            {(group.strand || group.program) && (
+              <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">
+                {group.strand || group.program}
+              </span>
+            )}
+            {group.section && (
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+                {group.section}
+              </span>
+            )}
+            {group.year_level && (
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+                Grade {group.year_level}
+              </span>
+            )}
+            {group.school_year && (
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+                {group.school_year}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-white/60">Adviser: {group.adviser_name || '—'}</p>
+        </div>
+        <div className="text-sm text-white/60">
+          <div>{members.length} members</div>
+          <div>{submissions.length} papers</div>
+          <div>{groupPosts.length} posts</div>
+        </div>
+      </header>
+
+      {/* Tabs */}
+      <div className="flex gap-1 overflow-x-auto border-b border-white/10 pb-1">
+        {TABS.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={`shrink-0 rounded-t-xl px-4 py-2 text-sm font-semibold transition ${
+              tab === t ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white'
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'Feed' && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => openComposer({})}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-gold/60 bg-gold/10 px-4 text-sm font-semibold text-gold transition hover:bg-gold/20"
+            >
+              <PlusIcon className="size-4" /> New post
+            </button>
+          </div>
+          {groupPosts.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/20 p-8 text-center text-sm text-white/60">
+              No posts in this group yet.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {groupPosts.map((p) => (
+                <ForumPostCard key={p.id} post={p} showGroup={false} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'Members' && (
+        <div className={`${glass} p-5 sm:p-6 space-y-4`}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-lg font-bold">Members ({members.length})</h2>
+            <div className="relative w-full sm:w-64">
+              <input
+                value={memberSearch}
+                onChange={(e) => searchMembers(e.target.value)}
+                placeholder="Search students to add…"
+                className="h-10 w-full rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
+              />
+              {memberResults.length > 0 && (
+                <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-xl border border-white/10 bg-navy-900/95 shadow-lg">
+                  {memberResults.map((s) => (
+                    <li
+                      key={s.user_id}
+                      onClick={() => addMember(s)}
+                      className="cursor-pointer px-3 py-2 text-sm hover:bg-white/10"
+                    >
+                      {s.name} <span className="text-white/50">({s.email})</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+          {members.length === 0 ? (
+            <p className="text-sm text-white/50">No members yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {members.map((m) => (
+                <li key={m.user_id} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3">
+                  <div>
+                    <p className="m-0 text-sm font-medium">{m.name}</p>
+                    <p className="m-0 text-xs text-white/50">{m.email} · {m.role}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeMember(m.user_id)}
+                    className="text-xs font-semibold text-rose-300 hover:underline"
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {tab === 'Panelists' && (
+        <div className={`${glass} p-5 sm:p-6 space-y-4`}>
+          <h2 className="text-lg font-bold">External Panelists ({panel.length})</h2>
+          <div className="flex gap-2">
+            <input
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="Panelist email (account must exist)"
+              className="h-10 flex-1 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
+            />
+            <button
+              type="button"
+              onClick={invitePanelist}
+              disabled={inviting}
+              className="h-10 rounded-xl bg-gold/20 px-4 text-sm font-semibold text-gold transition hover:bg-gold/30 disabled:opacity-60"
+            >
+              {inviting ? '…' : 'Invite'}
+            </button>
+          </div>
+          <p className="text-xs text-white/50">
+            Panelists are assigned by a System Admin for now. Full email invitation arrives with the domain.
+          </p>
+          {panel.length === 0 ? (
+            <p className="text-sm text-white/50">No panelists assigned.</p>
+          ) : (
+            <ul className="space-y-2">
+              {panel.map((p) => (
+                <li key={p.assignment_id} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3">
+                  <div>
+                    <p className="m-0 text-sm font-medium">{p.name}</p>
+                    <p className="m-0 text-xs text-white/50">{p.email} · {p.role_in_panel}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => revokePanelist(p.assignment_id)}
+                    className="text-xs font-semibold text-rose-300 hover:underline"
+                  >
+                    Revoke
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {tab === 'Papers' && (
+        <div className={`${glass} p-5 sm:p-6 space-y-4`}>
+          <h2 className="text-lg font-bold">Papers ({submissions.length})</h2>
+          {loadingDetail ? (
+            <p className="text-sm text-white/50">Loading…</p>
+          ) : submissions.length === 0 ? (
+            <p className="text-sm text-white/50">No papers submitted for this group.</p>
+          ) : (
+            <ul className="space-y-2">
+              {submissions.map((s) => (
+                <li key={s.submission_id} className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="m-0 font-medium truncate">{s.title}</p>
+                      <p className="m-0 text-xs text-white/50">{s.authors} · {s.status} · {s.stage}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/adviser/reviews/${s.submission_id}`)}
+                      className="shrink-0 text-xs font-semibold text-gold hover:underline"
+                    >
+                      Review
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {tab === 'Analytics' && (
+        <div className={`${glass} p-5 sm:p-6 space-y-4`}>
+          <h2 className="text-lg font-bold">Group Analytics</h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="text-2xl font-bold text-gold">{members.length}</div>
+              <div className="text-xs text-white/60">Members</div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="text-2xl font-bold text-gold">{submissions.length}</div>
+              <div className="text-xs text-white/60">Papers</div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="text-2xl font-bold text-gold">{submissions.filter(s => s.status === 'published').length}</div>
+              <div className="text-xs text-white/60">Published</div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+              <div className="text-2xl font-bold text-gold">{groupPosts.length}</div>
+              <div className="text-xs text-white/60">Posts</div>
+            </div>
+          </div>
+          {submissions.length > 0 && (
+            <div className="mt-4">
+              <h3 className="mb-2 text-sm font-semibold text-white/70">Papers by status</h3>
+              <ul className="space-y-1 text-sm">
+                {[...new Set(submissions.map(s => s.status))].map(st => (
+                  <li key={st} className="flex justify-between rounded-lg bg-white/[0.04] px-3 py-2">
+                    <span className="capitalize">{String(st).replace(/_/g, ' ')}</span>
+                    <span className="text-gold">{submissions.filter(s => s.status === st).length}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

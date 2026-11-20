@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { FilterIcon, SearchIcon, CloseIcon, ChevronDownIcon } from '../dashboard/icons'
 import { STATUS_STYLES } from '../dashboard/constants'
+import Select, { Option } from '../ui/Select'
 
 export const EMPTY_FILTERS = {
   query: '',
@@ -13,9 +14,6 @@ export const EMPTY_FILTERS = {
 }
 
 const FLAIRS = ['proposal', 'under_review', 'for_revision', 'approved', 'published']
-
-const selectCls =
-  'h-11 w-full rounded-lg border border-white/20 bg-white/5 px-3 text-sm text-white outline-none transition focus:border-gold/60 focus:ring-2 focus:ring-gold/20'
 
 const unique = (posts, key) => [...new Set(posts.map((p) => p[key]).filter(Boolean))].sort()
 
@@ -85,65 +83,65 @@ export default function FeedFilters({ posts, groups, value, onChange, lockGroup 
         <div className="grid grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-panel p-4 sm:grid-cols-2 lg:grid-cols-3">
           <label className="block text-xs font-semibold text-white/60">
             Flair
-            <select value={value.flair} onChange={set('flair')} className={`${selectCls} mt-1`}>
-              <option value="">All</option>
+            <Select value={value.flair} onChange={set('flair')} className="border-white/20">
+              <Option value="">All</Option>
               {FLAIRS.map((f) => (
-                <option key={f} value={f}>
+                <Option key={f} value={f}>
                   {STATUS_STYLES[f].label}
-                </option>
+                </Option>
               ))}
-            </select>
+            </Select>
           </label>
           {!lockGroup && (
             <label className="block text-xs font-semibold text-white/60">
               Group
-              <select value={value.group} onChange={set('group')} className={`${selectCls} mt-1`}>
-                <option value="">All</option>
+              <Select value={value.group} onChange={set('group')} className="border-white/20">
+                <Option value="">All</Option>
                 {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
+                  <Option key={g.id} value={g.id}>
                     {g.name}
-                  </option>
+                  </Option>
                 ))}
-              </select>
+              </Select>
             </label>
           )}
           <label className="block text-xs font-semibold text-white/60">
             Strand
-            <select value={value.strand} onChange={set('strand')} className={`${selectCls} mt-1`}>
-              <option value="">All</option>
+            <Select value={value.strand} onChange={set('strand')} className="border-white/20">
+              <Option value="">All</Option>
               {unique(posts, 'strand').map((v) => (
-                <option key={v}>{v}</option>
+                <Option key={v}>{v}</Option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="block text-xs font-semibold text-white/60">
             Section
-            <select value={value.section} onChange={set('section')} className={`${selectCls} mt-1`}>
-              <option value="">All</option>
+            <Select value={value.section} onChange={set('section')} className="border-white/20">
+              <Option value="">All</Option>
               {unique(posts, 'section').map((v) => (
-                <option key={v}>{v}</option>
+                <Option key={v}>{v}</Option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="block text-xs font-semibold text-white/60">
             Year level
-            <select value={value.yearLevel} onChange={set('yearLevel')} className={`${selectCls} mt-1`}>
-              <option value="">All</option>
+            <Select value={value.yearLevel} onChange={set('yearLevel')} className="border-white/20">
+              <Option value="">All</Option>
               {unique(posts, 'yearLevel').map((v) => (
-                <option key={v} value={v}>
+                <Option key={v} value={v}>
                   Grade {v}
-                </option>
+                </Option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="block text-xs font-semibold text-white/60">
             School year
-            <select value={value.schoolYear} onChange={set('schoolYear')} className={`${selectCls} mt-1`}>
-              <option value="">All</option>
+            <Select value={value.schoolYear} onChange={set('schoolYear')} className="border-white/20">
+              <Option value="">All</Option>
               {unique(posts, 'schoolYear').map((v) => (
-                <option key={v}>{v}</option>
+                <Option key={v}>{v}</Option>
               ))}
-            </select>
+            </Select>
           </label>
         </div>
       )}

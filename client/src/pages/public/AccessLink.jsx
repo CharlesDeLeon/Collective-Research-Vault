@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import PublicShell from '../../components/public/PublicShell'
 import StatePanel, { primaryBtn, outlineBtn } from '../../components/public/StatePanel'
 import AccessBlocked, { AccessLoading } from '../../components/public/AccessBlocked'
 import { useAccessGate } from '../../hooks/useAccessGate'
 import { consumeAccessLink } from '../../services/accessLinkService'
-import { getGalleryPaper } from '../../services/galleryData'
+import { getGalleryPaper } from '../../services/galleryService'
 
 export default function AccessLink() {
   const { token } = useParams()
@@ -13,8 +13,14 @@ export default function AccessLink() {
   const gate = useAccessGate(token)
   const [busy, setBusy] = useState('')
   const [failed, setFailed] = useState('')
+  const [paper, setPaper] = useState(null)
 
-  const paper = gate.paperSlug ? getGalleryPaper(gate.paperSlug) : null
+  useEffect(() => {
+    if (!gate.paperSlug) { setPaper(null); return }
+    let cancelled = false
+    getGalleryPaper(gate.paperSlug).then((p) => { if (!cancelled) setPaper(p) }).catch(() => {})
+    return () => { cancelled = true }
+  }, [gate.paperSlug])
 
   const open = async (mode) => {
     setBusy(mode)

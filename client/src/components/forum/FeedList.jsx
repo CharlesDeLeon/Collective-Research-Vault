@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react'
 import useForum from '../../context/useForum'
-import { FEED_GROUPS } from '../../services/feedData'
 import FeedFilters, { applyFilters, EMPTY_FILTERS } from './FeedFilters'
 import ForumPostCard from './ForumPostCard'
 
 const PAGE = 5
 
 export default function FeedList({ groupId = null }) {
-  const { posts, openComposer } = useForum()
+  const { posts, groups, openComposer } = useForum()
   const [filters, setFilters] = useState({ ...EMPTY_FILTERS, group: groupId ?? '' })
   const [shown, setShown] = useState(PAGE)
 
@@ -30,7 +29,7 @@ export default function FeedList({ groupId = null }) {
 
   return (
     <div className="space-y-4">
-      <FeedFilters posts={scoped} groups={FEED_GROUPS} value={filters} onChange={change} lockGroup={Boolean(groupId)} />
+      <FeedFilters posts={scoped} groups={groups || []} value={filters} onChange={change} lockGroup={Boolean(groupId)} />
 
       <div className="space-y-4">
         {visible.slice(0, shown).map((post) => (

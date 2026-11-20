@@ -4,7 +4,7 @@ import GalleryNavbar from '../../components/gallery/GalleryNavbar'
 import StatePanel, { primaryBtn, outlineBtn } from '../../components/public/StatePanel'
 import { inputCls } from '../../components/upload/Field'
 import { getRequestStatus } from '../../services/accessRequestService'
-import { getGalleryPaper } from '../../services/galleryData'
+import { getGalleryPaper } from '../../services/galleryService'
 import { longDate } from '../../utils/formatDate'
 
 const COPY = {
@@ -53,8 +53,14 @@ export default function RequestStatus() {
 
   const loading = Boolean(ref) && state.ref !== ref
   const data = state.ref === ref ? state.data : null
-  const paper = data ? getGalleryPaper(data.paperSlug) : null
   const copy = data ? COPY[data.status] : null
+  const [paper, setPaper] = useState(null)
+  useEffect(() => {
+    if (!data?.paperSlug) { setPaper(null); return }
+    let cancelled = false
+    getGalleryPaper(data.paperSlug).then((p) => { if (!cancelled) setPaper(p) }).catch(() => {})
+    return () => { cancelled = true }
+  }, [data?.paperSlug])
 
   return (
     <div className="min-h-screen bg-linear-to-br from-navy-900 to-navy-500 font-display text-white">

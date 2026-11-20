@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
 import { glass } from '../../components/dashboard/constants'
 import { DocIcon, SearchIcon, ChevronDownIcon } from '../../components/dashboard/icons'
@@ -15,6 +16,7 @@ const STATUS_CLS = {
 }
 
 export default function AdviserSubmissions() {
+  const navigate = useNavigate()
   const [submissions, setSubmissions] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -192,7 +194,7 @@ export default function AdviserSubmissions() {
                   <td className="px-4 py-3">
                     <button
                       type="button"
-                      onClick={() => openDetail(s.submission_id)}
+                      onClick={() => navigate(`/adviser/reviews/${s.submission_id}`)}
                       className="text-xs font-semibold text-gold hover:underline"
                     >
                       Review

@@ -151,7 +151,10 @@ function CommentItem({ postId, comment, canReply, onReply }) {
 
 export default function CommentThread({ post, autoFocusComposer = false }) {
   const { addComment } = useForum()
-  const [replyTo, setReplyTo] = useState(null)
+  const [reply, setReply] = useState(null)
+  const replyTo = reply?.parentId ?? null
+  const prefill = reply?.prefill ?? ''
+  const setReplyTo = (id) => setReply(id ? { parentId: id, prefill: '' } : null)
   const top = post.comments.filter((c) => !c.parentId)
 
   return (
@@ -171,10 +174,18 @@ export default function CommentThread({ post, autoFocusComposer = false }) {
                 {(replies.length > 0 || replyTo === c.id) && (
                   <div className="ml-4 mt-3 space-y-3 border-l border-white/10 pl-4 sm:ml-11">
                     {replies.map((r) => (
-                      <CommentItem key={r.id} postId={post.id} comment={r} canReply={false} />
+                      <CommentItem
+                        key={r.id}
+                        postId={post.id}
+                        comment={r}
+                        canReply
+                        onReply={() => setReply({ parentId: c.id, prefill: `@${r.authorName} ` })}
+                      />
                     ))}
                     {replyTo === c.id && (
                       <CommentInput
+                        key={prefill}
+                        initial={prefill}
                         autoFocus
                         label={`Reply to ${c.authorName}`}
                         placeholder="Write a reply…"

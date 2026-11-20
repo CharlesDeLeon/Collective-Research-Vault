@@ -4,7 +4,7 @@ import { glass, ROUTES } from '../../components/dashboard/constants'
 import { CheckIcon, CloseIcon, DocIcon, PlusIcon, SearchIcon } from '../../components/dashboard/icons'
 import StatusPill from '../../components/dashboard/StatusPill'
 import ResubmitModal from "../../components/paper/ResubmitModal";
-import { listMyPapers, resubmitPaper } from '../../services/studentPapers'
+import { getMyPapers, resubmitPaper } from '../../services/paperService'
 import { canEdit, canResubmit, normalizeStatus } from '../../utils/paperRules'
 import { timeAgo } from '../../utils/formatDate'
 
@@ -31,7 +31,7 @@ function PaperRow({ paper, onResubmit }) {
       </div>
       <h3 className="mb-0 mt-4 wrap-break-word text-base font-semibold leading-snug sm:text-lg">{paper.title}</h3>
       <p className="mb-0 mt-2 truncate text-xs text-white/60">
-        {paper.groupName} · {paper.strand} · {paper.section}
+        {[paper.groupName, paper.strand, paper.section].filter(Boolean).join(' · ')}
       </p>
       <div className="mt-auto pt-4">
         <div className="flex flex-wrap gap-2 border-t border-white/10 pt-4">
@@ -70,7 +70,7 @@ export default function MyPapers() {
 
   useEffect(() => {
     let live = true
-    listMyPapers()
+    getMyPapers()
       .then((rows) => {
         if (live) setPapers(rows)
       })
@@ -104,7 +104,8 @@ export default function MyPapers() {
   }, [papers, query, filter])
 
   const confirmResubmit = async (paper) => {
-    const next = await resubmitPaper(paper.id)
+    const data = await resubmitPaper(paper.id)
+    const next = { ...paper, status: data.status ?? paper.status }
     setPapers((list) => list.map((p) => (p.id === next.id ? next : p)))
     setResubmitting(null)
     setNotice('Sent to your adviser for review.')

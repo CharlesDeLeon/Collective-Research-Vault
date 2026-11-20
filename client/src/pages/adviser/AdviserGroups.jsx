@@ -272,7 +272,7 @@ export default function AdviserGroups() {
                 <span>{g.submission_count ?? 0} papers</span>
                 <button
                   type="button"
-                  onClick={() => openDetail(g)}
+                  onClick={() => navigate(`/adviser/groups/${g.group_id}`)}
                   className="font-semibold text-gold hover:underline"
                 >
                   View

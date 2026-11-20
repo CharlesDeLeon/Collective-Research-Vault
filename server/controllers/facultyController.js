@@ -45,7 +45,7 @@ const getAssignedSubmissions = async (req, res) => {
        LEFT JOIN reviews r ON s.submission_id = r.submission_id AND r.reviewer_id = ?
        LEFT JOIN review_comments rc ON s.submission_id = rc.submission_id
        WHERE pa.faculty_id = ? AND (pa.role_in_panel = 'adviser' OR pa.role_in_panel = 'panelist')
-       GROUP BY s.submission_id
+       GROUP BY s.submission_id, s.program, s.school_year, s.stage, s.status, s.created_at, s.updated_at, rg.group_name, u.name, r.status_assigned, r.review_id
        ORDER BY s.updated_at DESC`
       , [facultyId, facultyId]
     )
@@ -71,9 +71,10 @@ const addFeedbackComment = async (req, res) => {
       `SELECT s.submission_id 
        FROM submissions s
        JOIN research_groups rg ON s.group_id = rg.group_id
-       JOIN panel_assignments pa ON rg.group_id = pa.group_id
-       WHERE s.submission_id = ? AND pa.faculty_id = ?`,
-      [submission_id, author_id]
+       WHERE s.submission_id = ? AND (rg.adviser_id = ? OR rg.created_by = ? OR EXISTS (
+         SELECT 1 FROM panel_assignments pa WHERE pa.group_id = rg.group_id AND pa.faculty_id = ?
+       ))`,
+      [submission_id, author_id, author_id, author_id]
     )
     
     if (access.length === 0) {
@@ -327,9 +328,10 @@ const getSubmissionComments = async (req, res) => {
       `SELECT s.submission_id 
        FROM submissions s
        JOIN research_groups rg ON s.group_id = rg.group_id
-       JOIN panel_assignments pa ON rg.group_id = pa.group_id
-       WHERE s.submission_id = ? AND pa.faculty_id = ?`,
-      [submission_id, facultyId]
+       WHERE s.submission_id = ? AND (rg.adviser_id = ? OR rg.created_by = ? OR EXISTS (
+         SELECT 1 FROM panel_assignments pa WHERE pa.group_id = rg.group_id AND pa.faculty_id = ?
+       ))`,
+      [submission_id, facultyId, facultyId, facultyId]
     )
     
     if (access.length === 0) {
@@ -372,7 +374,7 @@ const getSubmissionComments = async (req, res) => {
          )
        LEFT JOIN review_comments rc ON s.submission_id = rc.submission_id
        WHERE s.submission_id = ?
-       GROUP BY s.submission_id`,
+       GROUP BY s.submission_id, s.group_id, s.title, s.abstract, s.keywords, s.authors, s.program, s.school_year, s.stage, s.status, s.created_at, s.updated_at, rg.group_name, u.name, r.status_assigned, r.review_id, dv.file_path, dv.file_name, dv.file_size, dv.file_type, dv.uploaded_at`,
       [facultyId, submission_id]
     )
 

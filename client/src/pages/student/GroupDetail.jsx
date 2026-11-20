@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import useForum from '../../context/useForum'
-import { FEED_GROUPS } from '../../services/feedData'
+import api from '../../services/api'
 import { glass, ROUTES } from '../../components/dashboard/constants'
 import { PlusIcon } from '../../components/dashboard/icons'
 import Avatar from '../../components/paper/Avatar'
@@ -10,7 +11,47 @@ import StatePanel from '../../components/public/StatePanel'
 export default function GroupDetail() {
   const { groupId } = useParams()
   const { openComposer } = useForum()
-  const group = FEED_GROUPS.find((g) => g.id === groupId && g.mine)
+  const [group, setGroup] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    api.get(`/groups/${groupId}`)
+      .then((res) => {
+        if (cancelled) return
+        const raw = res.data?.data
+        if (!raw) { setGroup(null); return }
+        setGroup({
+          id: raw.group_id,
+          name: raw.group_name,
+          strand: raw.strand || raw.program,
+          section: raw.section,
+          schoolYear: raw.school_year,
+          adviser: raw.adviser_name,
+          members: (raw.members || []).map((m) => m.name),
+          memberObjects: raw.members || [],
+          panel: raw.panel || [],
+        })
+      })
+      .catch(() => { if (!cancelled) setGroup(null) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [groupId])
+
+  if (loading) {
+    return <div className="p-8 text-center text-sm text-white/60">Loading group…</div>
+  }
+  if (!group) {
+    return (
+      <StatePanel title="Group not found">
+        <p>This group doesn't exist or you aren't a member.</p>
+        <Link to={ROUTES.groups} className="mt-4 inline-block font-semibold text-gold">
+          Back to Groups
+        </Link>
+      </StatePanel>
+    )
+  }
 
   if (!group) {
     return (

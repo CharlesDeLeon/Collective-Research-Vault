@@ -55,7 +55,7 @@ const enrichRows = (result) => {
   rows.insertId = null
   if (result.command === 'INSERT' && rows.length > 0) {
     const firstRow = rows[0]
-    rows.insertId = firstRow.user_id || firstRow.group_id || firstRow.comment_id || firstRow.review_id || firstRow.submission_id || firstRow.notification_id || null
+    rows.insertId = firstRow.user_id || firstRow.group_id || firstRow.comment_id || firstRow.post_id || firstRow.review_id || firstRow.submission_id || firstRow.notification_id || firstRow.access_request_id || firstRow.link_id || null
   }
   rows.affectedRows = result.rowCount
   return rows
