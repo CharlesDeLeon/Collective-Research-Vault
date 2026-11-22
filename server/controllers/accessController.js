@@ -37,10 +37,19 @@ const listRequests = async (req, res) => {
 
     const [rows] = await query(sql, params)
 
-    // Get counts
-    const [counts] = await query(
-      `SELECT status, COUNT(*)::int AS c FROM paper_access_requests GROUP BY status`
-    )
+    // Get counts (filtered by adviser's groups)
+    let countSql = `SELECT r.status, COUNT(*)::int AS c
+                    FROM paper_access_requests r
+                    JOIN submissions s ON s.submission_id = r.submission_id
+                    LEFT JOIN research_groups rg ON rg.group_id = s.group_id
+                    WHERE 1=1`
+    const countParams = []
+    if (role === 'adviser') {
+      countSql += ` AND (rg.adviser_id = ? OR rg.created_by = ?)`
+      countParams.push(userId, userId)
+    }
+    countSql += ` GROUP BY r.status`
+    const [counts] = await query(countSql, countParams)
     const countMap = {}
     for (const c of counts) countMap[c.status] = c.c
 
