@@ -5,12 +5,12 @@ export const login = async (email, password) => {
     return response.data
 }
 
-export const updateProfile = async ({ name, email }) => {
-    const response = await api.put('/auth/profile', { name, email })
+export const updateProfile = async ({ name, email, currentPassword }) => {
+    const response = await api.patch('/auth/profile', { name, email, currentPassword })
     return response.data
 }
 
 export const changePassword = async ({ current, next }) => {
-    const response = await api.post('/auth/change-password', { current_password: current, new_password: next })
+    const response = await api.post('/auth/change-password', { currentPassword: current, newPassword: next })
     return response.data
 }
