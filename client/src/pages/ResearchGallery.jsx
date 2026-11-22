@@ -13,26 +13,26 @@ export default function ResearchGallery() {
   const countText = `Showing ${g.total} ${g.total === 1 ? 'paper' : 'papers'}`
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-navy-900 to-navy-500 font-display text-white">
+    <div className="min-h-screen bg-page font-display text-fg">
       <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-8">
         <GalleryNavbar />
 
         <section className="pb-2 pt-4 sm:pt-6">
-          <h1 className="m-0 text-[1.625rem] font-semibold leading-tight sm:text-4xl">
+          <h1 className="m-0 text-[1.625rem] font-semibold leading-tight text-heading sm:text-4xl">
             Finished research from our students
           </h1>
-          <p className="mt-2 max-w-2xl text-[0.9375rem] leading-relaxed text-white/80 sm:mt-3 sm:text-[1.0625rem]">
+          <p className="mt-2 max-w-2xl text-[0.9375rem] leading-relaxed text-fg/80 sm:mt-3 sm:text-[1.0625rem]">
             Browse published theses and capstone projects. No account needed.
           </p>
           <div className="relative mt-5 max-w-2xl sm:mt-6">
-            <SearchIcon className="pointer-events-none absolute left-4 top-3.5 size-5 text-white/75 sm:left-5 sm:top-4" />
+            <SearchIcon className="pointer-events-none absolute left-4 top-3.5 size-5 text-fg-muted sm:left-5 sm:top-4" />
             <input
               type="search"
               value={g.query}
               onChange={(e) => g.setQuery(e.target.value)}
               aria-label="Search title, author or keyword"
               placeholder="Search title, author or keyword"
-              className="h-12 w-full rounded-full border-[0.094rem] border-white/40 bg-field/35 pl-12 pr-5 text-[0.9375rem] text-white placeholder:text-white/65 sm:h-13 sm:pl-13 sm:text-base"
+              className="h-12 w-full rounded-full border-[0.094rem] border-input-line bg-input-bg pl-12 pr-5 text-[0.9375rem] text-input-fg placeholder:text-placeholder sm:h-13 sm:pl-13 sm:text-base"
             />
           </div>
         </section>
@@ -42,15 +42,15 @@ export default function ResearchGallery() {
         <div className="mt-8 flex flex-col items-start gap-8 sm:mt-10 lg:flex-row">
           <aside
             aria-label="Filters"
-            className="hidden w-68 shrink-0 rounded-[1.25rem] border border-white/12 bg-field/35 p-5 lg:block"
+            className="hidden w-68 shrink-0 rounded-card border border-panel-line bg-sidebar p-5 panel-shadow lg:block"
           >
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="m-0 text-lg font-semibold">Filters</h2>
+              <h2 className="m-0 text-lg font-semibold text-heading">Filters</h2>
               {g.hasFilters && (
                 <button
                   type="button"
                   onClick={g.clearAll}
-                  className="min-h-11 px-1 text-sm font-medium text-gold"
+                  className="min-h-11 px-1 text-sm font-medium text-link"
                 >
                   Clear all
                 </button>
@@ -69,14 +69,14 @@ export default function ResearchGallery() {
               <button
                 type="button"
                 onClick={() => setSheet(true)}
-                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border-[0.094rem] border-gold text-[0.9375rem] font-medium text-gold"
+                className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border-[0.094rem] border-link text-[0.9375rem] font-medium text-link"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="size-4.5" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5" aria-hidden="true">
                   <path d="M4 6h16M7 12h10M10 18h4" />
                 </svg>
                 Filters
                 {g.activeFilterCount > 0 && (
-                  <span className="grid h-5.5 min-w-5.5 place-items-center rounded-full bg-gold px-1 text-xs font-bold text-ink">
+                  <span className="grid h-5.5 min-w-5.5 place-items-center rounded-full bg-primary px-1 text-xs font-bold text-primary-fg">
                     {g.activeFilterCount}
                   </span>
                 )}
@@ -84,7 +84,7 @@ export default function ResearchGallery() {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <p aria-live="polite" className="m-0 text-base font-semibold">
+              <p aria-live="polite" className="m-0 text-base font-semibold text-fg">
                 {countText}
               </p>
             </div>
@@ -94,14 +94,14 @@ export default function ResearchGallery() {
                 {g.chips.map((c) => (
                   <span
                     key={c.key}
-                    className="inline-flex min-h-9 items-center gap-1 rounded-full bg-gold/15 py-0 pl-3.5 pr-1.5 text-sm font-medium text-gold"
+                    className="inline-flex min-h-9 items-center gap-1 rounded-full bg-filter-chip-bg py-0 pl-3.5 pr-1.5 text-sm font-medium text-filter-chip-fg ring-1 ring-inset ring-filter-chip-line"
                   >
                     {c.label}
                     <button
                       type="button"
                       onClick={c.remove}
                       aria-label={`Remove ${c.label}`}
-                      className="grid size-7 place-items-center rounded-full text-gold"
+                      className="grid size-7 place-items-center rounded-full text-filter-chip-fg"
                     >
                       <CloseIcon className="size-3.5" />
                     </button>
@@ -122,7 +122,7 @@ export default function ResearchGallery() {
                     <button
                       type="button"
                       onClick={g.loadMore}
-                      className="min-h-12 rounded-xl border-[0.094rem] border-gold px-8 text-base font-medium text-gold hover:bg-gold/10"
+                      className="min-h-12 rounded-xl border-[0.094rem] border-link px-8 text-base font-medium text-link hover:bg-link/10"
                     >
                       Load more
                     </button>
@@ -130,13 +130,13 @@ export default function ResearchGallery() {
                 )}
               </>
             ) : (
-              <div className="mt-5 rounded-[1.25rem] border-[0.094rem] border-dashed border-white/30 px-6 py-12 text-center">
-                <p className="m-0 text-lg font-semibold">No research matches your search</p>
-                <p className="mb-5 mt-2 text-[0.9375rem] text-white/80">Try different words, or remove a filter.</p>
+              <div className="mt-5 rounded-card border-[0.094rem] border-dashed border-control-line-soft px-6 py-12 text-center">
+                <p className="m-0 text-lg font-semibold text-heading">No research matches your search</p>
+                <p className="mb-5 mt-2 text-[0.9375rem] text-fg/80">Try different words, or remove a filter.</p>
                 <button
                   type="button"
                   onClick={g.clearAll}
-                  className="min-h-12 rounded-xl bg-linear-to-br from-gold to-gold-soft px-7 text-base font-semibold text-ink"
+                  className="min-h-12 rounded-xl bg-cta px-7 text-base font-semibold text-cta-fg"
                 >
                   Clear filters
                 </button>

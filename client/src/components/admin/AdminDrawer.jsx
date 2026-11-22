@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink } from 'react-router-dom'
 import Logo from '../Logo'
+import ThemeToggle from '../gallery/ThemeToggle'
 import { CloseIcon } from '../dashboard/icons'
 import { ADMIN_NAV } from './adminNav'
 
@@ -40,11 +41,12 @@ export default function AdminDrawer({ open, onClose, user, onLogout }) {
       >
         <div className="flex items-center justify-between pb-6">
           <span className="flex items-center gap-2">
-            <Logo className="size-9 shrink-0 text-gold" />
+            <Logo className="size-10 sm:size-11 shrink-0 text-gold" />
             <span className="text-lg font-bold tracking-wide">
               CORE <span className="text-gold">V</span>
             </span>
           </span>
+          <ThemeToggle />
           <button
             ref={closeRef}
             type="button"

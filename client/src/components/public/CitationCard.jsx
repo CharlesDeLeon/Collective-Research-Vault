@@ -16,13 +16,13 @@ export default function CitationCard({ paper }) {
 
   return (
     <>
-      <div className="max-w-3xl rounded-[0.875rem] border border-white/15 bg-field/40 px-4 py-4 text-sm leading-[1.7] text-white/90">
+      <div className="max-w-3xl rounded-[0.875rem] border border-line-strong bg-surface-strong px-4 py-4 text-sm leading-[1.7] text-fg/90">
         {text}
       </div>
       <button
         type="button"
         onClick={copy}
-        className="mt-3 min-h-11 rounded-xl border-[0.094rem] border-gold bg-transparent px-5 text-[0.9375rem] font-medium text-gold hover:bg-gold/10"
+        className="mt-3 min-h-11 rounded-xl border-[0.094rem] border-link bg-transparent px-5 text-[0.9375rem] font-medium text-link hover:bg-link/10"
       >
         {copied ? 'Copied' : 'Copy citation'}
       </button>

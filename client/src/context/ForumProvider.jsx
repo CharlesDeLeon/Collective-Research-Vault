@@ -5,8 +5,6 @@ import { ForumContext } from './forumContext'
 import api from '../services/api'
 import AddPostModal from '../components/paper/AddPostModal'
 
-const newId = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
-
 const ROLE_DISPLAY = { student: 'Student', adviser: 'Adviser', external_panelist: 'Panelist', sysadmin: 'Admin', faculty: 'Adviser', coordinator: 'Adviser' }
 const displayRole = (r) => ROLE_DISPLAY[String(r || '').toLowerCase()] ?? r
 

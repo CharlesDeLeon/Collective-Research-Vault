@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Logo from '../Logo'
+import ThemeToggle from '../gallery/ThemeToggle'
 
 export default function PublicShell({ children, wide = false }) {
   return (
@@ -7,8 +8,9 @@ export default function PublicShell({ children, wide = false }) {
       <div className={`mx-auto px-4 pb-16 sm:px-8 ${wide ? 'max-w-5xl' : 'max-w-xl'}`}>
         <header className="flex items-center py-4 sm:py-6">
           <Link to="/" aria-label="CORE V home" className="flex text-gold">
-            <Logo className="size-10 sm:size-11" />
+            <Logo className="size-10 sm:size-11 text-gold" />
           </Link>
+          <ThemeToggle className="ml-auto" />
         </header>
         <main>{children}</main>
       </div>

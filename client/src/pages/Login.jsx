@@ -4,11 +4,13 @@ import useAuth from '../context/useAuth'
 import { useLoginShowcase } from '../hooks/useLoginShowcase'
 import Logo from '../components/Logo'
 import ShowcaseBelt from '../components/login/ShowcaseBelt'
+import { glass } from '../components/dashboard/constants'
+import ThemeToggle from '../components/gallery/ThemeToggle'
 
 const inputCls =
-  'w-full rounded-xl border border-white/25 bg-[#1f3586]/50 py-3 pl-12 text-sm text-white placeholder:text-indigo-100/50 transition focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/40'
-const iconCls = 'pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-indigo-100/70'
-const labelCls = 'mb-1.5 block text-sm font-medium text-indigo-50'
+  'w-full rounded-xl border border-white/15 bg-white/10 py-3 pl-12 text-sm text-white placeholder:text-white/50 transition focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/20'
+const iconCls = 'pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-white/60'
+const labelCls = 'mb-1.5 block text-sm font-medium text-white/80'
 const stroke = {
   fill: 'none',
   stroke: 'currentColor',
@@ -54,21 +56,20 @@ const Login = () => {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-[#243d9a] font-display text-white antialiased lg:flex-row">
-      <section className="relative h-72 w-full overflow-hidden bg-linear-to-br from-[#2c47a6] via-[#3a5cc0] to-[#4d77dc] lg:h-screen lg:w-[58%]">
-        <div className="absolute -left-24 -top-24 size-[28rem] rounded-full bg-sky-400/20 blur-3xl" />
+    <div className="flex min-h-screen w-full flex-col bg-navy-900 font-display text-white antialiased lg:flex-row">
+      <section className="relative h-72 w-full overflow-hidden bg-linear-to-br/srgb from-navy-900 to-navy-500 lg:h-screen lg:w-[58%]">
+        <div className="absolute -left-24 -top-24 size-[28rem] rounded-full bg-navy-500/30 blur-3xl" />
         <div className="belt-dots absolute inset-0 opacity-60" />
 
         <ShowcaseBelt cards={cards} />
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1/5 bg-linear-to-b from-[#2c47a6]/80 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-1/2 bg-linear-to-t from-[#1f3586] via-[#1f3586]/85 to-transparent lg:h-3/5" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 hidden w-40 bg-linear-to-r from-transparent to-[#243d9a]/60 lg:block" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1/5 bg-linear-to-b from-navy-900/80 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-1/2 bg-linear-to-t from-navy-900 via-navy-900/85 to-transparent lg:h-3/5" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 hidden w-40 bg-linear-to-r from-transparent to-navy-900/60 lg:block" />
 
-        <div className="absolute left-6 top-6 z-30 flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-xl border border-amber-400/60 bg-[#1f3586]/70 backdrop-blur">
-            <Logo className="size-6 text-amber-400" />
-          </div>
+        <div className="absolute inset-x-6 top-6 z-30 flex items-center justify-between">
+          <Logo className="size-10 sm:size-11 text-gold" />
+          <ThemeToggle />
         </div>
 
         <div className="absolute inset-x-6 bottom-6 z-30 max-w-md lg:bottom-10 lg:left-8">
@@ -77,10 +78,10 @@ const Login = () => {
           </p>
           <Link
             to="/gallery"
-            className="belt-pulse group mt-0 inline-flex items-center gap-4 rounded-full bg-white py-2 pl-6 pr-2 font-semibold text-[#1f3586] shadow-xl shadow-[#142058]/40 transition hover:-translate-y-0.5 hover:bg-indigo-50 focus:outline-none focus:ring-4 focus:ring-white/40 lg:mt-5"
+            className="belt-pulse group mt-0 inline-flex items-center gap-4 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft py-2 pl-6 pr-2 font-semibold text-ink shadow-lg shadow-amber-500/30 transition hover:-translate-y-0.5 hover:brightness-105 focus:outline-none focus:ring-4 focus:ring-gold/40 lg:mt-5"
           >
             Browse the gallery
-            <span className="flex size-10 items-center justify-center rounded-full bg-[#1f3586] text-white">
+            <span className="flex size-10 items-center justify-center rounded-full bg-navy-900 text-gold">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -95,25 +96,23 @@ const Login = () => {
               </svg>
             </span>
           </Link>
-          <p className="mb-0 ml-2 mt-3 text-sm text-indigo-50/90">Open to everyone. No login needed.</p>
+          <p className="mb-0 ml-2 mt-3 text-sm text-white/70">Open to everyone. No login needed.</p>
         </div>
       </section>
 
-      <section className="relative flex flex-1 items-center justify-center overflow-hidden bg-[#243d9a] p-6 sm:p-12 lg:border-l lg:border-white/20">
-        <div className="absolute -bottom-32 -right-24 size-96 rounded-full bg-amber-400/10 blur-3xl" />
-        <div className="absolute -left-24 -top-32 size-80 rounded-full bg-sky-300/20 blur-3xl" />
+      <section className="relative flex flex-1 items-center justify-center overflow-hidden bg-navy-900 p-6 sm:p-12 lg:border-l lg:border-white/10">
+        <div className="absolute -bottom-32 -right-24 size-96 rounded-full bg-gold/10 blur-3xl" />
+        <div className="absolute -left-24 -top-32 size-80 rounded-full bg-navy-500/30 blur-3xl" />
 
         <div className="relative w-full max-w-sm">
-          <div className="rounded-[1.75rem] bg-linear-to-br from-white/60 via-white/10 to-amber-300/60 p-px shadow-2xl shadow-[#142058]/50">
-            <div className="overflow-hidden rounded-[1.6875rem] bg-linear-to-b from-[#3a56b8] to-[#2a449f]">
+          <div className={`${glass} overflow-hidden`}>
+            <div>
               <div className="p-8">
                 <div className="flex items-center gap-4">
-                  <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-amber-300 to-amber-500 shadow-lg shadow-amber-500/30">
-                    <Logo className="size-8 text-[#16246b]" />
-                  </div>
+                  <Logo className="size-10 sm:size-11 shrink-0 text-gold" />
                   <div>
                     <h1 className="m-0 text-2xl font-bold leading-tight tracking-tight">Sign in</h1>
-                    <p className="mb-0 mt-0.5 text-sm text-indigo-100/85">Welcome to CORE-V.</p>
+                    <p className="mb-0 mt-0.5 text-sm text-white/70">Welcome to CORE-V.</p>
                   </div>
                 </div>
 
@@ -164,7 +163,7 @@ const Login = () => {
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
                         aria-pressed={showPassword}
                         onClick={() => setShowPassword((v) => !v)}
-                        className="absolute inset-y-0 right-0 px-4 text-indigo-100/70 hover:text-white focus:text-amber-300 focus:outline-none"
+                        className="absolute inset-y-0 right-0 px-4 text-white/60 hover:text-white focus:text-gold focus:outline-none"
                       >
                         <svg {...stroke} className="size-5">
                           <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
@@ -176,11 +175,11 @@ const Login = () => {
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
-                    <label className="flex cursor-not-allowed items-center gap-2 text-indigo-50 opacity-50">
-                      <input type="checkbox" disabled className="size-4 rounded accent-amber-400" />
+                    <label className="flex cursor-not-allowed items-center gap-2 text-white/80 opacity-50">
+                      <input type="checkbox" disabled className="size-4 rounded accent-gold" />
                       Remember me
                     </label>
-                    <span aria-disabled="true" className="cursor-not-allowed text-indigo-100 opacity-50">
+                    <span aria-disabled="true" className="cursor-not-allowed text-white/80 opacity-50">
                       Forgot password?
                     </span>
                   </div>
@@ -188,7 +187,7 @@ const Login = () => {
                   {error && (
                     <div
                       role="alert"
-                      className="rounded-lg border border-rose-300/30 bg-rose-500/20 px-3 py-2 text-[0.8125rem] text-rose-100"
+                      className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-[0.8125rem] text-rose-200"
                     >
                       {error}
                     </div>
@@ -197,7 +196,7 @@ const Login = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-linear-to-r from-amber-400 to-amber-200 py-3.5 font-semibold text-[#16246b] shadow-lg shadow-amber-500/30 transition hover:-translate-y-0.5 hover:brightness-105 focus:outline-none focus:ring-4 focus:ring-amber-300/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft py-3.5 font-semibold text-ink shadow-lg shadow-amber-500/30 transition hover:-translate-y-0.5 hover:brightness-105 focus:outline-none focus:ring-4 focus:ring-gold/40 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {loading ? 'Logging in...' : 'Log in'}
                     {!loading && (
@@ -218,7 +217,7 @@ const Login = () => {
                 </form>
               </div>
 
-              <div className="border-t border-white/15 bg-[#1f3586]/60 px-8 py-4 text-center text-sm text-indigo-100/85">
+              <div className="border-t border-white/10 bg-navy-900/40 px-8 py-4 text-center text-sm text-white/70">
                 No account yet? Your system administrator creates accounts. Contact them to get access.
               </div>
             </div>
