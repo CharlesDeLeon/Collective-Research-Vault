@@ -149,9 +149,9 @@ export default function PaperDetail() {
                   {paper.versions.map((v, i) => (
                     <li key={i} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
                       <span className="truncate text-sm">{v.fileName}</span>
-                      {v.fileName && (
+                      {v.filePath && (
                         <a
-                          href={getFileDownloadUrl(v.fileName ? `/uploads/${v.fileName}` : null)}
+                          href={getFileDownloadUrl(v.filePath)}
                           target="_blank"
                           rel="noreferrer"
                           className="shrink-0 text-xs font-semibold text-gold hover:underline"

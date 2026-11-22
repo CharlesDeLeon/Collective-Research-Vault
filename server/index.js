@@ -48,6 +48,7 @@ app.use('/api/coordinator/submissions', require('./routes/coordinatorSubmission.
 app.use('/api/coordinator/panel',       require('./routes/coordinatorSubmission.routes'))
 
 app.use('/api/auth', require('./routes/auth.routes'))
+app.use('/api/student', require('./routes/student.routes'))
 app.use('/api/faculty', require('./routes/faculty.routes'))
 app.use('/api/groups', require('./routes/group.routes'))
 app.use('/api/forum', require('./routes/forum.routes'))
