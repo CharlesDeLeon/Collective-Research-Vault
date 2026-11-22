@@ -30,6 +30,11 @@ export const backendSupport = {
   panelistScopedGroups: false,
   panelistPaperList: false,
   adviserExpiredCount: false,
+  adminDownloads: false,
+  adminActiveUsers: false,
+  adminReportStatuses: false,
+  adminAnnouncements: false,
+  adminSettings: false,
 }
 
 export const unsupportedNote = {
@@ -60,4 +65,11 @@ export const unsupportedNote = {
   panelistPaperList: 'Papers are listed from the posts in this group. A full list with files and review status is not available to panelists yet.',
   adviserExpiredCount: 'Expired requests are not counted by the server yet.',
   adminListTotals: 'Totals for this list are not available yet, so paging only shows whether there is a next page.',
+  adminDownloads: 'Download counts are not available to System Admins yet.',
+  adminActiveUsers: 'Sign-in activity is not recorded yet, so active users cannot be counted.',
+  adminReportStatuses: 'Statuses come from paper posts in the forum, so papers that were never posted are not counted. A report from the server will replace this.',
+  adminAnnouncements: 'Sending announcements is not available yet. You can write and preview one.',
+  adminAnnouncementHistory: 'Sent announcements are listed here once the server stores them.',
+  adminSettings: 'Settings cannot be saved yet. You can look around and edit, but nothing is stored.',
+  adminEmailStatus: 'Whether email is set up cannot be checked yet.',
 }
