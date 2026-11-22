@@ -365,7 +365,7 @@ export default function AdviserInbox() {
                       </button>
                     </div>
                     <p className="mb-0 mt-2 text-xs text-white/50">
-                      Share this link with the requester. It can be used once and expires in 72 hours. Email delivery is not yet configured.
+                      This link can be used once and expires in 72 hours. {generatedLink?.emailSent ? 'An email with the link has been sent to the requester.' : 'Share this link with the requester manually.'}
                     </p>
                   </div>
                 )}

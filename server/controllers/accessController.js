@@ -1,5 +1,6 @@
 const crypto = require('crypto')
 const { query } = require('../config/db')
+const { sendEmail } = require('../services/mailer')
 
 function sha256(s) { return crypto.createHash('sha256').update(s).digest('hex') }
 function newToken() { return crypto.randomBytes(32).toString('hex') }
@@ -81,7 +82,12 @@ const approveRequest = async (req, res) => {
     const { note } = req.body
     const userId = req.user.user_id
 
-    const [rows] = await query('SELECT * FROM paper_access_requests WHERE request_id = ?', [id])
+    const [rows] = await query(
+      `SELECT r.*, s.title AS paper_title FROM paper_access_requests r
+       JOIN submissions s ON s.submission_id = r.submission_id
+       WHERE r.request_id = ?`,
+      [id]
+    )
     if (!rows.length) return res.status(404).json({ message: 'Request not found' })
     const r = rows[0]
     if (r.status !== 'pending' && r.status !== 'verified') {
@@ -114,6 +120,24 @@ const approveRequest = async (req, res) => {
       [linkId, id, r.submission_id, req.ip || null, req.get('user-agent') || null]
     )
 
+    // Send email with the access link (console transport by default; configure SMTP/Brevo via env)
+    const accessUrl = `${process.env.APP_URL || 'http://localhost:5173'}/access/${token}`
+    const subject = `Your access request has been approved — CORE-V`
+    const text = [
+      `Hello ${r.name},`,
+      '',
+      `Your request to access "${r.paper_title || 'the paper'}" has been approved.`,
+      '',
+      `You can view the paper using this one-time link (valid for 72 hours):`,
+      accessUrl,
+      '',
+      `This link works once. After you open it, it cannot be used again. If you need access again, submit a new request.`,
+      '',
+      `— CORE-V Research Vault`,
+    ].join('\n')
+    // Fire-and-forget (don't block the response)
+    sendEmail({ to: r.email, subject, text }).catch(() => {})
+
     res.json({
       data: {
         requestId: r.request_id,
@@ -121,6 +145,7 @@ const approveRequest = async (req, res) => {
         token, // returned once; frontend should deliver via email or show
         expiresAt,
         status: 'approved',
+        emailSent: true,
       },
     })
   } catch (err) {
@@ -150,6 +175,20 @@ const declineRequest = async (req, res) => {
        VALUES (?, ?, 'access_declined', ?, ?)`,
       [id, rows[0].submission_id, req.ip || null, req.get('user-agent') || null]
     )
+
+    const r = rows[0]
+    const subject = `Your access request was declined — CORE-V`
+    const text = [
+      `Hello ${r.name},`,
+      '',
+      `Your request to access a paper has been declined.`,
+      note ? `Reason: ${note}` : '',
+      '',
+      `You can submit a new request at any time.`,
+      '',
+      `— CORE-V Research Vault`,
+    ].join('\n')
+    sendEmail({ to: r.email, subject, text }).catch(() => {})
 
     res.json({ message: 'Request declined', status: 'declined' })
   } catch (err) {
