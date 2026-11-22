@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import useToast from '../../context/useToast'
 import { glass, ROUTES } from '../../components/dashboard/constants'
 import { CheckIcon, CloseIcon, DocIcon, PlusIcon, SearchIcon } from '../../components/dashboard/icons'
 import StatusPill from '../../components/dashboard/StatusPill'
-import ResubmitModal from "../../components/paper/ResubmitModal";
+import ResubmitModal from '../../components/paper/ResubmitModal'
 import { getMyPapers, resubmitPaper } from '../../services/paperService'
 import { canEdit, canResubmit, normalizeStatus } from '../../utils/paperRules'
 import { timeAgo } from '../../utils/formatDate'
@@ -22,11 +23,42 @@ const GRID = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] ite
 const secondary =
   'inline-flex min-h-10 items-center justify-center rounded-lg border border-white/25 px-4 text-sm font-medium text-white/90 hover:bg-white/10'
 
+const CONSENT_STYLES = {
+  granted: 'border-emerald-400/40 bg-emerald-500/15 text-emerald-300',
+  declined: 'border-rose-400/40 bg-rose-500/15 text-rose-300',
+  pending: 'border-white/20 bg-white/5 text-white/60',
+}
+
+const CONSENT_LABELS = {
+  granted: 'Release granted',
+  declined: 'Release withdrawn',
+  pending: 'Release pending',
+}
+
+function ConsentPill({ consent }) {
+  const status = ['granted', 'declined', 'pending'].includes(consent?.status) ? consent.status : 'pending'
+  return (
+    <span className={`shrink-0 rounded-full border px-3 py-1 text-[0.625rem] font-bold uppercase tracking-wider ${CONSENT_STYLES[status]}`}>
+      {CONSENT_LABELS[status]}
+    </span>
+  )
+}
+
+function lockedText(status) {
+  const s = normalizeStatus(status)
+  if (s === 'approved' || s === 'published') return 'Locked — only your adviser can change it.'
+  return ''
+}
+
 function PaperRow({ paper, onResubmit }) {
+  const locked = lockedText(paper.status)
   return (
     <article className={`${glass} flex flex-col p-4 sm:p-5`}>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <StatusPill status={paper.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusPill status={paper.status} />
+          <ConsentPill consent={paper.consent} />
+        </div>
         <span className="text-xs text-white/50">Updated {timeAgo(paper.updatedAt)}</span>
       </div>
       <h3 className="mb-0 mt-4 wrap-break-word text-base font-semibold leading-snug sm:text-lg">{paper.title}</h3>
@@ -52,6 +84,7 @@ function PaperRow({ paper, onResubmit }) {
               Resubmit for Review
             </button>
           )}
+          {locked && <p className="m-0 w-full text-xs text-white/60">{locked}</p>}
         </div>
       </div>
     </article>
@@ -60,30 +93,32 @@ function PaperRow({ paper, onResubmit }) {
 
 export default function MyPapers() {
   const location = useLocation()
-  const [papers, setPapers] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const { toast } = useToast()
+  const [data, setData] = useState({ loaded: false, papers: [], error: false })
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
   const [notice, setNotice] = useState(location.state?.notice ?? '')
   const [resubmitting, setResubmitting] = useState(null)
+  const requestRef = useRef(0)
 
-  useEffect(() => {
-    let live = true
+  const loading = !data.loaded
+  const papers = data.papers
+  const error = data.error
+
+  const fetchPapers = useCallback(() => {
+    const id = ++requestRef.current
     getMyPapers()
       .then((rows) => {
-        if (live) setPapers(rows)
+        if (id === requestRef.current) setData({ loaded: true, papers: rows, error: false })
       })
       .catch(() => {
-        if (live) setError(true)
+        if (id === requestRef.current) setData({ loaded: true, papers: [], error: true })
       })
-      .finally(() => {
-        if (live) setLoading(false)
-      })
-    return () => {
-      live = false
-    }
   }, [])
+
+  useEffect(() => {
+    fetchPapers()
+  }, [fetchPapers])
 
   const counts = useMemo(() => {
     const out = { all: papers.length }
@@ -94,21 +129,26 @@ export default function MyPapers() {
     return out
   }, [papers])
 
+  const activeFilter = counts[filter] ? filter : 'all'
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     return papers.filter(
       (p) =>
-        (filter === 'all' || normalizeStatus(p.status) === filter) &&
-        (!q || p.title.toLowerCase().includes(q))
+        (activeFilter === 'all' || normalizeStatus(p.status) === activeFilter) &&
+        (!q || String(p.title ?? '').toLowerCase().includes(q))
     )
-  }, [papers, query, filter])
+  }, [papers, query, activeFilter])
 
   const confirmResubmit = async (paper) => {
-    const data = await resubmitPaper(paper.id)
-    const next = { ...paper, status: data.status ?? paper.status }
-    setPapers((list) => list.map((p) => (p.id === next.id ? next : p)))
+    const result = await resubmitPaper(paper.id)
+    const nextStatus = result?.status ?? result?.data?.status ?? paper.status
+    setData((d) => ({
+      ...d,
+      papers: d.papers.map((p) => (p.id === paper.id ? { ...p, status: nextStatus } : p)),
+    }))
     setResubmitting(null)
-    setNotice('Sent to your adviser for review.')
+    toast('Sent to your adviser for review.')
   }
 
   return (
@@ -161,10 +201,10 @@ export default function MyPapers() {
             <button
               key={f.key}
               type="button"
-              aria-pressed={filter === f.key}
+              aria-pressed={activeFilter === f.key}
               onClick={() => setFilter(f.key)}
               className={`inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm font-medium ${
-                filter === f.key
+                activeFilter === f.key
                   ? 'border-gold bg-gold/10 text-gold'
                   : 'border-white/20 text-white/75 hover:bg-white/5'
               }`}
@@ -177,9 +217,16 @@ export default function MyPapers() {
       </div>
 
       {error ? (
-        <p role="alert" className="m-0 text-sm text-danger-ink">
-          Could not load your papers. Refresh the page to try again.
-        </p>
+        <div role="alert" className="rounded-2xl border border-danger/40 bg-danger/10 p-6">
+          <p className="m-0 text-sm text-danger-ink">Could not load your papers.</p>
+          <button
+            type="button"
+            onClick={fetchPapers}
+            className={`${secondary} mt-4 border-danger/50 text-danger-ink hover:bg-danger/10`}
+          >
+            Retry
+          </button>
+        </div>
       ) : loading ? (
         <div className={GRID}>
           {[0, 1, 2].map((i) => (
