@@ -36,7 +36,7 @@ export function normalizePaperDetail(d) {
     title: d.title,
     status: d.status,
     abstract: d.abstract,
-    keywords: d.keywords,
+    keywords: d.keywords ? String(d.keywords).split(/[,;]/).map((s) => s.trim()).filter(Boolean) : [],
     program: d.program,
     strand: d.strand || d.program,
     section: d.section,
@@ -48,6 +48,7 @@ export function normalizePaperDetail(d) {
     versions: (d.versions ?? []).map((v) => ({
       number: v.version_number,
       fileName: v.file_name,
+      filePath: v.file_path,
       uploadedAt: v.uploaded_at,
     })),
     notes: (d.reviews ?? []).flatMap((r) =>
