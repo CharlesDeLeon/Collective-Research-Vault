@@ -1,42 +1,158 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
-import api from '../../services/api'
+import { useParams, useNavigate } from 'react-router-dom'
+import {
+  getSubmission,
+  setSubmissionStage,
+  setSubmissionStatus,
+  addFeedbackComment,
+  uploadSubmissionFile,
+  publishSubmission,
+  unpublishSubmission,
+} from '../../services/adviserService'
+import { backendSupport, unsupportedNote } from '../../services/backendSupport'
+import useToast from '../../context/useToast'
 import { glass } from '../../components/dashboard/constants'
-import { DocIcon, CheckIcon, CloseIcon } from '../../components/dashboard/icons'
+import { CheckIcon, DocIcon, AlertIcon } from '../../components/dashboard/icons'
 import StatusPill from '../../components/dashboard/StatusPill'
-import { normalizeStatus } from '../../utils/paperRules'
+import ModalShell from '../../components/ui/ModalShell'
+import Select, { Option } from '../../components/ui/Select'
 import { getFileDownloadUrl } from '../../utils/helpers'
+import { submissionCitation } from '../../utils/submissionCitation'
+import { copyText } from '../../utils/clipboard'
+import { fullDate, timeAgo } from '../../utils/formatDate'
 
 const STAGE_LABELS = { proposal: 'Proposal', defense: 'Defense', final_submission: 'Final Submission' }
-const STATUS_COLORS = {
-  submitted: 'bg-sky-500/20 text-sky-300',
-  under_review: 'bg-violet-500/20 text-violet-300',
-  needs_revision: 'bg-amber-500/20 text-amber-300',
-  approved: 'bg-emerald-500/20 text-emerald-300',
-  rejected: 'bg-rose-500/20 text-rose-300',
-  published: 'bg-emerald-500/20 text-emerald-300',
+
+const STATUS_CHOICES = [
+  { value: 'under_review', label: 'Under Review' },
+  { value: 'needs_revision', label: 'For Revision' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+]
+
+const fieldCls =
+  'w-full rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none placeholder:text-white/40 focus:border-gold/50 disabled:cursor-not-allowed disabled:opacity-50'
+
+const goldBtn =
+  'h-11 w-full rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft text-sm font-semibold text-ink transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60'
+
+function Note({ children }) {
+  return <p className="m-0 text-xs text-white/60">{children}</p>
+}
+
+function UnpublishModal({ title, busy, error, onConfirm, onClose }) {
+  const [reason, setReason] = useState('')
+  const ready = reason.trim().length > 0
+  return (
+    <ModalShell title="Unpublish paper" icon={AlertIcon} onClose={onClose}>
+      <p className="mt-4 px-1 text-sm leading-relaxed text-white/75">
+        <span className="font-medium text-white">{title}</span> will be removed from the public gallery. Tell the group
+        why, so they know what to fix.
+      </p>
+      <label className="mt-4 block px-1">
+        <span className="text-xs font-semibold text-white/70">Reason</span>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={3}
+          className={`${fieldCls} mt-1 py-3`}
+          placeholder="Why is this paper being unpublished?"
+        />
+      </label>
+      {error && (
+        <p role="alert" className="mb-0 mt-3 px-1 text-xs text-danger-ink">
+          {error}
+        </p>
+      )}
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={onClose}
+          className="h-11 rounded-xl border border-white/20 text-sm font-semibold text-white/80 transition hover:bg-white/10"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          disabled={!ready || busy}
+          onClick={() => onConfirm(reason.trim())}
+          className="h-11 rounded-xl border border-danger bg-danger/20 text-sm font-semibold text-danger-ink transition enabled:hover:bg-danger/30 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {busy ? 'Unpublishing…' : 'Unpublish'}
+        </button>
+      </div>
+    </ModalShell>
+  )
+}
+
+function PublishModal({ paper, citation, consentAt, busy, error, onConfirm, onClose }) {
+  return (
+    <ModalShell title="Publish to gallery" icon={DocIcon} onClose={onClose}>
+      <p className="mt-4 px-1 text-sm leading-relaxed text-white/75">
+        This is what the public will see. The full paper stays behind the access-request flow.
+      </p>
+      <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+        <p className="m-0 text-base font-semibold leading-snug">{paper.title}</p>
+        <p className="m-0 line-clamp-4 text-sm text-white/70">{paper.abstract || 'No abstract provided.'}</p>
+        <p className="m-0 text-xs text-white/60">
+          {[paper.authors, paper.strand || paper.program, paper.school_year].filter(Boolean).join(' · ')}
+        </p>
+        <div>
+          <p className="m-0 text-xs font-semibold uppercase tracking-wide text-white/50">Citation (APA 7)</p>
+          <p className="m-0 mt-1 text-sm text-white/80">{citation}</p>
+        </div>
+        <p className="m-0 text-xs text-white/60">
+          Author consent recorded {consentAt ? fullDate(consentAt) : 'now, when you confirm'}.
+        </p>
+      </div>
+      {error && (
+        <p role="alert" className="mb-0 mt-3 px-1 text-xs text-danger-ink">
+          {error}
+        </p>
+      )}
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={onClose}
+          className="h-11 rounded-xl border border-white/20 text-sm font-semibold text-white/80 transition hover:bg-white/10"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onConfirm}
+          className="h-11 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft text-sm font-semibold text-ink transition hover:brightness-105 disabled:opacity-60"
+        >
+          {busy ? 'Publishing…' : 'Confirm publish'}
+        </button>
+      </div>
+    </ModalShell>
+  )
 }
 
 export default function AdviserReview() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [paper, setPaper] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [newStage, setNewStage] = useState('')
   const [newStatus, setNewStatus] = useState('')
+  const [statusNote, setStatusNote] = useState('')
   const [updating, setUpdating] = useState(false)
   const [updateError, setUpdateError] = useState(null)
-  const [abstractEdit, setAbstractEdit] = useState('')
-  const [editingAbstract, setEditingAbstract] = useState(false)
-  const [consent, setConsent] = useState(false)
+  const [consentConfirmed, setConsentConfirmed] = useState(false)
   const [citation, setCitation] = useState('')
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [publishError, setPublishError] = useState(null)
-  const [showPublishModal, setShowPublishModal] = useState(false)
-  const [comments, setComments] = useState([])
+  const [showPublish, setShowPublish] = useState(false)
+  const [showUnpublish, setShowUnpublish] = useState(false)
+  const [unpublishing, setUnpublishing] = useState(false)
+  const [unpublishError, setUnpublishError] = useState(null)
   const [commentText, setCommentText] = useState('')
   const [commenting, setCommenting] = useState(false)
 
@@ -44,19 +160,15 @@ export default function AdviserReview() {
     setLoading(true)
     setError(null)
     try {
-      const res = await api.get(`/coordinator/submissions/${id}`)
-      const d = res.data.data
+      const d = await getSubmission(id)
       setPaper(d)
       setNewStage(d.stage)
-      setNewStatus(d.status)
-      setAbstractEdit(d.abstract || '')
-      setConsent(!!d.author_consent_at)
+      setNewStatus(d.status === 'published' ? 'approved' : d.status === 'submitted' ? 'under_review' : d.status)
+      setConsentConfirmed(!!d.author_consent_at)
       setCitation(d.citation || '')
-      // fetch comments
-      const cRes = await api.get(`/faculty/submissions/${id}/comments`).catch(() => ({ data: [] }))
-      setComments(Array.isArray(cRes.data?.data) ? cRes.data.data : Array.isArray(cRes.data) ? cRes.data : [])
     } catch (e) {
-      setError('Failed to load submission')
+      console.error(e)
+      setError('Failed to load this paper.')
     } finally {
       setLoading(false)
     }
@@ -64,41 +176,41 @@ export default function AdviserReview() {
 
   useEffect(() => { fetchPaper() }, [fetchPaper])
 
+  const files = paper?.versions ?? paper?.files ?? []
+  const consentAt = paper?.author_consent_at ?? null
+  const isPublished = paper?.status === 'published'
+  const generatedCitation = paper ? submissionCitation(paper) : ''
+  const finalCitation = citation.trim() || generatedCitation
+
+  const consentOk = consentAt ? true : consentConfirmed
+  const checklist = paper
+    ? [
+        { label: 'Status is Approved', ok: paper.status === 'approved' || isPublished },
+        { label: 'At least one paper file uploaded', ok: files.length > 0 },
+        { label: 'Citation ready', ok: Boolean(finalCitation) },
+        { label: 'Author consent granted', ok: consentOk },
+      ]
+    : []
+  const blockers = checklist.filter((c) => !c.ok).map((c) => c.label)
+  const canPublish = blockers.length === 0 && !isPublished
+
+  const currentStatus = paper ? (paper.status === 'submitted' ? 'under_review' : paper.status === 'published' ? 'approved' : paper.status) : ''
+  const statusChanged = paper && (newStage !== paper.stage || newStatus !== currentStatus)
+
   const handleUpdateStatus = async () => {
     if (!paper) return
     setUpdating(true)
     setUpdateError(null)
     try {
-      if (newStage !== paper.stage) {
-        await api.patch(`/coordinator/submissions/${paper.submission_id}/stage`, { stage: newStage })
-      }
-      if (newStatus !== paper.status) {
-        await api.patch(`/coordinator/submissions/${paper.submission_id}/status`, { status: newStatus })
-      }
+      if (newStage !== paper.stage) await setSubmissionStage(paper.submission_id, newStage)
+      if (newStatus !== currentStatus) await setSubmissionStatus(paper.submission_id, newStatus)
+      toast('Status updated.')
+      setStatusNote('')
       fetchPaper()
     } catch (e) {
-      setUpdateError(e.response?.data?.message || 'Failed to update')
+      setUpdateError(e.response?.data?.message || 'Failed to update the status.')
     } finally {
       setUpdating(false)
-    }
-  }
-
-  const handleSaveAbstract = async () => {
-    try {
-      await api.patch(`/papers/${paper.submission_id}`, { abstract: abstractEdit })
-      setEditingAbstract(false)
-      fetchPaper()
-    } catch (e) {
-      setUpdateError(e.response?.data?.message || 'Failed to save abstract')
-    }
-  }
-
-  const handleConsent = async (granted) => {
-    try {
-      await api.post(`/coordinator/submissions/${paper.submission_id}/consent`, { granted })
-      setConsent(granted)
-    } catch (e) {
-      setUpdateError(e.response?.data?.message || 'Failed to update consent')
     }
   }
 
@@ -107,13 +219,12 @@ export default function AdviserReview() {
     setUploading(true)
     setUpdateError(null)
     try {
-      const body = new FormData()
-      body.append('file', file)
-      await api.post(`/coordinator/submissions/${paper.submission_id}/files`, body)
+      await uploadSubmissionFile(paper.submission_id, file)
       setFile(null)
+      toast('File uploaded.')
       fetchPaper()
     } catch (e) {
-      setUpdateError(e.response?.data?.message || 'Failed to upload file')
+      setUpdateError(e.response?.data?.message || 'Failed to upload the file.')
     } finally {
       setUploading(false)
     }
@@ -123,26 +234,29 @@ export default function AdviserReview() {
     setPublishing(true)
     setPublishError(null)
     try {
-      await api.post(`/coordinator/submissions/${paper.submission_id}/publish`, {
-        citation: citation || null,
-        consentGranted: consent,
-      })
-      setShowPublishModal(false)
+      await publishSubmission(paper.submission_id, { citation: finalCitation, consentGranted: consentOk })
+      setShowPublish(false)
+      toast('Published to the gallery.')
       fetchPaper()
     } catch (e) {
-      setPublishError(e.response?.data?.message || 'Failed to publish')
+      setPublishError(e.response?.data?.message || 'Failed to publish.')
     } finally {
       setPublishing(false)
     }
   }
 
-  const handleUnpublish = async () => {
-    if (!window.confirm('Unpublish this paper from the gallery?')) return
+  const handleUnpublish = async (reason) => {
+    setUnpublishing(true)
+    setUnpublishError(null)
     try {
-      await api.post(`/coordinator/submissions/${paper.submission_id}/unpublish`, { reason: 'Adviser unpublish' })
+      await unpublishSubmission(paper.submission_id, reason)
+      setShowUnpublish(false)
+      toast('Removed from the gallery.')
       fetchPaper()
     } catch (e) {
-      setUpdateError(e.response?.data?.message || 'Failed to unpublish')
+      setUnpublishError(e.response?.data?.message || 'Failed to unpublish.')
+    } finally {
+      setUnpublishing(false)
     }
   }
 
@@ -151,25 +265,20 @@ export default function AdviserReview() {
     if (!commentText.trim()) return
     setCommenting(true)
     try {
-      await api.post(`/faculty/submissions/${paper.submission_id}/comment`, { comment_text: commentText.trim() })
+      await addFeedbackComment(paper.submission_id, commentText.trim())
       setCommentText('')
       fetchPaper()
-    } catch (e) {
-      setUpdateError(e.response?.data?.message || 'Failed to add comment')
+    } catch (err) {
+      setUpdateError(err.response?.data?.message || 'Failed to add the comment.')
     } finally {
       setCommenting(false)
     }
   }
 
-  const files = paper?.versions ?? paper?.files ?? []
-
-  const checklist = paper ? [
-    { label: 'Status is Approved', ok: paper.status === 'approved' || paper.status === 'published' },
-    { label: 'At least one file uploaded', ok: files.length > 0 },
-    { label: 'Author consent granted', ok: consent },
-  ] : []
-
-  const canPublish = checklist.every((c) => c.ok)
+  const copyCitation = async () => {
+    const ok = await copyText(finalCitation)
+    toast(ok ? 'Citation copied.' : 'Could not copy the citation.', ok ? 'success' : 'error')
+  }
 
   if (loading) {
     return <div className="p-8 text-center text-sm text-white/60">Loading…</div>
@@ -177,8 +286,8 @@ export default function AdviserReview() {
   if (error || !paper) {
     return (
       <div className="space-y-4">
-        <button type="button" onClick={() => navigate('/adviser/submissions')} className="text-sm text-white/60 hover:text-white">
-          ‹ Back to submissions
+        <button type="button" onClick={() => navigate('/adviser/reviews')} className="text-sm text-white/60 hover:text-white">
+          ‹ Back to reviews
         </button>
         <div role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-6">
           <p className="m-0 text-sm text-rose-200">{error || 'Submission not found.'}</p>
@@ -189,18 +298,23 @@ export default function AdviserReview() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <button type="button" onClick={() => navigate('/adviser/submissions')} className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white">
-        ‹ Back to submissions
-      </button>
+      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-sm text-white/60">
+        <button type="button" onClick={() => navigate('/adviser/reviews')} className="hover:text-white">
+          Reviews
+        </button>
+        <span aria-hidden="true">›</span>
+        <span className="min-w-0 truncate text-white/80">{paper.title}</span>
+      </nav>
 
       <header>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{paper.title}</h1>
-          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_COLORS[paper.status] || 'bg-white/10 text-white/60'}`}>
-            {String(paper.status).replace(/_/g, ' ')}
-          </span>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="m-0 min-w-0 wrap-break-word text-2xl font-bold tracking-tight sm:text-3xl">{paper.title}</h1>
+          <StatusPill status={paper.status} />
         </div>
-        <p className="text-sm text-white/60 mt-1">{paper.group_name} · {paper.program} · {paper.school_year}</p>
+        <p className="mb-0 mt-1 text-sm text-white/60">
+          {[paper.submitted_by_name, paper.group_name, paper.program, paper.school_year].filter(Boolean).join(' · ')}
+          {paper.updated_at && ` · Updated ${timeAgo(paper.updated_at)}`}
+        </p>
       </header>
 
       {updateError && (
@@ -210,38 +324,17 @@ export default function AdviserReview() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Left: content */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <div className={`${glass} p-5 sm:p-6`}>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-bold">Abstract</h2>
-              {!editingAbstract ? (
-                <button type="button" onClick={() => setEditingAbstract(true)} className="text-xs font-semibold text-gold hover:underline">
-                  Edit
-                </button>
-              ) : (
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setEditingAbstract(false)} className="text-xs text-white/60 hover:text-white">Cancel</button>
-                  <button type="button" onClick={handleSaveAbstract} className="text-xs font-semibold text-gold hover:underline">Save</button>
-                </div>
-              )}
-            </div>
-            {editingAbstract ? (
-              <textarea
-                value={abstractEdit}
-                onChange={(e) => setAbstractEdit(e.target.value)}
-                rows={6}
-                className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-gold/50"
-              />
-            ) : (
-              <p className="m-0 whitespace-pre-line text-sm leading-relaxed text-white/90">
-                {paper.abstract || 'No abstract provided.'}
-              </p>
-            )}
+            <h2 className="mb-3 mt-0 text-lg font-bold">Abstract</h2>
+            <p className="m-0 whitespace-pre-line text-sm leading-relaxed text-white/90">
+              {paper.abstract || 'No abstract provided.'}
+            </p>
+            {!backendSupport.adviserAbstractEdit && <p className="mb-0 mt-3 text-xs text-white/50">{unsupportedNote.adviserAbstractEdit}</p>}
             {paper.keywords && (
               <div className="mt-4 flex flex-wrap gap-2 border-t border-white/10 pt-4">
                 {(Array.isArray(paper.keywords) ? paper.keywords : String(paper.keywords).split(/[,;]/)).map((k, i) => (
-                  <span key={i} className="rounded-full border border-gold/60 px-3 py-1 text-xs text-[#FFD27F]">
+                  <span key={i} className="rounded-full border border-gold/60 px-3 py-1 text-xs text-gold-light">
                     {k.trim()}
                   </span>
                 ))}
@@ -250,39 +343,45 @@ export default function AdviserReview() {
           </div>
 
           <div className={`${glass} p-5 sm:p-6`}>
-            <h2 className="mb-3 text-lg font-bold">Metadata</h2>
-            <dl className="space-y-2 text-sm">
-              <div className="flex justify-between gap-2"><dt className="text-white/50">Authors</dt><dd className="text-right">{paper.authors || '—'}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-white/50">Program</dt><dd className="text-right">{paper.program || '—'}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-white/50">School year</dt><dd className="text-right">{paper.school_year || '—'}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-white/50">Stage</dt><dd className="text-right">{STAGE_LABELS[paper.stage] || paper.stage}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-white/50">Submitted by</dt><dd className="text-right">{paper.submitted_by_name || '—'}</dd></div>
+            <h2 className="mb-3 mt-0 text-lg font-bold">Details</h2>
+            <dl className="m-0 space-y-2 text-sm">
+              {[
+                ['Authors', paper.authors],
+                ['Group', paper.group_name],
+                ['Program', paper.program],
+                ['School year', paper.school_year],
+                ['Stage', STAGE_LABELS[paper.stage] || paper.stage],
+                ['Submitted by', paper.submitted_by_name],
+              ].map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-4">
+                  <dt className="shrink-0 text-white/50">{k}</dt>
+                  <dd className="m-0 min-w-0 wrap-break-word text-right">{v || '—'}</dd>
+                </div>
+              ))}
             </dl>
           </div>
 
-          {/* Comments */}
           <div className={`${glass} p-5 sm:p-6`}>
-            <h2 className="mb-3 text-lg font-bold">Feedback comments</h2>
-            <ul className="space-y-3">
+            <h2 className="mb-3 mt-0 text-lg font-bold">Discussion</h2>
+            <ul className="m-0 list-none space-y-3 p-0">
               {(paper.comments || []).map((c) => (
                 <li key={c.comment_id || c.id} className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold">{c.author_name || c.authorName}</span>
-                    <span className="text-[0.65rem] text-white/40">{c.created_at ? new Date(c.created_at).toLocaleString() : ''}</span>
+                    <span className="text-[0.6875rem] text-white/50">{c.created_at ? timeAgo(c.created_at) : ''}</span>
                   </div>
                   <p className="mb-0 mt-1 text-sm text-white/80">{c.comment_text || c.text}</p>
                 </li>
               ))}
-              {!paper.comments?.length && (
-                <li className="text-sm text-white/50">No comments yet.</li>
-              )}
+              {!paper.comments?.length && <li className="text-sm text-white/50">No comments yet.</li>}
             </ul>
             <form onSubmit={handleComment} className="mt-4 flex gap-2">
               <input
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Add feedback…"
-                className="h-11 flex-1 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
+                aria-label="Add feedback"
+                className={`${fieldCls} h-11 flex-1`}
               />
               <button
                 type="submit"
@@ -293,57 +392,63 @@ export default function AdviserReview() {
               </button>
             </form>
           </div>
+
+          <div className={`${glass} p-5 sm:p-6`}>
+            <h2 className="mb-3 mt-0 text-lg font-bold">Status history</h2>
+            {!backendSupport.statusHistory ? (
+              <Note>{unsupportedNote.statusHistory}</Note>
+            ) : null}
+          </div>
         </div>
 
-        {/* Right: adviser actions */}
-        <aside className="min-w-0 space-y-6">
-          <div className={`${glass} p-5 sm:p-6`}>
-            <h2 className="mb-3 text-lg font-bold">Adviser actions</h2>
-            <div className="space-y-3">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold text-white/70">Stage</span>
-                <select
-                  value={newStage}
-                  onChange={(e) => setNewStage(e.target.value)}
-                  className="h-11 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
-                >
-                  <option value="proposal">Proposal</option>
-                  <option value="defense">Defense</option>
-                  <option value="final_submission">Final Submission</option>
-                </select>
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold text-white/70">Status</span>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  className="h-11 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
-                >
-                  <option value="submitted">Submitted</option>
-                  <option value="under_review">Under Review</option>
-                  <option value="needs_revision">Needs Revision</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="published">Published</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                onClick={handleUpdateStatus}
-                disabled={updating || (newStage === paper.stage && newStatus === paper.status)}
-                className="h-11 w-full rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft text-sm font-semibold text-ink transition hover:brightness-105 disabled:opacity-60"
+        <aside className="min-w-0 space-y-6 lg:sticky lg:top-6 lg:self-start">
+          <div className={`${glass} space-y-3 p-5 sm:p-6`}>
+            <h2 className="m-0 text-lg font-bold">Review</h2>
+            <label className="block">
+              <span className="text-xs font-semibold text-white/70">Stage</span>
+              <Select value={newStage} onChange={(e) => setNewStage(e.target.value)} className="border-white/15">
+                <Option value="proposal">Proposal</Option>
+                <Option value="defense">Defense</Option>
+                <Option value="final_submission">Final Submission</Option>
+              </Select>
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold text-white/70">Status</span>
+              <Select
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
+                disabled={isPublished}
+                className="border-white/15 disabled:opacity-50"
               >
-                {updating ? 'Updating…' : 'Update stage & status'}
-              </button>
-            </div>
+                {STATUS_CHOICES.map((c) => (
+                  <Option key={c.value} value={c.value}>{c.label}</Option>
+                ))}
+              </Select>
+            </label>
+            {isPublished && <Note>Unpublish this paper before changing its status.</Note>}
+            <label className="block">
+              <span className="text-xs font-semibold text-white/70">Note for the group</span>
+              <textarea
+                value={statusNote}
+                onChange={(e) => setStatusNote(e.target.value)}
+                rows={2}
+                disabled={!backendSupport.statusNote}
+                placeholder="Optional note with this status change"
+                className={`${fieldCls} mt-1 py-3`}
+              />
+            </label>
+            {!backendSupport.statusNote && <Note>{unsupportedNote.statusNote}</Note>}
+            <button type="button" onClick={handleUpdateStatus} disabled={updating || !statusChanged || isPublished} className={goldBtn}>
+              {updating ? 'Updating…' : 'Update stage & status'}
+            </button>
           </div>
 
           <div className={`${glass} p-5 sm:p-6`}>
-            <h2 className="mb-3 text-lg font-bold">Files</h2>
-            <ul className="space-y-2">
-              {(paper.versions || paper.files || []).map((v, i) => (
+            <h2 className="mb-3 mt-0 text-lg font-bold">Paper files</h2>
+            <ul className="m-0 list-none space-y-2 p-0">
+              {files.map((v, i) => (
                 <li key={i} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm">
-                  <span className="truncate">{v.file_name || v.fileName}</span>
+                  <span className="min-w-0 truncate">{v.file_name || v.fileName}</span>
                   {(v.file_name || v.fileName) && (
                     <a
                       href={getFileDownloadUrl(v.file_path || v.filePath || v.file_name)}
@@ -356,13 +461,13 @@ export default function AdviserReview() {
                   )}
                 </li>
               ))}
-              {!(paper.versions || paper.files)?.length && (
-                <li className="text-sm text-white/50">No files uploaded yet.</li>
-              )}
+              {!files.length && <li className="text-sm text-white/50">No files uploaded yet.</li>}
             </ul>
             <div className="mt-3 flex gap-2">
               <input
                 type="file"
+                accept=".pdf,.doc,.docx"
+                aria-label="Choose a paper file"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 className="min-w-0 flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-white"
               />
@@ -375,58 +480,92 @@ export default function AdviserReview() {
                 {uploading ? '…' : 'Upload'}
               </button>
             </div>
-            {file && <p className="mb-0 mt-1 text-xs text-white/60">Selected: {file.name}</p>}
+            {!backendSupport.finalAndDefendedFiles && <p className="mb-0 mt-2 text-xs text-white/50">{unsupportedNote.finalAndDefendedFiles}</p>}
           </div>
 
-          <div className={`${glass} p-5 sm:p-6`}>
-            <h2 className="mb-3 text-lg font-bold">Publish to gallery</h2>
-            <ul className="space-y-2 text-sm">
-              {checklist.map((c, i) => (
-                <li key={i} className="flex items-center gap-2">
-                  <span className={c.ok ? 'text-emerald-300' : 'text-white/30'}>{c.ok ? '✓' : '○'}</span>
+          <div className={`${glass} space-y-3 p-5 sm:p-6`}>
+            <h2 className="m-0 text-lg font-bold">Publish to gallery</h2>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-white/70">Author consent</span>
+              <span
+                className={`rounded-full border px-3 py-1 text-[0.625rem] font-bold uppercase tracking-wider ${
+                  consentAt
+                    ? 'border-emerald-400/30 bg-emerald-500/20 text-emerald-300'
+                    : 'border-amber-400/30 bg-amber-500/20 text-amber-300'
+                }`}
+              >
+                {consentAt ? `Granted ${fullDate(consentAt)}` : 'Pending'}
+              </span>
+            </div>
+
+            {!consentAt && !backendSupport.studentConsent && (
+              <>
+                <label className="flex items-start gap-2 text-sm text-white/80">
+                  <input
+                    type="checkbox"
+                    checked={consentConfirmed}
+                    onChange={(e) => setConsentConfirmed(e.target.checked)}
+                    disabled={isPublished}
+                    className="mt-0.5 size-4 shrink-0 accent-gold"
+                  />
+                  <span>I confirm the authors agreed to public release of the title, abstract and citation.</span>
+                </label>
+                <Note>{unsupportedNote.studentConsent}</Note>
+              </>
+            )}
+            {!backendSupport.requestConsent && (
+              <button
+                type="button"
+                disabled
+                className="h-10 w-full cursor-not-allowed rounded-xl border border-white/15 text-xs font-semibold text-white/50"
+              >
+                Request consent from the author
+              </button>
+            )}
+
+            <ul className="m-0 list-none space-y-2 p-0 text-sm">
+              {checklist.map((c) => (
+                <li key={c.label} className="flex items-center gap-2">
+                  {c.ok ? <CheckIcon className="size-4 text-emerald-300" /> : <span className="grid size-4 place-items-center text-white/30">○</span>}
                   <span className={c.ok ? 'text-white/80' : 'text-white/50'}>{c.label}</span>
                 </li>
               ))}
             </ul>
 
-            <label className="mt-3 flex items-center gap-2 text-sm text-white/70">
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => handleConsent(e.target.checked)}
-                className="size-4 accent-gold"
-              />
-              Author consent granted
-            </label>
-
-            <label className="mt-3 flex flex-col gap-1">
-              <span className="text-xs font-semibold text-white/70">Citation (APA 7, optional)</span>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold text-white/70">Citation (APA 7)</span>
               <textarea
                 value={citation}
                 onChange={(e) => setCitation(e.target.value)}
-                rows={2}
-                className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-gold/50"
-                placeholder="Auto-generated if left empty"
+                rows={3}
+                disabled={isPublished}
+                className={`${fieldCls} py-3 text-xs`}
+                placeholder={generatedCitation}
               />
             </label>
+            <div className="flex items-start justify-between gap-3">
+              <p className="m-0 min-w-0 wrap-break-word text-xs text-white/60">
+                {citation.trim() ? 'Using your citation.' : 'Using the generated citation above if you leave this empty.'}
+              </p>
+              <button type="button" onClick={copyCitation} className="shrink-0 text-xs font-semibold text-gold hover:underline">
+                Copy
+              </button>
+            </div>
 
-            {publishError && (
-              <p className="mt-2 text-xs text-rose-200">{publishError}</p>
+            {!canPublish && !isPublished && blockers.length > 0 && (
+              <Note>Publishing is blocked until: {blockers.join(', ').toLowerCase()}.</Note>
             )}
+            {publishError && !showPublish && <p className="m-0 text-xs text-danger-ink">{publishError}</p>}
 
-            <button
-              type="button"
-              onClick={() => setShowPublishModal(true)}
-              disabled={!canPublish || paper.status === 'published'}
-              className="mt-3 h-11 w-full rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft text-sm font-semibold text-ink transition hover:brightness-105 disabled:opacity-60"
-            >
-              {paper.status === 'published' ? 'Published' : 'Publish to Gallery'}
+            <button type="button" onClick={() => { setPublishError(null); setShowPublish(true) }} disabled={!canPublish} className={goldBtn}>
+              {isPublished ? 'Published' : 'Publish to Gallery'}
             </button>
-            {paper.status === 'published' && (
+            {isPublished && (
               <button
                 type="button"
-                onClick={handleUnpublish}
-                className="mt-2 h-10 w-full rounded-xl border border-white/15 text-xs font-semibold text-white/60 transition hover:text-white"
+                onClick={() => { setUnpublishError(null); setShowUnpublish(true) }}
+                className="h-10 w-full rounded-xl border border-white/15 text-xs font-semibold text-white/70 transition hover:text-white"
               >
                 Unpublish
               </button>
@@ -435,36 +574,25 @@ export default function AdviserReview() {
         </aside>
       </div>
 
-      {showPublishModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className={`${glass} w-full max-w-md p-6`}>
-            <h2 className="mb-4 text-xl font-bold">Publish to gallery?</h2>
-            <p className="text-sm text-white/70">
-              This will make <span className="font-medium text-white">{paper.title}</span> visible in the public gallery
-              with its title, abstract, and citation. The full paper stays behind the access-request flow.
-            </p>
-            <div className="mt-4 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowPublishModal(false)}
-                className="h-10 rounded-xl border border-white/15 px-4 text-sm font-semibold text-white/70 transition hover:text-white"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handlePublish}
-                disabled={publishing}
-                className="h-10 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft px-5 text-sm font-semibold text-ink transition hover:brightness-105 disabled:opacity-60"
-              >
-                {publishing ? 'Publishing…' : 'Confirm publish'}
-              </button>
-            </div>
-            {publishError && (
-              <p className="mt-3 text-xs text-rose-200">{publishError}</p>
-            )}
-          </div>
-        </div>
+      {showPublish && (
+        <PublishModal
+          paper={paper}
+          citation={finalCitation}
+          consentAt={consentAt}
+          busy={publishing}
+          error={publishError}
+          onConfirm={handlePublish}
+          onClose={() => setShowPublish(false)}
+        />
+      )}
+      {showUnpublish && (
+        <UnpublishModal
+          title={paper.title}
+          busy={unpublishing}
+          error={unpublishError}
+          onConfirm={handleUnpublish}
+          onClose={() => setShowUnpublish(false)}
+        />
       )}
     </div>
   )

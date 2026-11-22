@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
 import { ROUTES } from '../dashboard/constants'
 
-export default function ProfileTrigger({ className, children }) {
+export default function ProfileTrigger({ to = ROUTES.profile, className, children }) {
   return (
-    <Link to={ROUTES.profile} aria-label="Open profile" className={className}>
+    <Link to={to} aria-label="Open profile" className={className}>
       {children}
     </Link>
   )

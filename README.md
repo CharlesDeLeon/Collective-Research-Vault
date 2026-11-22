@@ -14,6 +14,20 @@ Collective-Research-Vault
 │  ├─ src
 │  │  ├─ App.jsx
 │  │  ├─ components
+│  │  │  ├─ admin
+│  │  │  │  ├─ AccessRequestModal.jsx
+│  │  │  │  ├─ AdminDrawer.jsx
+│  │  │  │  ├─ adminNav.js
+│  │  │  │  ├─ AdviserChip.jsx
+│  │  │  │  ├─ AuditDetailModal.jsx
+│  │  │  │  ├─ ChangeRoleModal.jsx
+│  │  │  │  ├─ Pager.jsx
+│  │  │  │  ├─ PostDetailModal.jsx
+│  │  │  │  ├─ PostSummary.jsx
+│  │  │  │  ├─ RequestStatusChip.jsx
+│  │  │  │  ├─ UserActivity.jsx
+│  │  │  │  ├─ UserBits.jsx
+│  │  │  │  └─ UserFormModal.jsx
 │  │  │  ├─ dashboard
 │  │  │  │  ├─ constants.js
 │  │  │  │  ├─ DashboardHeader.jsx
@@ -80,7 +94,8 @@ Collective-Research-Vault
 │  │  │  ├─ ui
 │  │  │  │  ├─ ConfirmModal.jsx
 │  │  │  │  ├─ ErrorScreen.jsx
-│  │  │  │  └─ ModalShell.jsx
+│  │  │  │  ├─ ModalShell.jsx
+│  │  │  │  └─ Select.jsx
 │  │  │  └─ upload
 │  │  │     ├─ Field.jsx
 │  │  │     ├─ FileDropzone.jsx
@@ -96,32 +111,39 @@ Collective-Research-Vault
 │  │  │  └─ useToast.js
 │  │  ├─ hooks
 │  │  │  ├─ useAccessGate.js
+│  │  │  ├─ useDebouncedValue.js
 │  │  │  ├─ useLoginShowcase.js
 │  │  │  ├─ useNotifications.js
-│  │  │  ├─ usePaperDetail.js
+│  │  │  ├─ usePostActions.js
 │  │  │  ├─ useResearchGallery.js
 │  │  │  └─ useStudentDashboard.js
 │  │  ├─ index.css
 │  │  ├─ main.jsx
 │  │  ├─ pages
 │  │  │  ├─ admin
+│  │  │  │  ├─ AdminAccessRequests.jsx
 │  │  │  │  ├─ AdminDashboard.jsx
+│  │  │  │  ├─ AdminGroupDetail.jsx
+│  │  │  │  ├─ AdminGroups.jsx
 │  │  │  │  ├─ AdminLayout.jsx
+│  │  │  │  ├─ AdminModeration.jsx
+│  │  │  │  ├─ AdminPosts.jsx
+│  │  │  │  ├─ AdminRoles.jsx
+│  │  │  │  ├─ AdminUserDetail.jsx
 │  │  │  │  ├─ AuditTrail.jsx
 │  │  │  │  ├─ ManageStorage.jsx
 │  │  │  │  └─ ManageUsers.jsx
-│  │  │  ├─ coordinator
-│  │  │  │  ├─ CoordinatorDashboard.jsx
-│  │  │  │  ├─ CoordinatorLayout.jsx
-│  │  │  │  ├─ CoordinatorNotif.jsx
-│  │  │  │  ├─ FacultyAssignment.jsx
-│  │  │  │  ├─ ManageGroups.jsx
-│  │  │  │  └─ ManageSubmissions.jsx
-│  │  │  ├─ faculty
-│  │  │  │  ├─ AssignmentsList.jsx
-│  │  │  │  ├─ FacultyDashboard.jsx
-│  │  │  │  ├─ FacultyLayout.jsx
-│  │  │  │  └─ SubmissionDetail.jsx
+│  │  │  ├─ adviser
+│  │  │  │  ├─ AdviserAnalytics.jsx
+│  │  │  │  ├─ AdviserDashboard.jsx
+│  │  │  │  ├─ AdviserGroupDetail.jsx
+│  │  │  │  ├─ AdviserGroups.jsx
+│  │  │  │  ├─ AdviserInbox.jsx
+│  │  │  │  ├─ AdviserLayout.jsx
+│  │  │  │  ├─ AdviserModeration.jsx
+│  │  │  │  ├─ AdviserReports.jsx
+│  │  │  │  ├─ AdviserReview.jsx
+│  │  │  │  └─ AdviserSubmissions.jsx
 │  │  │  ├─ Forbidden.jsx
 │  │  │  ├─ GalleryPaper.jsx
 │  │  │  ├─ Login.jsx
@@ -151,30 +173,36 @@ Collective-Research-Vault
 │  │  ├─ services
 │  │  │  ├─ accessLinkService.js
 │  │  │  ├─ accessRequestService.js
+│  │  │  ├─ accessService.js
 │  │  │  ├─ adminService.js
+│  │  │  ├─ adviserService.js
 │  │  │  ├─ api.js
 │  │  │  ├─ authService.js
-│  │  │  ├─ dashboardMocks.js
+│  │  │  ├─ backendSupport.js
 │  │  │  ├─ feedData.js
-│  │  │  ├─ forumPlaceholder.js
 │  │  │  ├─ galleryData.js
+│  │  │  ├─ galleryService.js
 │  │  │  ├─ loginShowcase.js
 │  │  │  ├─ notificationService.js
 │  │  │  ├─ paperService.js
-│  │  │  ├─ studentPapers.js
 │  │  │  └─ uploadService.js
 │  │  └─ utils
+│  │     ├─ adminRoles.js
 │  │     ├─ avatarColors.js
 │  │     ├─ citation.js
 │  │     ├─ clipboard.js
+│  │     ├─ csv.js
 │  │     ├─ formatDate.js
 │  │     ├─ helpers.js
 │  │     ├─ paperRules.js
+│  │     ├─ permissionLabels.js
 │  │     ├─ roleHome.js
 │  │     ├─ roles.js
 │  │     ├─ siteInfo.js
 │  │     ├─ strands.js
+│  │     ├─ submissionCitation.js
 │  │     └─ videoLinks.js
+│  ├─ vercel.json
 │  └─ vite.config.js
 ├─ database
 │  ├─ migrations
@@ -183,7 +211,9 @@ Collective-Research-Vault
 │  ├─ schema.sql
 │  ├─ seed.sql
 │  └─ setup.js
-├─ netlify.toml
+├─ docs
+│  ├─ handoff.md
+│  └─ README.md
 ├─ package-lock.json
 ├─ package.json
 ├─ README.md
@@ -194,12 +224,16 @@ Collective-Research-Vault
 │  ├─ constants
 │  │  └─ rbac.js
 │  ├─ controllers
+│  │  ├─ accessController.js
 │  │  ├─ adminController.js
 │  │  ├─ authController.js
 │  │  ├─ coordinatorController.js
 │  │  ├─ facultyController.js
+│  │  ├─ forumController.js
+│  │  ├─ groupController.js
 │  │  ├─ notificationController.js
 │  │  ├─ paperController.js
+│  │  ├─ publicController.js
 │  │  └─ reviewController.js
 │  ├─ generateHash.js
 │  ├─ index.js
@@ -212,19 +246,26 @@ Collective-Research-Vault
 │  ├─ package-lock.json
 │  ├─ package.json
 │  ├─ routes
+│  │  ├─ access.routes.js
 │  │  ├─ admin.routes.js
 │  │  ├─ auth.routes.js
 │  │  ├─ coordinator.routes.js
 │  │  ├─ coordinatorSubmission.routes.js
 │  │  ├─ faculty.routes.js
+│  │  ├─ forum.routes.js
+│  │  ├─ group.routes.js
 │  │  ├─ notification.routes.js
 │  │  ├─ paper.routes.js
+│  │  ├─ public.routes.js
 │  │  └─ review.routes.js
 │  ├─ scripts
 │  │  ├─ db-check.js
-│  │  └─ db-setup.js
+│  │  ├─ db-setup.js
+│  │  ├─ migrate_forum.js
+│  │  └─ migrate_gallery.js
 │  └─ utils
 │     └─ auditLogger.js
-└─ SUPABASE_SETUP.md
+├─ SUPABASE_SETUP.md
+└─ vercel.json
 
 ```

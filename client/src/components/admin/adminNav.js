@@ -1,0 +1,30 @@
+import {
+  HomeIcon,
+  UsersIcon,
+  DocIcon,
+  FlagIcon,
+  BellIcon,
+  BookIcon,
+  ClockIcon,
+  UploadCloudIcon,
+  FilterIcon,
+  PencilIcon,
+  UserIcon,
+  CheckIcon,
+} from '../dashboard/icons'
+
+export const ADMIN_NAV = [
+  { label: 'Dashboard', to: '/admin/dashboard', icon: HomeIcon, end: true },
+  { label: 'Users', to: '/admin/users', icon: UsersIcon },
+  { label: 'Roles', to: '/admin/roles', icon: CheckIcon },
+  { label: 'Groups', to: '/admin/groups', icon: UsersIcon },
+  { label: 'Posts', to: '/admin/posts', icon: DocIcon },
+  { label: 'Moderation', to: '/admin/moderation', icon: FlagIcon },
+  { label: 'Access requests', to: '/admin/access-requests', icon: BellIcon },
+  { label: 'Reports', icon: BookIcon, disabled: true },
+  { label: 'Audit', to: '/admin/audit', icon: ClockIcon },
+  { label: 'Storage', to: '/admin/storage', icon: UploadCloudIcon },
+  { label: 'Analytics', icon: FilterIcon, disabled: true },
+  { label: 'Settings', icon: PencilIcon, disabled: true },
+  { label: 'Profile', to: '/admin/profile', icon: UserIcon },
+]

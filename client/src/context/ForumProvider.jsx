@@ -124,7 +124,7 @@ export default function ForumProvider({ children }) {
           type,
           text,
           mediaUrl: mediaUrl ?? '',
-          groupId: myGroup?.id,
+          groupId: composing?.groupId ?? myGroup?.id,
           paperId: paper?.id ?? null,
           paperTitle: paper?.title ?? '',
           status: paper?.status ?? null,
@@ -139,7 +139,7 @@ export default function ForumProvider({ children }) {
         toast('Failed to post.')
       }
     },
-    [myGroup, toast]
+    [myGroup, composing, toast]
   )
 
   const editPost = useCallback(
