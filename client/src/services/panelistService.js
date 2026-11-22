@@ -1,3 +1,4 @@
+import api from './api'
 import { listMyGroups, getGroup } from './adviserService'
 import { backendSupport } from './backendSupport'
 
@@ -8,4 +9,8 @@ export async function listAssignedGroups(userId) {
   return list
     .map((g, i) => ({ ...g, ...(details[i] ?? {}) }))
     .filter((g) => (g.panel ?? []).some((p) => Number(p.user_id) === Number(userId)))
+}
+export async function listPanelistPapers() {
+  const res = await api.get('/panelist/papers')
+  return Array.isArray(res.data?.data) ? res.data.data : []
 }

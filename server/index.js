@@ -57,6 +57,8 @@ app.use('/api/public', require('./routes/public.routes'))
 app.use('/api/adviser', require('./routes/access.routes'))
 app.use('/api/admin', require('./routes/admin.routes'))
 app.use('/api/notifications', require('./routes/notification.routes'))
+app.use('/api/panelist', require('./routes/panelist.routes'))
+app.use('/api/invites', require('./routes/invite.routes'))
 
 app.get('/api', (req, res ) => {
     res.json({ message: 'CORE V API is running' })

@@ -10,6 +10,7 @@ import RequestStatus from './pages/public/RequestStatus'
 import AccessLink from './pages/public/AccessLink'
 import AccessView from './pages/public/AccessView'
 import AccessDownload from './pages/public/AccessDownload'
+import InviteAccept from './pages/public/InviteAccept'
 import Landing from './pages/public/Landing'
 import NotFoundPage from './pages/NotFoundPage'
 import SessionExpiredModal from './components/SessionExpiredModal'
@@ -63,6 +64,7 @@ import PanelistDashboard from './pages/panelist/PanelistDashboard'
 import PanelistGroups from './pages/panelist/PanelistGroups'
 import PanelistGroupDetail from './pages/panelist/PanelistGroupDetail'
 import PanelistPostDetail from './pages/panelist/PanelistPostDetail'
+import PanelistPapers from './pages/panelist/PanelistPapers'
 
 
 function App() {
@@ -81,6 +83,7 @@ function App() {
           <Route path="/access/:token" element={<AccessLink />} />
           <Route path="/access/:token/view" element={<AccessView />} />
           <Route path="/access/:token/download" element={<AccessDownload />} />
+          <Route path="/invite/:token" element={<InviteAccept />} />
 
           <Route
             path="/student"
@@ -147,6 +150,7 @@ function App() {
             <Route path="groups" element={<PanelistGroups />} />
             <Route path="groups/:groupId" element={<PanelistGroupDetail />} />
             <Route path="posts/:postId" element={<PanelistPostDetail />} />
+            <Route path="papers" element={<PanelistPapers />} />
             <Route path="notifications" element={<ActivityHistory />} />
             <Route path="profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/panelist/dashboard" replace />} />

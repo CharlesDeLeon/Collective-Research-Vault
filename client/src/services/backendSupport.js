@@ -8,7 +8,7 @@ export const backendSupport = {
   adviserAbstractEdit: false,
   unpublishReasonStored: false,
   finalAndDefendedFiles: false,
-  panelistInvite: false,
+  panelistInvite: true,
   changePassword: false,
   profileSync: false,
   adminResetPassword: false,
