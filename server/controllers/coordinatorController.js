@@ -590,7 +590,7 @@ const uploadSubmissionFile = async (req, res) => {
     await db.query(
       `INSERT INTO document_versions (submission_id, file_path, file_name, file_size, file_type, version_number, uploaded_by)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, req.file.path, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId]
+      [id, `uploads/${req.file.filename}`, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId]
     )
 
     res.status(201).json({ message: 'File uploaded', version: nextVersion, fileRole })

@@ -1,4 +1,5 @@
 import api from './api'
+import { getFileDownloadUrl } from '../utils/helpers'
 
 export async function getAccessLink(token) {
   try {
@@ -16,7 +17,8 @@ export async function consumeAccessLink(token) {
     const res = await api.get(`/public/access/${encodeURIComponent(token)}/view`)
     const d = res.data?.data
     if (!d) return { state: 'invalid', paperSlug: null, fileUrl: '' }
-    return { state: d.state, paperSlug: d.paperSlug, fileUrl: d.fileUrl || '' }
+    const fileUrl = d.fileUrl ? getFileDownloadUrl(d.fileUrl) : ''
+    return { state: d.state, paperSlug: d.paperSlug, fileUrl }
   } catch {
     return { state: 'invalid', paperSlug: null, fileUrl: '' }
   }

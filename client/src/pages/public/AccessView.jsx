@@ -31,7 +31,7 @@ export default function AccessView() {
           <>
             <iframe
               title={paper?.title ?? 'Paper'}
-              src={state.fileUrl}
+              src={`${state.fileUrl}#toolbar=1&navpanes=0&scrollbar=1`}
               className="mt-4 h-[70vh] w-full rounded-xl border border-white/15 bg-white"
             />
             <a href={state.fileUrl} download className={`${outlineBtn} mt-4`}>Download PDF</a>

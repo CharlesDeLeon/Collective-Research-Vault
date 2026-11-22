@@ -94,7 +94,7 @@ const uploadPaper = async (req, res) => {
     await connection.query(
       `INSERT INTO document_versions (submission_id, file_path, file_name, file_size, file_type, version_number, uploaded_by)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [submissionId, req.file.path, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId]
+      [submissionId, `uploads/${req.file.filename}`, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId]
     )
 
     await connection.commit()
@@ -176,7 +176,7 @@ const uploadPaperVersion = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         paperId,
-        req.file.path,
+        `uploads/${req.file.filename}`,
         req.file.originalname,
         req.file.size || null,
         req.file.mimetype || null,
