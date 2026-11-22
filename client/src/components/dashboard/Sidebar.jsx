@@ -34,6 +34,7 @@ export const ADVISER_NAV = [
   { label: 'Reviews', to: '/adviser/reviews', icon: DocIcon },
   { label: 'Access Inbox', to: '/adviser/inbox', icon: BellIcon },
   { label: 'Moderation', to: '/adviser/moderation', icon: CommentIcon },
+  { label: 'Panelists', to: '/adviser/panelists', icon: UsersIcon },
   { label: 'Reports', to: '/adviser/reports', icon: BookIcon },
   { label: 'Analytics', to: '/adviser/analytics', icon: FilterIcon },
   { label: 'Notifications', to: '/adviser/notifications', icon: BellIcon },
@@ -45,6 +46,7 @@ export const ADVISER_BOTTOM = [
   { label: 'Groups', to: '/adviser/groups', icon: UsersIcon },
   { label: 'Reviews', to: '/adviser/reviews', icon: DocIcon },
   { label: 'Inbox', to: '/adviser/inbox', icon: BellIcon },
+  { label: 'Panelists', to: '/adviser/panelists', icon: UsersIcon },
   { label: 'Profile', to: '/adviser/profile', icon: UserIcon },
 ]
 

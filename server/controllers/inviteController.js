@@ -190,4 +190,31 @@ const acceptInvite = async (req, res) => {
   }
 }
 
-module.exports = { createInvite, validateInvite, acceptInvite }
+
+const listInvites = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT pi.invitation_id, pi.email, pi.name, pi.expires_at, pi.accepted_at, pi.created_at,
+              u.name AS invited_by_name
+       FROM panelist_invitations pi
+       LEFT JOIN users u ON u.user_id = pi.invited_by
+       ORDER BY pi.created_at DESC`
+    )
+    const data = rows.map(r => ({
+      id: r.invitation_id,
+      email: r.email,
+      name: r.name,
+      invitedBy: r.invited_by_name,
+      expiresAt: r.expires_at,
+      acceptedAt: r.accepted_at,
+      createdAt: r.created_at,
+      status: r.accepted_at ? 'accepted' : (new Date(r.expires_at) < new Date() ? 'expired' : 'pending'),
+    }))
+    res.json({ data })
+  } catch (err) {
+    console.error('listInvites error:', err)
+    res.status(500).json({ message: 'Failed to load invitations' })
+  }
+}
+
+module.exports = { createInvite, validateInvite, acceptInvite, listInvites }
