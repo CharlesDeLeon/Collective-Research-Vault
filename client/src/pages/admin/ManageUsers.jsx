@@ -1,704 +1,415 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import api from '../../services/api'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import useAuth from '../../context/useAuth'
+import useToast from '../../context/useToast'
+import useDebouncedValue from '../../hooks/useDebouncedValue'
+import {
+  getAdminUsers,
+  getUserRoleStats,
+  createAdminUser,
+  updateAdminUser,
+  changeAdminUserRole,
+  deactivateAdminUser,
+  reactivateAdminUser,
+  apiMessage,
+} from '../../services/adminService'
+import { glass } from '../../components/dashboard/constants'
+import { SearchIcon, PlusIcon } from '../../components/dashboard/icons'
+import Select, { Option } from '../../components/ui/Select'
+import ConfirmModal from '../../components/ui/ConfirmModal'
+import UserFormModal from '../../components/admin/UserFormModal'
+import ChangeRoleModal from '../../components/admin/ChangeRoleModal'
+import { Avatar, RoleBadge, StatusBadge } from '../../components/admin/UserBits'
+import { ROLE_OPTIONS, ROLE_LABELS, canonicalRole } from '../../utils/adminRoles'
 
-const EMPTY_FORM = { name: '', email: '', password: '', role: 'student', status: 'active', program: '' }
-const ManageUsers = () => {
-  const [users, setUsers] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [page, setPage] = useState(1)
-  const [limit] = useState(25)
-  const [total, setTotal] = useState(0)
-  const [search, setSearch] = useState('')
-  const [roleFilter, setRoleFilter] = useState('')
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editTarget, setEditTarget] = useState(null) // null = add, object = edit
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [saving, setSaving] = useState(false)
-  const [statusFilter, setStatusFilter] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const adminCount = users.filter(u => u.role === 'sysadmin').length
-  const adviserCount = users.filter(u => u.role === 'adviser').length
-  const panelistCount = users.filter(u => u.role === 'external_panelist').length
-  const activeCount = users.filter(u => (u.status || (u.is_active ? 'active' : 'inactive')) === 'active').length
+const PAGE_SIZE = 20
 
+const shortDate = (value) => {
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const params = {
-        page,
-        limit,
-        search: search || undefined,
-        role: roleFilter || undefined,
-        status: statusFilter || undefined,
-      }
-      const res = await api.get('/admin/users', { params })
-      setUsers(res.data.data || [])
-      setTotal(res.data.pagination?.total || 0)
-    } catch (e) {
-      console.error(e)
-      setError('Failed to load users')
-    } finally {
-      setLoading(false)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, search, roleFilter, statusFilter])
+const isActive = (u) => (u.status ? u.status === 'active' : Boolean(u.is_active))
 
-  useEffect(() => { fetchUsers() }, [fetchUsers])
+const smallBtn =
+  'rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40'
+const ghostBtn = `${smallBtn} border-white/15 text-white/75 enabled:hover:bg-white/10 enabled:hover:text-white`
+const dangerBtn = `${smallBtn} border-danger/50 text-danger-ink enabled:hover:bg-danger/15`
 
-  const applyFilters = () => { setPage(1); fetchUsers() }
-
-  const openAdd = () => {
-    setEditTarget(null)
-    setForm(EMPTY_FORM)
-    setModalOpen(true)
-  }
-
-  const openEdit = (user) => {
-    setEditTarget(user)
-    setForm({
-      name: user.name || '',
-      email: user.email || '',
-      password: '',
-      role: user.role || 'student',
-      status: user.status || (user.is_active ? 'active' : 'inactive') || 'active',
-      program: user.program || '',
-    })
-    setModalOpen(true)
-  }
-
-  const closeModal = () => {
-    setModalOpen(false)
-    setEditTarget(null)
-    setForm(EMPTY_FORM)
-  }
-
-  const handleSave = async () => {
-    setSaving(true)
-    try {
-      if (editTarget) {
-        await api.put(`/admin/users/${editTarget.user_id}`, form)
-      } else {
-        await api.post('/admin/users', form)
-      }
-      closeModal()
-      fetchUsers()
-    } catch (e) {
-      console.error(e)
-      setError('Failed to save user')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleDelete = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return
-    try {
-      await api.delete(`/admin/users/${userId}`)
-      fetchUsers()
-    } catch (e) {
-      console.error(e)
-      setError('Failed to delete user')
-    }
-  }
-
-  const getInitials = (name) => {
-    if (!name) return '?'
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-  }
-
+function RowActions({ user, isSelf, onEdit, onRole, onToggle }) {
+  const active = isActive(user)
+  const selfHint = isSelf ? 'You cannot change your own access.' : undefined
   return (
-    <div style={styles.container}>
-
-      {/* Header */}
-      <div style={styles.topBar}>
-        <div>
-          <h2 style={styles.heading}>Manage Users</h2>
-          <p style={styles.subheading}>View, create, and manage all user accounts</p>
-        </div>
-        <button style={styles.addButton} onClick={openAdd}>+ Add User</button>
-      </div>
-
-      {/* Metrics */}
-      <div style={styles.metricsGrid}>
-        <div style={styles.metricCard}>
-          <div style={styles.metricLabel}>Total Users</div>
-          <div style={styles.metricValue}>{total}</div>
-        </div>
-        <div style={styles.metricCard}>
-          <div style={styles.metricLabel}>Active</div>
-          <div style={styles.metricValue}>{activeCount}</div>
-        </div>
-        <div style={styles.metricCard}>
-          <div style={styles.metricLabel}>Admins</div>
-          <div style={styles.metricValue}>{adminCount}</div>
-        </div>
-        <div style={styles.metricCard}>
-          <div style={styles.metricLabel}>Advisers</div>
-          <div style={styles.metricValue}>{adviserCount}</div>
-        </div>
-        <div style={styles.metricCard}>
-          <div style={styles.metricLabel}>Panelists</div>
-          <div style={styles.metricValue}>{panelistCount}</div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div style={styles.filterBar}>
-        <input
-          style={styles.searchInput}
-          placeholder="Search by name or email..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && applyFilters()}
-        />
-        <select
-          style={styles.filterSelect}
-          value={roleFilter}
-          onChange={e => setRoleFilter(e.target.value)}
-        >
-          <option value="">All Roles</option>
-          <option value="sysadmin">SysAdmin</option>
-          <option value="adviser">Adviser</option>
-          <option value="external_panelist">External Panelist</option>
-          <option value="student">Student</option>
-        </select>
-        <select
-          style={styles.filterSelect}
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-        >
-          <option value="">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-        <button style={styles.addButton} onClick={applyFilters}>Apply</button>
-      </div>
-
-      {loading && <div style={styles.loadingText}>Loading...</div>}
-      {error && <div style={styles.errorText}>{error}</div>}
-
-      {/* Table */}
-      <table style={styles.table}>
-        <thead style={styles.thead}>
-          <tr>
-            <th style={styles.th}>User</th>
-            <th style={styles.th}>Role</th>
-            <th style={styles.th}>Status</th>
-            <th style={styles.th}>Program</th>
-            <th style={styles.th}>Joined</th>
-            <th style={styles.th}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(u => (
-            <tr key={u.user_id}>
-              <td style={styles.td}>
-                <div style={styles.avatarCell}>
-                  <div style={styles.avatar}>{getInitials(u.name)}</div>
-                  <div>
-                    <p style={styles.userName}>{u.name || '—'}</p>
-                    <p style={styles.userEmail}>{u.email || '—'}</p>
-                  </div>
-                </div>
-              </td>
-              <td style={styles.td}>
-                  <span style={styles.roleBadge}>{u.role || 'student'}</span>
-                </td>
-              <td style={styles.td}>
-                {(u.status || (u.is_active ? 'active' : 'inactive')) === 'active' ? (
-                  <span style={styles.statusBadgeActive}>
-                    <span style={{ ...styles.statusDot, background: '#4ade80' }} />
-                    Active
-                  </span>
-                ) : (
-                  <span style={styles.statusBadgeInactive}>
-                    <span style={{ ...styles.statusDot, background: 'rgba(255,255,255,0.3)' }} />
-                    Inactive
-                  </span>
-                )}
-              </td>
-              <td style={styles.td}>{u.program || '—'}</td>
-              <td style={styles.td}>
-                {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
-              </td>
-              <td style={styles.td}>
-                <div style={styles.actionGroup}>
-                  <button style={styles.editButton} onClick={() => openEdit(u)}>Edit</button>
-                  <button style={styles.deleteButton} onClick={() => handleDelete(u.user_id)}>Deactivate</button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Pagination */}
-      <div style={styles.pagination}>
-        <div style={styles.paginationInfo}>Showing {users.length} of {total}</div>
-        <div style={styles.paginationControls}>
-          <button
-            style={page === 1 ? styles.pageButtonDisabled : styles.pageButton}
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            Prev
-          </button>
-          <span style={styles.pageLabel}>Page {page}</span>
-          <button
-            style={page * limit >= total ? styles.pageButtonDisabled : styles.pageButton}
-            onClick={() => setPage(p => p + 1)}
-            disabled={page * limit >= total}
-          >
-            Next
-          </button>
-        </div>
-      </div>
-
-      {/* Add / Edit Modal */}
-      {modalOpen && (
-        <div style={styles.overlay} onClick={closeModal}>
-          <div style={styles.modal} onClick={e => e.stopPropagation()}>
-            <h3 style={styles.modalHeading}>{editTarget ? 'Edit User' : 'Add User'}</h3>
-
-            <div style={styles.modalField}>
-              <label style={styles.modalLabel}>Full Name</label>
-              <input
-                style={styles.modalInput}
-                placeholder="e.g. Juan dela Cruz"
-                value={form.name}
-                onChange={e => setForm({ ...form, name: e.target.value })}
-              />
-            </div>
-
-            <div style={styles.modalField}>
-              <label style={styles.modalLabel}>Email</label>
-              <input
-                style={styles.modalInput}
-                type="email"
-                placeholder="e.g. juan@email.com"
-                value={form.email}
-                onChange={e => setForm({ ...form, email: e.target.value })}
-              />
-            </div>
-
-            {/* Password — only shown when adding a new user */}
-            {!editTarget && (
-              <div style={styles.modalField}>
-                <label style={styles.modalLabel}>Password</label>
-                <div style={styles.passwordWrapper}>
-                  <input
-                    style={{ ...styles.modalInput, paddingRight: '44px' }}
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Set a password"
-                    value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
-                  />
-                  <button
-                    type="button"
-                    style={styles.eyeButton}
-                    onClick={() => setShowPassword(p => !p)}
-                    tabIndex={-1}
-                  >
-                    {showPassword ? 'hide' : 'show'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div style={styles.modalField}>
-              <label style={styles.modalLabel}>Role</label>
-              <select
-                style={styles.modalSelect}
-                value={form.role}
-                onChange={e => setForm({ ...form, role: e.target.value })}
-              >
-                <option value="student">Student</option>
-                <option value="sysadmin">SysAdmin</option>
-                <option value="adviser">Adviser</option>
-                <option value="external_panelist">External Panelist</option>
-              </select>
-            </div>
-
-            <div style={styles.modalField}>
-              <label style={styles.modalLabel}>Program</label>
-              <input
-                style={styles.modalInput}
-                placeholder="e.g. BSIT"
-                value={form.program}
-                onChange={e => setForm({ ...form, program: e.target.value })}
-              />
-            </div>
-
-            <div style={styles.modalActions}>
-              <button style={styles.cancelButton} onClick={closeModal}>Cancel</button>
-              <button style={styles.saveButton} onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving...' : editTarget ? 'Save Changes' : 'Add User'}
-              </button>
-            </div>
-          </div>
-        </div>
+    <div className="flex flex-wrap gap-2 md:flex-nowrap">
+      <Link to={`/admin/users/${user.user_id}`} className={ghostBtn}>
+        View
+      </Link>
+      <button type="button" onClick={() => onEdit(user)} className={ghostBtn}>
+        Edit
+      </button>
+      <button type="button" onClick={() => onRole(user)} disabled={isSelf} title={selfHint} className={ghostBtn}>
+        Change role
+      </button>
+      {active ? (
+        <button type="button" onClick={() => onToggle(user)} disabled={isSelf} title={selfHint} className={dangerBtn}>
+          Deactivate
+        </button>
+      ) : (
+        <button type="button" onClick={() => onToggle(user)} className={ghostBtn}>
+          Reactivate
+        </button>
       )}
-
     </div>
   )
 }
 
-const styles = {
-  // Layout
-  container: {
-    padding: '2rem',
-    color: '#fff',
-    minHeight: '100vh',
-  },
-  topBar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '2rem',
-  },
-  heading: {
-    fontSize: 'clamp(1.5rem, 3vw, 2.25rem)',
-    fontWeight: '700',
-    margin: '0 0 0.25rem 0',
-  },
-  subheading: {
-    fontSize: '14px',
-    color: 'rgba(255,255,255,0.5)',
-    marginTop: '4px',
-  },
+export default function ManageUsers() {
+  const { user: me } = useAuth()
+  const { toast } = useToast()
+  const [params, setParams] = useSearchParams()
 
-  // Metrics
-  metricsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-    gap: '1rem',
-    marginBottom: '2rem',
-  },
-  metricCard: {
-    background: '#ffffff0f',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '14px',
-    padding: '1.5rem',
-    textAlign: 'center',
-  },
-  metricLabel: {
-    fontSize: '13px',
-    color: 'rgba(255,255,255,0.6)',
-    marginBottom: '0.5rem',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-  },
-  metricValue: {
-    fontSize: '2.5rem',
-    fontWeight: '800',
-    color: '#FFBE4F',
-    lineHeight: 1,
-  },
+  const [users, setUsers] = useState([])
+  const [total, setTotal] = useState(0)
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [role, setRole] = useState('')
+  const [status, setStatus] = useState('')
+  const [form, setForm] = useState(null)
+  const [roleTarget, setRoleTarget] = useState(null)
+  const [toggleTarget, setToggleTarget] = useState(null)
+  const requestId = useRef(0)
 
-  // Filter bar
-  filterBar: {
-    display: 'flex',
-    gap: '8px',
-    marginBottom: '1.5rem',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-  },
-  searchInput: {
-    flex: 1,
-    minWidth: '200px',
-    padding: '10px 14px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: '#ffffff0f',
-    color: '#fff',
-    fontSize: '14px',
-    outline: 'none',
-  },
-  filterSelect: {
-    padding: '10px 14px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: '#ffffff0f',
-    color: '#fff',
-    fontSize: '14px',
-    outline: 'none',
-    cursor: 'pointer',
-  },
-  addButton: {
-    padding: '10px 18px',
-    borderRadius: '10px',
-    border: 'none',
-    background: '#FFBE4F',
-    color: '#000',
-    fontWeight: '700',
-    fontSize: '14px',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  },
+  const debouncedSearch = useDebouncedValue(search.trim())
+  const myId = me?.user_id ?? me?.id
+  const hasFilters = Boolean(search || role || status)
 
-  // Status
-  loadingText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: '14px',
-    marginBottom: '1rem',
-  },
-  errorText: {
-    color: '#ff6b6b',
-    fontSize: '14px',
-    marginBottom: '1rem',
-  },
+  const loadStats = useCallback(async () => {
+    try {
+      setStats(await getUserRoleStats())
+    } catch {
+      setStats(null)
+    }
+  }, [])
 
-  // Table
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    background: '#ffffff0f',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '14px',
-    overflow: 'hidden',
-  },
-  thead: {
-    background: 'rgba(255,255,255,0.05)',
-  },
-  th: {
-    padding: '12px 16px',
-    textAlign: 'left',
-    fontSize: '13px',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    color: 'rgba(255,255,255,0.6)',
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
-  },
-  td: {
-    padding: '12px 16px',
-    fontSize: '14px',
-    color: 'rgba(255,255,255,0.85)',
-    borderTop: '1px solid rgba(255,255,255,0.07)',
-    verticalAlign: 'middle',
-  },
+  const load = useCallback(async () => {
+    const id = ++requestId.current
+    setLoading(true)
+    setError('')
+    try {
+      const result = await getAdminUsers({
+        page,
+        limit: PAGE_SIZE,
+        search: debouncedSearch || undefined,
+        role: role || undefined,
+        status: status || undefined,
+      })
+      if (id !== requestId.current) return
+      setUsers(result.data)
+      setTotal(result.total)
+    } catch (e) {
+      if (id !== requestId.current) return
+      setError(apiMessage(e, 'Could not load users.'))
+    } finally {
+      if (id === requestId.current) setLoading(false)
+    }
+  }, [page, debouncedSearch, role, status])
 
-  // Avatar
-  avatarCell: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  avatar: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '50%',
-    background: 'rgba(255,190,79,0.2)',
-    border: '1px solid rgba(255,190,79,0.4)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '14px',
-    fontWeight: '700',
-    color: '#FFBE4F',
-    flexShrink: 0,
-  },
-  userName: {
-    fontWeight: '600',
-    fontSize: '14px',
-    margin: '0 0 2px 0',
-  },
-  userEmail: {
-    fontSize: '12px',
-    color: 'rgba(255,255,255,0.45)',
-    margin: 0,
-  },
+  useEffect(() => {
+    load()
+  }, [load])
 
-  // Badges
-  roleBadge: {
-    display: 'inline-block',
-    padding: '3px 10px',
-    borderRadius: '999px',
-    background: 'rgba(255,190,79,0.15)',
-    color: '#FFBE4F',
-    fontWeight: '600',
-    fontSize: '12px',
-    letterSpacing: '0.03em',
-  },
-  statusBadgeActive: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '5px',
-    padding: '3px 10px',
-    borderRadius: '999px',
-    background: 'rgba(74,222,128,0.12)',
-    color: '#4ade80',
-    fontWeight: '600',
-    fontSize: '12px',
-  },
-  statusBadgeInactive: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '5px',
-    padding: '3px 10px',
-    borderRadius: '999px',
-    background: 'rgba(255,255,255,0.07)',
-    color: 'rgba(255,255,255,0.4)',
-    fontWeight: '600',
-    fontSize: '12px',
-  },
-  statusDot: {
-    width: '6px',
-    height: '6px',
-    borderRadius: '50%',
-    flexShrink: 0,
-  },
+  useEffect(() => {
+    loadStats()
+  }, [loadStats])
 
-  // Actions
-  actionGroup: {
-    display: 'flex',
-    gap: '6px',
-  },
-  editButton: {
-    padding: '5px 12px',
-    borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: 'transparent',
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: '12px',
-    cursor: 'pointer',
-  },
-  deleteButton: {
-    padding: '5px 12px',
-    borderRadius: '8px',
-    border: '1px solid rgba(255,100,100,0.3)',
-    background: 'transparent',
-    color: 'rgba(255,100,100,0.8)',
-    fontSize: '12px',
-    cursor: 'pointer',
-  },
+  useEffect(() => {
+    if (params.get('create') === '1') {
+      setForm({ user: null })
+      setParams({}, { replace: true })
+    }
+  }, [params, setParams])
 
-  // Pagination
-  pagination: {
-    marginTop: '1.25rem',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  paginationInfo: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: '14px',
-  },
-  paginationControls: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  pageButton: {
-    padding: '7px 14px',
-    borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: '#ffffff0f',
-    color: '#fff',
-    fontSize: '13px',
-    cursor: 'pointer',
-  },
-  pageButtonDisabled: {
-    padding: '7px 14px',
-    borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.07)',
-    background: 'transparent',
-    color: 'rgba(255,255,255,0.25)',
-    fontSize: '13px',
-    cursor: 'not-allowed',
-  },
-  pageLabel: {
-    fontSize: '14px',
-    color: 'rgba(255,255,255,0.6)',
-  },
+  const refresh = () => {
+    load()
+    loadStats()
+  }
 
-  // Modal overlay
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.6)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 100,
-  },
-  modal: {
-    background: '#1a1a2e',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: '16px',
-    padding: '2rem',
-    width: '100%',
-    maxWidth: '440px',
-    color: '#fff',
-  },
-  modalHeading: {
-    fontSize: '20px',
-    fontWeight: '700',
-    margin: '0 0 1.5rem 0',
-  },
-  modalField: {
-    marginBottom: '1rem',
-  },
-  modalLabel: {
-    display: 'block',
-    fontSize: '13px',
-    color: 'rgba(255,255,255,0.6)',
-    marginBottom: '6px',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.04em',
-  },
-  modalInput: {
-    width: '100%',
-    padding: '10px 14px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: '#ffffff0f',
-    color: '#fff',
-    fontSize: '14px',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  modalSelect: {
-    width: '100%',
-    padding: '10px 14px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: '#0d0d1a',
-    color: '#fff',
-    fontSize: '14px',
-    outline: 'none',
-    cursor: 'pointer',
-    boxSizing: 'border-box',
-  },
-  modalActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '8px',
-    marginTop: '1.5rem',
-  },
-  cancelButton: {
-    padding: '10px 18px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: 'transparent',
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: '14px',
-    cursor: 'pointer',
-  },
-  saveButton: {
-    padding: '10px 18px',
-    borderRadius: '10px',
-    border: 'none',
-    background: '#FFBE4F',
-    color: '#000',
-    fontWeight: '700',
-    fontSize: '14px',
-    cursor: 'pointer',
-  },
+  const clearFilters = () => {
+    setSearch('')
+    setRole('')
+    setStatus('')
+    setPage(1)
+  }
+
+  const submitForm = async (payload) => {
+    const editing = form?.user
+    try {
+      if (editing) {
+        await updateAdminUser(editing.user_id, payload)
+        toast('User updated.')
+      } else {
+        await createAdminUser(payload)
+        toast('User created.')
+      }
+      setForm(null)
+      refresh()
+      return null
+    } catch (e) {
+      const message = apiMessage(e, 'Could not save this user.')
+      if (e.response?.status === 409) return { email: message }
+      toast(message, 'error')
+      return {}
+    }
+  }
+
+  const submitRole = async (nextRole) => {
+    try {
+      await changeAdminUserRole(roleTarget.user_id, nextRole)
+      toast(`${roleTarget.name} is now ${ROLE_LABELS[nextRole]}.`)
+      setRoleTarget(null)
+      refresh()
+    } catch (e) {
+      toast(apiMessage(e, 'Could not change the role.'), 'error')
+    }
+  }
+
+  const confirmToggle = async () => {
+    const target = toggleTarget
+    const activate = !isActive(target)
+    setToggleTarget(null)
+    try {
+      if (activate) await reactivateAdminUser(target.user_id)
+      else await deactivateAdminUser(target.user_id)
+      toast(activate ? `${target.name} can sign in again.` : `${target.name} was deactivated.`)
+      refresh()
+    } catch (e) {
+      toast(apiMessage(e, 'Could not update this account.'), 'error')
+    }
+  }
+
+  const counts = (stats ?? []).reduce((acc, row) => {
+    const key = canonicalRole(row.role)
+    acc[key] = (acc[key] ?? 0) + Number(row.count)
+    return acc
+  }, {})
+  const totalUsers = Object.values(counts).reduce((a, b) => a + b, 0)
+  const kpis = [
+    ['Total users', totalUsers],
+    ...ROLE_OPTIONS.map((r) => [`${ROLE_LABELS[r]}s`.replace('System Admins', 'Admins'), counts[r] ?? 0]),
+  ]
+
+  const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const to = Math.min(page * PAGE_SIZE, total)
+  const actions = { onEdit: (u) => setForm({ user: u }), onRole: setRoleTarget, onToggle: setToggleTarget }
+
+  return (
+    <div className="space-y-6 font-display">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold sm:text-3xl">Users</h1>
+          <p className="mt-1 text-sm text-white/60">Create accounts, change roles and deactivate people. Deactivating keeps their posts and history.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setForm({ user: null })}
+          className="flex h-11 items-center gap-2 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft px-5 text-sm font-semibold text-ink transition hover:brightness-105"
+        >
+          <PlusIcon className="size-4" />
+          Create user
+        </button>
+      </header>
+
+      {stats && (
+        <section aria-label="Users by role" className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+          {kpis.map(([label, value], index) => (
+            <div key={label} className={`${glass} p-4 ${index === 0 ? 'col-span-2 sm:col-span-1' : ''}`}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/55">{label}</p>
+              <p className="mt-1 text-3xl font-bold text-gold">{value}</p>
+            </div>
+          ))}
+        </section>
+      )}
+
+      <section className={`${glass} p-4 sm:p-5`}>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_14rem_12rem_auto]">
+          <label className="relative block sm:col-span-2 xl:col-span-1">
+            <span className="sr-only">Search users</span>
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/50" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(1)
+              }}
+              placeholder="Search by name or email"
+              className="h-11 w-full rounded-lg border border-white/20 bg-navy-900/60 pl-10 pr-3 text-sm text-white outline-none transition placeholder:text-white/40 focus:border-gold/60 focus:ring-2 focus:ring-gold/20"
+            />
+          </label>
+          <div className="-mt-1">
+            <Select
+              value={role}
+              onChange={(e) => {
+                setRole(e.target.value)
+                setPage(1)
+              }}
+              aria-label="Filter by role"
+              className="border-white/20"
+            >
+              <Option value="">All roles</Option>
+              {ROLE_OPTIONS.map((r) => (
+                <Option key={r} value={r}>
+                  {ROLE_LABELS[r]}
+                </Option>
+              ))}
+            </Select>
+          </div>
+          <div className="-mt-1">
+            <Select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value)
+                setPage(1)
+              }}
+              aria-label="Filter by status"
+              className="border-white/20"
+            >
+              <Option value="">All statuses</Option>
+              <Option value="active">Active</Option>
+              <Option value="inactive">Inactive</Option>
+            </Select>
+          </div>
+          <button type="button" onClick={clearFilters} disabled={!hasFilters} className={`${ghostBtn} h-11 px-4 text-sm`}>
+            Clear filters
+          </button>
+        </div>
+      </section>
+
+      {error && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger-ink">
+          <span>{error}</span>
+          <button type="button" onClick={load} className={dangerBtn}>
+            Try again
+          </button>
+        </div>
+      )}
+
+      {loading && users.length === 0 ? (
+        <div className="space-y-3" aria-busy="true">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-16 animate-pulse rounded-2xl bg-panel" />
+          ))}
+        </div>
+      ) : users.length === 0 && !error ? (
+        <div className={`${glass} px-6 py-12 text-center`}>
+          <p className="font-semibold">{hasFilters ? 'No users match these filters.' : 'No users yet.'}</p>
+          <p className="mt-1 text-sm text-white/60">
+            {hasFilters ? 'Try a different search or clear the filters.' : 'Create the first account to get started.'}
+          </p>
+          {hasFilters && (
+            <button type="button" onClick={clearFilters} className={`${ghostBtn} mt-4`}>
+              Clear filters
+            </button>
+          )}
+        </div>
+      ) : (users.length === 0 ? null : (
+        <>
+          <div className={`${glass} hidden overflow-x-auto md:block ${loading ? 'opacity-60' : ''}`}>
+            <table className="w-full min-w-[44rem] text-left text-sm">
+              <thead>
+                <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-white/55">
+                  <th scope="col" className="px-5 py-3 font-semibold">User</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">Role</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">Status</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">Program</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">Joined</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.user_id} className="border-b border-white/5 last:border-0">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar name={u.name} />
+                        <div className="min-w-0">
+                          <Link to={`/admin/users/${u.user_id}`} className="block truncate font-semibold hover:text-gold">{u.name}</Link>
+                          <p className="truncate text-xs text-white/55">{u.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3"><RoleBadge role={u.role} /></td>
+                    <td className="px-5 py-3"><StatusBadge active={isActive(u)} /></td>
+                    <td className="px-5 py-3 text-white/75">{u.program || '—'}</td>
+                    <td className="whitespace-nowrap px-5 py-3 text-white/75">{shortDate(u.created_at) || '—'}</td>
+                    <td className="px-5 py-3">
+                      <RowActions user={u} isSelf={u.user_id === myId} {...actions} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <ul className={`space-y-3 md:hidden ${loading ? 'opacity-60' : ''}`}>
+            {users.map((u) => (
+              <li key={u.user_id} className={`${glass} p-4`}>
+                <div className="flex items-start gap-3">
+                  <Avatar name={u.name} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{u.name}</p>
+                    <p className="truncate text-xs text-white/55">{u.email}</p>
+                  </div>
+                  <StatusBadge active={isActive(u)} />
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-white/60">
+                  <RoleBadge role={u.role} />
+                  {u.program && <span>{u.program}</span>}
+                  {u.created_at && <span>Joined {shortDate(u.created_at)}</span>}
+                </div>
+                <div className="mt-4">
+                  <RowActions user={u} isSelf={u.user_id === myId} {...actions} />
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-3 text-sm text-white/60">
+            <p>
+              Showing {from}–{to} of {total}
+            </p>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className={`${ghostBtn} px-4`}>
+                Previous
+              </button>
+              <span>Page {page}</span>
+              <button type="button" onClick={() => setPage((p) => p + 1)} disabled={page * PAGE_SIZE >= total} className={`${ghostBtn} px-4`}>
+                Next
+              </button>
+            </div>
+          </nav>
+        </>
+      ))}
+
+      {form && <UserFormModal user={form.user} onSubmit={submitForm} onClose={() => setForm(null)} />}
+      {roleTarget && <ChangeRoleModal user={roleTarget} onSubmit={submitRole} onClose={() => setRoleTarget(null)} />}
+      {toggleTarget && (
+        <ConfirmModal
+          title={isActive(toggleTarget) ? 'Deactivate user' : 'Reactivate user'}
+          message={
+            isActive(toggleTarget)
+              ? `${toggleTarget.name} will no longer be able to sign in. Their posts and history stay as they are, and you can reactivate the account later.`
+              : `${toggleTarget.name} will be able to sign in again.`
+          }
+          confirmLabel={isActive(toggleTarget) ? 'Deactivate' : 'Reactivate'}
+          danger={isActive(toggleTarget)}
+          onConfirm={confirmToggle}
+          onClose={() => setToggleTarget(null)}
+        />
+      )}
+    </div>
+  )
 }
-
-export default ManageUsers

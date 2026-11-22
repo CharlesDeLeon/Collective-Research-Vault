@@ -1,382 +1,269 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import api from '../../services/api'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { getAuditLogs, getAuditSummary, apiMessage } from '../../services/adminService'
+import { glass } from '../../components/dashboard/constants'
+import Select, { Option } from '../../components/ui/Select'
+import AuditDetailModal from '../../components/admin/AuditDetailModal'
+import { CheckIcon } from '../../components/dashboard/icons'
+import { formatAction } from '../../utils/adminRoles'
+import { toCsv, downloadCsv } from '../../utils/csv'
+import { backendSupport, unsupportedNote } from '../../services/backendSupport'
+import { timeAgo } from '../../utils/formatDate'
 
-function tryParse(v) {
-  if (!v) return null
-  // eslint-disable-next-line no-unused-vars
-  try { return typeof v === 'string' ? JSON.parse(v) : v } catch (e) { return v }
-}
+const PAGE_SIZE = 25
 
-function formatValue(value) {
-  if (value === null || value === undefined || value === '') return 'N/A'
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
-  if (value instanceof Date) return value.toLocaleString()
-  return String(value)
-}
+const targetText = (a) => (a.target_type ? `${a.target_type}${a.target_id ? ` #${a.target_id}` : ''}` : '—')
+const whenText = (a) => (a.created_at ? new Date(a.created_at).toLocaleString() : '—')
 
-function renderDetailsContent(value, depth = 0) {
-  const parsed = tryParse(value)
-  if (parsed === null || parsed === undefined) return <span style={styles.detailEmpty}>No details</span>
+const smallBtn =
+  'rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/75 transition enabled:hover:bg-white/10 enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
 
-  if (typeof parsed !== 'object') {
-    return <div style={styles.detailValue}>{formatValue(parsed)}</div>
-  }
+const dateInputCls =
+  'mt-1 h-11 w-full rounded-lg border border-white/20 bg-navy-900/60 px-3 text-sm text-white outline-none transition scheme-dark focus:border-gold/60 focus:ring-2 focus:ring-gold/20'
 
-  if (Array.isArray(parsed)) {
-    if (!parsed.length) return <span style={styles.detailEmpty}>No details</span>
-    return (
-      <div style={styles.listWrap}>
-        {parsed.map((item, index) => (
-          <div key={index} style={styles.listItem}>
-            {typeof item === 'object' && item !== null
-              ? <pre style={styles.jsonPre}>{JSON.stringify(item, null, 2)}</pre>
-              : <span style={styles.detailValue}>{formatValue(item)}</span>}
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  const entries = Object.entries(parsed)
-  if (!entries.length) return <span style={styles.detailEmpty}>No details</span>
-
-  return (
-    <div style={styles.kvGrid}>
-      {entries.map(([key, value]) => (
-        <React.Fragment key={`${depth}-${key}`}>
-          <div style={styles.kvKey}>{key}</div>
-          <div style={styles.kvValue}>
-            {typeof value === 'object' && value !== null
-              ? <pre style={styles.jsonPre}>{JSON.stringify(value, null, 2)}</pre>
-              : formatValue(value)}
-          </div>
-        </React.Fragment>
-      ))}
-    </div>
-  )
-}
-
-const AuditTrail = () => {
-  const [audits, setAudits] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [page, setPage] = useState(1)
-  const [limit] = useState(25)
+export default function AuditTrail() {
+  const [logs, setLogs] = useState([])
   const [total, setTotal] = useState(0)
-  const [expanded, setExpanded] = useState(null)
+  const [summary, setSummary] = useState({ actions: [], targets: [] })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [page, setPage] = useState(1)
+  const [action, setAction] = useState('')
+  const [targetType, setTargetType] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [open, setOpen] = useState(null)
+  const requestId = useRef(0)
 
-  const fetchAudits = useCallback(async () => {
+  const hasFilters = Boolean(action || targetType || dateFrom || dateTo)
+  const rangeInvalid = Boolean(dateFrom && dateTo && dateFrom > dateTo)
+
+  useEffect(() => {
+    getAuditSummary()
+      .then(setSummary)
+      .catch(() => setSummary({ actions: [], targets: [] }))
+  }, [])
+
+  const load = useCallback(async () => {
+    if (rangeInvalid) return
+    const id = ++requestId.current
     setLoading(true)
-    setError(null)
+    setError('')
     try {
-      const params = {
+      const result = await getAuditLogs({
         page,
-        limit,
-      }
-      const res = await api.get('/admin/audit-logs', { params })
-      setAudits(res.data.data || [])
-      setTotal(res.data.pagination?.total || 0)
+        limit: PAGE_SIZE,
+        action: action || undefined,
+        targetType: targetType || undefined,
+        dateFrom: dateFrom ? `${dateFrom}T00:00:00` : undefined,
+        dateTo: dateTo ? `${dateTo}T23:59:59` : undefined,
+      })
+      if (id !== requestId.current) return
+      setLogs(result.data)
+      setTotal(result.total)
     } catch (e) {
-      console.error(e)
-      setError('Failed to load audit logs')
+      if (id !== requestId.current) return
+      setError(apiMessage(e, 'Could not load the audit log.'))
     } finally {
-      setLoading(false)
+      if (id === requestId.current) setLoading(false)
     }
-  }, [page, limit])
+  }, [page, action, targetType, dateFrom, dateTo, rangeInvalid])
 
-  useEffect(() => { fetchAudits() }, [page, limit, fetchAudits])
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const change = (setter) => (e) => {
+    setter(e.target.value)
+    setPage(1)
+  }
+
+  const clearFilters = () => {
+    setAction('')
+    setTargetType('')
+    setDateFrom('')
+    setDateTo('')
+    setPage(1)
+  }
+
+  const exportPage = () => {
+    const csv = toCsv(
+      ['Time', 'Actor', 'Email', 'Action', 'Target type', 'Target id', 'IP address'],
+      logs.map((a) => [
+        a.created_at ? new Date(a.created_at).toISOString() : '',
+        a.user_name || 'System',
+        a.user_email || '',
+        a.action,
+        a.target_type || '',
+        a.target_id || '',
+        a.ip_address || '',
+      ])
+    )
+    downloadCsv(`corev-audit-page-${page}.csv`, csv)
+  }
+
+  const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const to = Math.min(page * PAGE_SIZE, total)
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.heading}>Audit Trail</h2>
-      <p style={styles.subheading}>Track and review all system activity logs</p>
+    <div className="space-y-6 font-display">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold sm:text-3xl">Audit log</h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-3 py-1 text-xs font-semibold text-success-ink">
+              <CheckIcon className="size-3.5" />
+              Immutable
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-white/60">A read-only record of what happened in CORE V. Entries cannot be edited or deleted.</p>
+        </div>
+        <button type="button" onClick={exportPage} disabled={logs.length === 0} className={`${smallBtn} h-11 px-4 text-sm`}>
+          Export this page (CSV)
+        </button>
+      </header>
 
-      {loading && <div style={styles.loadingText}>Loading...</div>}
-      {error && <div style={styles.errorText}>{error}</div>}
-
-      <table style={styles.table}>
-        <thead style={styles.thead}>
-          <tr>
-            <th style={styles.th}>Date</th>
-            <th style={styles.th}>Action</th>
-            <th style={styles.th}>User</th>
-            <th style={styles.th}>Target</th>
-            <th style={styles.th}>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          {audits.map(a => (
-            <React.Fragment key={a.log_id}>
-              <tr>
-                <td style={styles.td}>{a.created_at ? new Date(a.created_at).toLocaleString() : ''}</td>
-                <td style={styles.td}>
-                  <span style={styles.actionBadge}>{a.action}</span>
-                </td>
-                <td style={styles.td}>{a.user_name || a.user_id || 'system'}</td>
-                <td style={styles.td}>{(a.target_type || '') + (a.target_id ? ` (${a.target_id})` : '')}</td>
-                <td style={styles.td}>
-                  <button
-                    style={styles.viewButton}
-                    onClick={() => setExpanded(expanded === a.log_id ? null : a.log_id)}
-                  >
-                    {expanded === a.log_id ? 'Hide' : 'View'}
-                  </button>
-                </td>
-              </tr>
-              {expanded === a.log_id && (
-                <tr style={styles.expandedRow}>
-                  <td colSpan={5} style={styles.expandedTd}>
-                    <div style={styles.expandedPanel}>
-                      <div style={styles.detailSection}>
-                        <div style={styles.detailTitle}>Changes</div>
-                        {renderDetailsContent(a.changes)}
-                      </div>
-                      <div style={styles.detailSection}>
-                        <div style={styles.detailTitle}>Details</div>
-                        {renderDetailsContent(a.details)}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </React.Fragment>
-          ))}
-        </tbody>
-      </table>
-
-      <div style={styles.pagination}>
-        <div style={styles.paginationInfo}>Showing {audits.length} of {total}</div>
-        <div style={styles.paginationControls}>
-          <button
-            style={page === 1 ? styles.pageButtonDisabled : styles.pageButton}
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            Prev
-          </button>
-          <span style={styles.pageLabel}>Page {page}</span>
-          <button
-            style={page * limit >= total ? styles.pageButtonDisabled : styles.pageButton}
-            onClick={() => setPage(p => p + 1)}
-            disabled={page * limit >= total}
-          >
-            Next
+      <section className={`${glass} p-4 sm:p-5`}>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/55">Action</span>
+            <Select value={action} onChange={change(setAction)} aria-label="Filter by action" className="border-white/20">
+              <Option value="">All actions</Option>
+              {summary.actions.map((row) => (
+                <Option key={row.action} value={row.action}>
+                  {formatAction(row.action)}
+                </Option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/55">Target</span>
+            <Select value={targetType} onChange={change(setTargetType)} aria-label="Filter by target type" className="border-white/20">
+              <Option value="">All targets</Option>
+              {summary.targets
+                .filter((row) => row.target_type)
+                .map((row) => (
+                  <Option key={row.target_type} value={row.target_type}>
+                    {formatAction(row.target_type)}
+                  </Option>
+                ))}
+            </Select>
+          </div>
+          <label className="block">
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/55">From</span>
+            <input type="date" value={dateFrom} max={dateTo || undefined} onChange={change(setDateFrom)} className={dateInputCls} />
+          </label>
+          <label className="block">
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/55">To</span>
+            <input type="date" value={dateTo} min={dateFrom || undefined} onChange={change(setDateTo)} className={dateInputCls} />
+          </label>
+          <button type="button" onClick={clearFilters} disabled={!hasFilters} className={`${smallBtn} h-11 self-end px-4 text-sm`}>
+            Clear filters
           </button>
         </div>
-      </div>
+        {rangeInvalid && (
+          <p role="alert" className="mt-3 text-xs text-danger-ink">
+            The start date must be on or before the end date.
+          </p>
+        )}
+        {!backendSupport.adminAuditSearch && <p className="mt-3 text-xs text-white/50">{unsupportedNote.adminAuditSearch}</p>}
+      </section>
+
+      {error && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger-ink">
+          <span>{error}</span>
+          <button type="button" onClick={load} className={smallBtn}>
+            Try again
+          </button>
+        </div>
+      )}
+
+      {loading && logs.length === 0 ? (
+        <div className="space-y-3" aria-busy="true">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-14 animate-pulse rounded-2xl bg-panel" />
+          ))}
+        </div>
+      ) : logs.length === 0 && !error ? (
+        <div className={`${glass} px-6 py-12 text-center`}>
+          <p className="font-semibold">{hasFilters ? 'No entries match these filters.' : 'Nothing has been logged yet.'}</p>
+          {hasFilters && (
+            <button type="button" onClick={clearFilters} className={`${smallBtn} mt-4`}>
+              Clear filters
+            </button>
+          )}
+        </div>
+      ) : (logs.length === 0 ? null : (
+        <>
+          <div className={`${glass} hidden overflow-x-auto md:block ${loading ? 'opacity-60' : ''}`}>
+            <table className="w-full min-w-[46rem] text-left text-sm">
+              <thead>
+                <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-white/55">
+                  <th scope="col" className="px-5 py-3 font-semibold">Time</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">Actor</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">Action</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">Target</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">IP</th>
+                  <th scope="col" className="px-5 py-3 font-semibold"><span className="sr-only">Details</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((a) => (
+                  <tr key={a.log_id} className="border-b border-white/5 last:border-0">
+                    <td className="whitespace-nowrap px-5 py-3 text-white/75">{whenText(a)}</td>
+                    <td className="px-5 py-3">{a.user_name || <span className="text-white/50">System</span>}</td>
+                    <td className="px-5 py-3">
+                      <span className="inline-block rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-xs font-semibold text-gold">
+                        {formatAction(a.action)}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-white/75">{targetText(a)}</td>
+                    <td className="px-5 py-3 text-white/75">{a.ip_address || '—'}</td>
+                    <td className="px-5 py-3 text-right">
+                      <button type="button" onClick={() => setOpen(a)} className={smallBtn}>
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <ul className={`space-y-3 md:hidden ${loading ? 'opacity-60' : ''}`}>
+            {logs.map((a) => (
+              <li key={a.log_id}>
+                <button type="button" onClick={() => setOpen(a)} className={`${glass} block w-full p-4 text-left transition hover:bg-white/5`}>
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="inline-block rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-xs font-semibold text-gold">
+                      {formatAction(a.action)}
+                    </span>
+                    <span className="shrink-0 text-xs text-white/50">{timeAgo(a.created_at)}</span>
+                  </span>
+                  <span className="mt-2 block text-sm">{a.user_name || 'System'}</span>
+                  <span className="block text-xs text-white/55">{targetText(a)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-3 text-sm text-white/60">
+            <p>
+              Showing {from}–{to} of {total}
+            </p>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className={`${smallBtn} px-4`}>
+                Previous
+              </button>
+              <span>Page {page}</span>
+              <button type="button" onClick={() => setPage((p) => p + 1)} disabled={page * PAGE_SIZE >= total} className={`${smallBtn} px-4`}>
+                Next
+              </button>
+            </div>
+          </nav>
+        </>
+      ))}
+
+      {open && <AuditDetailModal entry={open} onClose={() => setOpen(null)} />}
     </div>
   )
 }
-
-const styles = {
-  container: {
-    padding: '2rem',
-    color: '#fff',
-    minHeight: '100vh',
-  },
-  heading: {
-    fontSize: 'clamp(1.5rem, 3vw, 2.25rem)',
-    fontWeight: '700',
-    margin: '0 0 0.25rem 0',
-  },
-  subheading: {
-    fontSize: '14px',
-    color: 'rgba(255,255,255,0.5)',
-    marginTop: '4px',
-    marginBottom: '2rem',
-  },
-  filterBar: {
-    display: 'flex',
-    gap: '8px',
-    marginBottom: '1.5rem',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-  },
-  filterInput: {
-    padding: '10px 14px',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: '#ffffff0f',
-    color: '#fff',
-    fontSize: '14px',
-    outline: 'none',
-    minWidth: '120px',
-  },
-  applyButton: {
-    padding: '10px 18px',
-    borderRadius: '10px',
-    border: 'none',
-    background: '#FFBE4F',
-    color: '#000',
-    fontWeight: '700',
-    fontSize: '14px',
-    cursor: 'pointer',
-  },
-  loadingText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: '14px',
-    marginBottom: '1rem',
-  },
-  errorText: {
-    color: '#ff6b6b',
-    fontSize: '14px',
-    marginBottom: '1rem',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    background: '#ffffff0f',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '14px',
-    overflow: 'hidden',
-  },
-  thead: {
-    background: 'rgba(255,255,255,0.05)',
-  },
-  th: {
-    padding: '12px 16px',
-    textAlign: 'left',
-    fontSize: '13px',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    color: 'rgba(255,255,255,0.6)',
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
-  },
-  td: {
-    padding: '12px 16px',
-    fontSize: '14px',
-    color: 'rgba(255,255,255,0.85)',
-    borderTop: '1px solid rgba(255,255,255,0.07)',
-    verticalAlign: 'middle',
-  },
-  actionBadge: {
-    display: 'inline-block',
-    padding: '3px 10px',
-    borderRadius: '999px',
-    background: 'rgba(255,190,79,0.15)',
-    color: '#FFBE4F',
-    fontWeight: '600',
-    fontSize: '12px',
-    letterSpacing: '0.03em',
-  },
-  viewButton: {
-    padding: '5px 12px',
-    borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: 'transparent',
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: '12px',
-    cursor: 'pointer',
-  },
-  expandedRow: {
-    background: 'rgba(0,0,0,0.2)',
-  },
-  expandedTd: {
-    padding: '12px 16px',
-    borderTop: '1px solid rgba(255,255,255,0.07)',
-  },
-  expandedPanel: {
-    display: 'grid',
-    gap: '14px',
-  },
-  detailSection: {
-    padding: '14px',
-    borderRadius: '12px',
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)',
-  },
-  detailTitle: {
-    fontSize: '12px',
-    fontWeight: '700',
-    letterSpacing: '0.06em',
-    textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.6)',
-    marginBottom: '10px',
-  },
-  kvGrid: {
-    display: 'grid',
-    gridTemplateColumns: '180px 1fr',
-    gap: '10px 14px',
-    alignItems: 'start',
-  },
-  kvKey: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: '13px',
-    fontWeight: '600',
-    wordBreak: 'break-word',
-  },
-  kvValue: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: '13px',
-    wordBreak: 'break-word',
-  },
-  detailValue: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: '13px',
-    wordBreak: 'break-word',
-  },
-  detailEmpty: {
-    color: 'rgba(255,255,255,0.45)',
-    fontSize: '13px',
-    fontStyle: 'italic',
-  },
-  listWrap: {
-    display: 'grid',
-    gap: '10px',
-  },
-  listItem: {
-    padding: '10px 12px',
-    borderRadius: '10px',
-    background: 'rgba(0,0,0,0.18)',
-    border: '1px solid rgba(255,255,255,0.06)',
-  },
-  jsonPre: {
-    margin: 0,
-    whiteSpace: 'pre-wrap',
-    fontSize: '12px',
-    lineHeight: 1.5,
-    color: 'rgba(255,255,255,0.8)',
-    fontFamily: 'monospace',
-  },
-  pagination: {
-    marginTop: '1.25rem',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  paginationInfo: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: '14px',
-  },
-  paginationControls: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  pageButton: {
-    padding: '7px 14px',
-    borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: '#ffffff0f',
-    color: '#fff',
-    fontSize: '13px',
-    cursor: 'pointer',
-  },
-  pageButtonDisabled: {
-    padding: '7px 14px',
-    borderRadius: '8px',
-    border: '1px solid rgba(255,255,255,0.07)',
-    background: 'transparent',
-    color: 'rgba(255,255,255,0.25)',
-    fontSize: '13px',
-    cursor: 'not-allowed',
-  },
-  pageLabel: {
-    fontSize: '14px',
-    color: 'rgba(255,255,255,0.6)',
-  },
-}
-
-export default AuditTrail
-

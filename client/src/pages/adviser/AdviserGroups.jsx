@@ -1,53 +1,69 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../../services/api'
+import {
+  listMyGroups,
+  getGroup,
+  createGroup,
+  updateGroup,
+  addGroupMember,
+  removeGroupMember,
+  searchStudents,
+} from '../../services/adviserService'
+import useToast from '../../context/useToast'
 import { glass } from '../../components/dashboard/constants'
-import { UsersIcon, PlusIcon, PencilIcon, TrashIcon } from '../../components/dashboard/icons'
+import { PlusIcon, PencilIcon, SearchIcon } from '../../components/dashboard/icons'
+import Select, { Option } from '../../components/ui/Select'
 
 const STRANDS = ['STEM', 'ABM', 'HUMSS', 'GAS']
 const EMPTY_FORM = { group_name: '', strand: '', section: '', year_level: '', school_year: '' }
 
+const inputCls =
+  'h-11 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none placeholder:text-white/40 focus:border-gold/50'
+
 export default function AdviserGroups() {
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [groups, setGroups] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [total, setTotal] = useState(0)
-  const limit = 25
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [formError, setFormError] = useState('')
   const [saving, setSaving] = useState(false)
   const [modalMembers, setModalMembers] = useState([])
   const [memberSearch, setMemberSearch] = useState('')
   const [memberResults, setMemberResults] = useState([])
 
-  const [detail, setDetail] = useState(null)
-  const [detailLoading, setDetailLoading] = useState(false)
-
   const fetchGroups = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await api.get('/coordinator/groups', { params: { search: search || undefined, page, limit } })
-      setGroups(res.data.data || [])
-      setTotal(res.data.pagination?.total || res.data.data?.length || 0)
+      setGroups(await listMyGroups())
     } catch (e) {
       console.error(e)
       setError('Failed to load groups')
     } finally {
       setLoading(false)
     }
-  }, [page, limit, search])
+  }, [])
 
   useEffect(() => { fetchGroups() }, [fetchGroups])
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return groups
+    return groups.filter((g) =>
+      [g.group_name, g.strand, g.program, g.section, g.school_year].some((v) => String(v ?? '').toLowerCase().includes(q))
+    )
+  }, [groups, search])
 
   const openAdd = () => {
     setEditTarget(null)
     setForm(EMPTY_FORM)
+    setFormError('')
     setModalMembers([])
     setMemberSearch('')
     setMemberResults([])
@@ -60,116 +76,115 @@ export default function AdviserGroups() {
       group_name: g.group_name || '',
       strand: g.strand || g.program || '',
       section: g.section || '',
-      year_level: g.year_level || '',
+      year_level: g.year_level ? String(g.year_level) : '',
       school_year: g.school_year || '',
     })
+    setFormError('')
     setMemberSearch('')
     setMemberResults([])
+    setModalMembers([])
+    setModalOpen(true)
     try {
-      const res = await api.get(`/coordinator/groups/${g.group_id}`)
-      const existing = (res.data.data?.members || []).map(m => ({ user_id: m.user_id, name: m.name, email: m.email }))
-      setModalMembers(existing)
+      const full = await getGroup(g.group_id)
+      setModalMembers((full?.members || []).map((m) => ({ user_id: m.user_id, name: m.name, email: m.email })))
     } catch (e) {
       console.error(e)
-      setModalMembers([])
+      toast('Could not load the current members.', 'error')
     }
-    setModalOpen(true)
   }
 
   const closeModal = () => {
     setModalOpen(false)
     setEditTarget(null)
     setForm(EMPTY_FORM)
+    setFormError('')
     setModalMembers([])
   }
 
-  const searchMembers = async (q) => {
+  const onSearchMembers = async (q) => {
     setMemberSearch(q)
-    if (!q.trim()) { setMemberResults([]); return }
+    if (!q.trim()) {
+      setMemberResults([])
+      return
+    }
     try {
-      const res = await api.get('/coordinator/students', { params: { search: q } })
-      const list = res.data.data || []
-      setMemberResults(list.filter(s => !modalMembers.some(m => m.user_id === s.user_id)))
+      const list = await searchStudents(q)
+      setMemberResults(list.filter((s) => !modalMembers.some((m) => m.user_id === s.user_id)))
     } catch (e) {
       console.error(e)
     }
   }
 
   const addMember = (s) => {
-    setModalMembers(prev => [...prev, { user_id: s.user_id, name: s.name, email: s.email }])
-    setMemberResults(prev => prev.filter(x => x.user_id !== s.user_id))
+    setModalMembers((prev) => [...prev, { user_id: s.user_id, name: s.name, email: s.email }])
+    setMemberResults((prev) => prev.filter((x) => x.user_id !== s.user_id))
     setMemberSearch('')
   }
 
   const removeMember = (uid) => {
-    setModalMembers(prev => prev.filter(m => m.user_id !== uid))
+    setModalMembers((prev) => prev.filter((m) => m.user_id !== uid))
+  }
+
+  const validate = () => {
+    if (!form.group_name.trim()) return 'Group name is required.'
+    if (!form.strand) return 'Select a strand.'
+    if (!form.section.trim()) return 'Section is required.'
+    if (!form.year_level) return 'Select a year level.'
+    if (!form.school_year.trim()) return 'School year is required.'
+    const dupe = groups.some(
+      (g) =>
+        g.group_id !== editTarget?.group_id &&
+        String(g.group_name).trim().toLowerCase() === form.group_name.trim().toLowerCase() &&
+        String(g.section ?? '').trim().toLowerCase() === form.section.trim().toLowerCase()
+    )
+    if (dupe) return 'A group with this name already exists in this section.'
+    return ''
   }
 
   const saveGroup = async () => {
-    if (!form.group_name.trim()) { alert('Group name is required'); return }
+    const problem = validate()
+    setFormError(problem)
+    if (problem) return
     setSaving(true)
     try {
       const payload = {
         group_name: form.group_name.trim(),
-        program: form.strand || null,
-        strand: form.strand || null,
-        section: form.section || null,
-        year_level: form.year_level ? Number(form.year_level) : null,
-        school_year: form.school_year || null,
+        program: form.strand,
+        strand: form.strand,
+        section: form.section.trim(),
+        year_level: Number(form.year_level),
+        school_year: form.school_year.trim(),
       }
       if (editTarget) {
-        await api.put(`/coordinator/groups/${editTarget.group_id}`, payload)
-        // sync members: remove old, add new — simpler: add missing, remove extra
-        const res = await api.get(`/coordinator/groups/${editTarget.group_id}`)
-        const existing = (res.data.data?.members || []).map(m => m.user_id)
-        const staged = modalMembers.map(m => m.user_id)
-        for (const uid of existing.filter(id => !staged.includes(id))) {
-          await api.delete(`/coordinator/groups/${editTarget.group_id}/members/${uid}`)
+        await updateGroup(editTarget.group_id, payload)
+        const full = await getGroup(editTarget.group_id)
+        const existing = (full?.members || []).map((m) => m.user_id)
+        const staged = modalMembers.map((m) => m.user_id)
+        for (const uid of existing.filter((id) => !staged.includes(id))) {
+          await removeGroupMember(editTarget.group_id, uid)
         }
-        for (const uid of staged.filter(id => !existing.includes(id))) {
-          await api.post(`/coordinator/groups/${editTarget.group_id}/members`, { user_id: uid })
+        for (const uid of staged.filter((id) => !existing.includes(id))) {
+          await addGroupMember(editTarget.group_id, uid)
         }
+        toast('Group updated.')
       } else {
-        const res = await api.post('/coordinator/groups', payload)
-        const newId = res.data?.data?.group_id || res.data?.insertId
+        const newId = await createGroup(payload)
         if (newId) {
           for (const m of modalMembers) {
-            await api.post(`/coordinator/groups/${newId}/members`, { user_id: m.user_id })
+            await addGroupMember(newId, m.user_id)
           }
+          toast('Group created.')
+        } else {
+          toast('Group created, but the members could not be added. Open the group to add them.', 'error')
         }
       }
       closeModal()
       fetchGroups()
     } catch (e) {
       console.error(e)
-      alert(e.response?.data?.message || 'Failed to save group')
+      setFormError(e.response?.data?.message || 'Failed to save the group.')
     } finally {
       setSaving(false)
-    }
-  }
-
-  const deleteGroup = async (g) => {
-    if (!window.confirm(`Delete group "${g.group_name}"?`)) return
-    try {
-      await api.delete(`/coordinator/groups/${g.group_id}`)
-      fetchGroups()
-      if (detail?.group_id === g.group_id) setDetail(null)
-    } catch (e) {
-      console.error(e)
-      alert(e.response?.data?.message || 'Failed to delete group')
-    }
-  }
-
-  const openDetail = async (g) => {
-    setDetailLoading(true)
-    try {
-      const res = await api.get(`/coordinator/groups/${g.group_id}`)
-      setDetail(res.data.data || g)
-    } catch (e) {
-      console.error(e)
-      setDetail(g)
-    } finally {
-      setDetailLoading(false)
     }
   }
 
@@ -189,15 +204,17 @@ export default function AdviserGroups() {
         </button>
       </header>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <label className="relative block max-w-xl">
+        <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/40" />
         <input
-          type="text"
+          type="search"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Search groups…"
-          className="h-11 flex-1 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white placeholder-white/40 outline-none focus:border-gold/50"
+          aria-label="Search groups"
+          className={`${inputCls} w-full pl-10`}
         />
-      </div>
+      </label>
 
       {error && (
         <p role="alert" className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
@@ -212,36 +229,36 @@ export default function AdviserGroups() {
           ))}
         </div>
       ) : groups.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/20 p-8 text-center text-sm text-white/60">
-          No groups yet. Create your first group to get started.
+        <div className="rounded-2xl border-2 border-dashed border-white/20 px-6 py-12 text-center">
+          <p className="m-0 text-lg font-semibold">Create your first group</p>
+          <p className="mb-0 mt-1 text-sm text-white/70">Add the students you advise, then review their papers here.</p>
+          <button
+            type="button"
+            onClick={openAdd}
+            className="mt-5 h-12 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft px-7 text-base font-semibold text-ink hover:brightness-105"
+          >
+            Create group
+          </button>
         </div>
+      ) : visible.length === 0 ? (
+        <p className="m-0 rounded-2xl border border-dashed border-white/20 p-8 text-center text-sm text-white/70">
+          No groups match your search.
+        </p>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-4 sm:gap-5">
-          {groups.map((g) => (
-            <div
-              key={g.group_id}
-              className={`${glass} flex flex-col gap-3 p-5 transition hover:border-gold/40`}
-            >
+          {visible.map((g) => (
+            <div key={g.group_id} className={`${glass} flex flex-col gap-3 p-5 transition hover:border-gold/40`}>
               <div className="flex items-start justify-between gap-3">
-                <h2 className="min-w-0 wrap-break-word text-lg font-bold">{g.group_name}</h2>
-                <div className="flex shrink-0 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => openEdit(g)}
-                    className="grid size-8 place-items-center rounded-lg border border-white/15 text-white/70 transition hover:border-gold/40 hover:text-gold"
-                    title="Edit"
-                  >
-                    <PencilIcon className="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteGroup(g)}
-                    className="grid size-8 place-items-center rounded-lg border border-white/15 text-white/70 transition hover:border-rose-400/40 hover:text-rose-300"
-                    title="Delete"
-                  >
-                    <TrashIcon className="size-4" />
-                  </button>
-                </div>
+                <h2 className="m-0 min-w-0 wrap-break-word text-lg font-bold">{g.group_name}</h2>
+                <button
+                  type="button"
+                  onClick={() => openEdit(g)}
+                  aria-label={`Edit ${g.group_name}`}
+                  title="Edit"
+                  className="grid size-9 shrink-0 place-items-center rounded-lg border border-white/15 text-white/70 transition hover:border-gold/40 hover:text-gold"
+                >
+                  <PencilIcon className="size-4" />
+                </button>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -251,9 +268,7 @@ export default function AdviserGroups() {
                   </span>
                 )}
                 {g.section && (
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
-                    {g.section}
-                  </span>
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">{g.section}</span>
                 )}
                 {g.year_level && (
                   <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
@@ -267,13 +282,13 @@ export default function AdviserGroups() {
                 )}
               </div>
 
-              <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-3 text-xs text-white/50">
+              <div className="mt-auto flex items-center justify-between gap-2 border-t border-white/10 pt-3 text-xs text-white/60">
                 <span>{g.member_count ?? 0} members</span>
                 <span>{g.submission_count ?? 0} papers</span>
                 <button
                   type="button"
                   onClick={() => navigate(`/adviser/groups/${g.group_id}`)}
-                  className="font-semibold text-gold hover:underline"
+                  className="min-h-9 font-semibold text-gold hover:underline"
                 >
                   View
                 </button>
@@ -283,87 +298,15 @@ export default function AdviserGroups() {
         </div>
       )}
 
-      {total > limit && (
-        <div className="flex justify-center gap-2 pt-2">
-          <button
-            type="button"
-            disabled={page <= 1}
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-sm disabled:opacity-40"
-          >
-            Prev
-          </button>
-          <span className="px-3 py-1.5 text-sm text-white/60">Page {page}</span>
-          <button
-            type="button"
-            disabled={page * limit >= total}
-            onClick={() => setPage(p => p + 1)}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-sm disabled:opacity-40"
-          >
-            Next
-          </button>
-        </div>
-      )}
-
-      {/* Detail panel */}
-      {detail && (
-        <div className={`${glass} p-5 sm:p-6`}>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold">{detail.group_name}</h2>
-            <button
-              type="button"
-              onClick={() => setDetail(null)}
-              className="text-sm text-white/60 hover:text-white"
-            >
-              Close
-            </button>
-          </div>
-          {detailLoading ? (
-            <p className="text-sm text-white/50">Loading…</p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <h3 className="mb-2 text-sm font-semibold text-white/70">Members</h3>
-                {detail.members?.length ? (
-                  <ul className="space-y-1 text-sm">
-                    {detail.members.map(m => (
-                      <li key={m.user_id} className="flex items-center justify-between rounded-lg bg-white/[0.04] px-3 py-2">
-                        <span>{m.name}</span>
-                        <span className="text-xs text-white/50">{m.email}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-white/50">No members.</p>
-                )}
-              </div>
-              <div>
-                <h3 className="mb-2 text-sm font-semibold text-white/70">Papers</h3>
-                {detail.submissions?.length ? (
-                  <ul className="space-y-1 text-sm">
-                    {detail.submissions.map(s => (
-                      <li key={s.submission_id} className="rounded-lg bg-white/[0.04] px-3 py-2">
-                        <div className="font-medium">{s.title}</div>
-                        <div className="text-xs text-white/50">{s.status} · {s.stage}</div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-white/50">No papers.</p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Create/Edit modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className={`${glass} w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6`}>
-            <h2 className="mb-4 text-xl font-bold">
-              {editTarget ? 'Edit group' : 'Create group'}
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={editTarget ? 'Edit group' : 'Create group'}
+            className="w-full max-w-2xl rounded-2xl border border-white/10 bg-modal p-5 shadow-2xl shadow-black/30 sm:p-6"
+          >
+            <h2 className="mb-4 mt-0 text-xl font-bold">{editTarget ? 'Edit group' : 'Create group'}</h2>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1 sm:col-span-2">
@@ -371,21 +314,23 @@ export default function AdviserGroups() {
                 <input
                   value={form.group_name}
                   onChange={(e) => setForm({ ...form, group_name: e.target.value })}
-                  className="h-11 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
+                  className={inputCls}
                   placeholder="e.g. Group Alpha"
                 />
               </label>
 
-              <label className="flex flex-col gap-1">
+              <label className="flex flex-col">
                 <span className="text-xs font-semibold text-white/70">Strand</span>
-                <select
+                <Select
                   value={form.strand}
                   onChange={(e) => setForm({ ...form, strand: e.target.value })}
-                  className="h-11 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
+                  className="border-white/15"
                 >
-                  <option value="">Select strand</option>
-                  {STRANDS.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                  <Option value="">Select strand</Option>
+                  {STRANDS.map((s) => (
+                    <Option key={s} value={s}>{s}</Option>
+                  ))}
+                </Select>
               </label>
 
               <label className="flex flex-col gap-1">
@@ -393,22 +338,22 @@ export default function AdviserGroups() {
                 <input
                   value={form.section}
                   onChange={(e) => setForm({ ...form, section: e.target.value })}
-                  className="h-11 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
+                  className={inputCls}
                   placeholder="e.g. STEM 12-A"
                 />
               </label>
 
-              <label className="flex flex-col gap-1">
+              <label className="flex flex-col">
                 <span className="text-xs font-semibold text-white/70">Year level</span>
-                <select
+                <Select
                   value={form.year_level}
                   onChange={(e) => setForm({ ...form, year_level: e.target.value })}
-                  className="h-11 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
+                  className="border-white/15"
                 >
-                  <option value="">Select</option>
-                  <option value="11">11</option>
-                  <option value="12">12</option>
-                </select>
+                  <Option value="">Select</Option>
+                  <Option value="11">11</Option>
+                  <Option value="12">12</Option>
+                </Select>
               </label>
 
               <label className="flex flex-col gap-1">
@@ -416,46 +361,72 @@ export default function AdviserGroups() {
                 <input
                   value={form.school_year}
                   onChange={(e) => setForm({ ...form, school_year: e.target.value })}
-                  className="h-11 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
+                  className={inputCls}
                   placeholder="e.g. 2026-2027"
                 />
               </label>
+
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <span className="text-xs font-semibold text-white/70">Adviser</span>
+                <p className="m-0 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60">
+                  You. The adviser is filled in automatically.
+                </p>
+              </div>
             </div>
 
             <div className="mt-5">
-              <h3 className="mb-2 text-sm font-semibold text-white/70">Members</h3>
-              <div className="flex gap-2">
-                <input
-                  value={memberSearch}
-                  onChange={(e) => searchMembers(e.target.value)}
-                  placeholder="Search students by name or email…"
-                  className="h-10 flex-1 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
-                />
-              </div>
+              <h3 className="mb-2 mt-0 text-sm font-semibold text-white/70">Members</h3>
+              <input
+                value={memberSearch}
+                onChange={(e) => onSearchMembers(e.target.value)}
+                placeholder="Search students by name or email…"
+                aria-label="Search students"
+                className={`${inputCls} h-10 w-full`}
+              />
+              {memberSearch.trim() && memberResults.length === 0 && (
+                <p className="mb-0 mt-2 text-xs text-white/60">
+                  No student found. Ask a System Admin to create the account.
+                </p>
+              )}
               {memberResults.length > 0 && (
-                <ul className="mt-2 max-h-32 overflow-y-auto rounded-xl border border-white/10 bg-white/[0.04]">
-                  {memberResults.map(s => (
-                    <li
-                      key={s.user_id}
-                      onClick={() => addMember(s)}
-                      className="cursor-pointer px-3 py-2 text-sm hover:bg-white/10"
-                    >
-                      {s.name} <span className="text-white/50">({s.email})</span>
+                <ul className="m-0 mt-2 max-h-36 list-none overflow-y-auto rounded-xl border border-white/10 bg-white/[0.04] p-0">
+                  {memberResults.map((s) => (
+                    <li key={s.user_id}>
+                      <button
+                        type="button"
+                        onClick={() => addMember(s)}
+                        className="block w-full px-3 py-2 text-left text-sm hover:bg-white/10"
+                      >
+                        {s.name} <span className="text-white/50">({s.email})</span>
+                      </button>
                     </li>
                   ))}
                 </ul>
               )}
               {modalMembers.length > 0 && (
-                <ul className="mt-2 flex flex-wrap gap-2">
-                  {modalMembers.map(m => (
-                    <li key={m.user_id} className="flex items-center gap-2 rounded-full bg-gold/10 px-3 py-1 text-xs text-gold">
+                <ul className="m-0 mt-2 flex list-none flex-wrap gap-2 p-0">
+                  {modalMembers.map((m) => (
+                    <li key={m.user_id} className="flex items-center gap-2 rounded-full bg-gold/10 py-1 pl-3 pr-1 text-xs text-gold">
                       {m.name}
-                      <button type="button" onClick={() => removeMember(m.user_id)} className="text-gold/70 hover:text-gold">×</button>
+                      <button
+                        type="button"
+                        onClick={() => removeMember(m.user_id)}
+                        aria-label={`Remove ${m.name}`}
+                        className="grid size-6 place-items-center rounded-full text-gold/70 hover:bg-gold/20 hover:text-gold"
+                      >
+                        ×
+                      </button>
                     </li>
                   ))}
                 </ul>
               )}
             </div>
+
+            {formError && (
+              <p role="alert" className="mb-0 mt-4 text-sm text-danger-ink">
+                {formError}
+              </p>
+            )}
 
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -471,7 +442,7 @@ export default function AdviserGroups() {
                 disabled={saving}
                 className="h-11 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft px-5 text-sm font-semibold text-ink transition hover:brightness-105 disabled:opacity-60"
               >
-                {saving ? 'Saving…' : (editTarget ? 'Save changes' : 'Create group')}
+                {saving ? 'Saving…' : editTarget ? 'Save changes' : 'Create group'}
               </button>
             </div>
           </div>

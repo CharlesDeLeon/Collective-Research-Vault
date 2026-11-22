@@ -1,13 +1,21 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import useForum from '../../context/useForum'
-import api from '../../services/api'
+import useToast from '../../context/useToast'
+import {
+  getGroup,
+  listSubmissions,
+  searchStudents,
+  addGroupMember,
+  removeGroupMember,
+  revokePanelAssignment,
+} from '../../services/adviserService'
+import { backendSupport, unsupportedNote } from '../../services/backendSupport'
+import ConfirmModal from '../../components/ui/ConfirmModal'
 import { glass } from '../../components/dashboard/constants'
-import { UsersIcon, DocIcon, CommentIcon, PlusIcon, PencilIcon, TrashIcon, UserIcon } from '../../components/dashboard/icons'
-import FeedList from '../../components/forum/FeedList'
+import { PlusIcon } from '../../components/dashboard/icons'
 import ForumPostCard from '../../components/forum/ForumPostCard'
 import StatusPill from '../../components/dashboard/StatusPill'
-import { normalizeStatus } from '../../utils/paperRules'
 
 const TABS = ['Feed', 'Members', 'Panelists', 'Papers', 'Analytics']
 
@@ -15,6 +23,7 @@ export default function AdviserGroupDetail() {
   const { groupId } = useParams()
   const navigate = useNavigate()
   const { posts, openComposer } = useForum()
+  const { toast } = useToast()
 
   const [group, setGroup] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -28,15 +37,16 @@ export default function AdviserGroupDetail() {
 
   const [memberSearch, setMemberSearch] = useState('')
   const [memberResults, setMemberResults] = useState([])
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviting, setInviting] = useState(false)
+  const [pendingRemoval, setPendingRemoval] = useState(null)
 
   const fetchGroup = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await api.get(`/groups/${groupId}`)
-      setGroup(res.data?.data || null)
+      const g = await getGroup(groupId)
+      setGroup(g)
+      setMembers(g?.members || [])
+      setPanel(g?.panel || [])
     } catch (e) {
       console.error(e)
       setError('Failed to load group')
@@ -48,15 +58,10 @@ export default function AdviserGroupDetail() {
   const fetchDetail = useCallback(async () => {
     setLoadingDetail(true)
     try {
-      const [gRes, sRes] = await Promise.all([
-        api.get(`/coordinator/groups/${groupId}`),
-        api.get('/coordinator/submissions', { params: { limit: 100 } }),
-      ])
-      const g = gRes.data?.data
+      const [g, { data }] = await Promise.all([getGroup(groupId), listSubmissions({ limit: 100 })])
       setMembers(g?.members || [])
       setPanel(g?.panel || [])
-      const subs = (sRes.data?.data || []).filter((s) => String(s.group_id) === String(groupId))
-      setSubmissions(subs)
+      setSubmissions(data.filter((s) => String(s.group_id) === String(groupId)))
     } catch (e) {
       console.error(e)
     } finally {
@@ -71,8 +76,7 @@ export default function AdviserGroupDetail() {
     setMemberSearch(q)
     if (!q.trim()) { setMemberResults([]); return }
     try {
-      const res = await api.get('/coordinator/students', { params: { search: q } })
-      const list = res.data?.data || []
+      const list = await searchStudents(q)
       setMemberResults(list.filter((s) => !members.some((m) => m.user_id === s.user_id)))
     } catch (e) {
       console.error(e)
@@ -81,44 +85,33 @@ export default function AdviserGroupDetail() {
 
   const addMember = async (s) => {
     try {
-      await api.post(`/coordinator/groups/${groupId}/members`, { user_id: s.user_id })
+      await addGroupMember(groupId, s.user_id)
       setMemberResults((r) => r.filter((x) => x.user_id !== s.user_id))
       setMemberSearch('')
+      toast(`${s.name} added to the group.`)
       fetchDetail()
     } catch (e) {
       console.error(e)
+      toast('Could not add the student.', 'error')
     }
   }
 
-  const removeMember = async (uid) => {
-    if (!window.confirm('Remove this member?')) return
+  const confirmRemoval = async () => {
+    const target = pendingRemoval
+    setPendingRemoval(null)
+    if (!target) return
     try {
-      await api.delete(`/coordinator/groups/${groupId}/members/${uid}`)
+      if (target.kind === 'member') {
+        await removeGroupMember(groupId, target.id)
+        toast('Member removed.')
+      } else {
+        await revokePanelAssignment(target.id)
+        toast('Panelist revoked.')
+      }
       fetchDetail()
     } catch (e) {
       console.error(e)
-    }
-  }
-
-  const invitePanelist = async () => {
-    if (!inviteEmail.trim()) return
-    setInviting(true)
-    try {
-      // Panelists are existing users with external_panelist role; adviser assigns them.
-      // For now, search by email is not available; show a placeholder.
-      alert('Panelist invitation by email will be available once email delivery is configured. For now, ask a System Admin to create the panelist account, then assign them here.')
-    } finally {
-      setInviting(false)
-    }
-  }
-
-  const revokePanelist = async (assignmentId) => {
-    if (!window.confirm('Revoke this panelist assignment?')) return
-    try {
-      await api.delete(`/coordinator/panel/${assignmentId}`)
-      fetchDetail()
-    } catch (e) {
-      console.error(e)
+      toast('That did not work. Try again.', 'error')
     }
   }
 
@@ -201,7 +194,7 @@ export default function AdviserGroupDetail() {
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={() => openComposer({})}
+              onClick={() => openComposer({ groupId: Number(groupId) })}
               className="inline-flex h-10 items-center gap-2 rounded-xl border border-gold/60 bg-gold/10 px-4 text-sm font-semibold text-gold transition hover:bg-gold/20"
             >
               <PlusIcon className="size-4" /> New post
@@ -235,12 +228,14 @@ export default function AdviserGroupDetail() {
               {memberResults.length > 0 && (
                 <ul className="absolute z-10 mt-1 max-h-40 w-full overflow-y-auto rounded-xl border border-white/10 bg-navy-900/95 shadow-lg">
                   {memberResults.map((s) => (
-                    <li
-                      key={s.user_id}
-                      onClick={() => addMember(s)}
-                      className="cursor-pointer px-3 py-2 text-sm hover:bg-white/10"
-                    >
-                      {s.name} <span className="text-white/50">({s.email})</span>
+                    <li key={s.user_id}>
+                      <button
+                        type="button"
+                        onClick={() => addMember(s)}
+                        className="block w-full px-3 py-2 text-left text-sm hover:bg-white/10"
+                      >
+                        {s.name} <span className="text-white/50">({s.email})</span>
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -259,7 +254,7 @@ export default function AdviserGroupDetail() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => removeMember(m.user_id)}
+                    onClick={() => setPendingRemoval({ kind: 'member', id: m.user_id, name: m.name })}
                     className="text-xs font-semibold text-rose-300 hover:underline"
                   >
                     Remove
@@ -274,25 +269,11 @@ export default function AdviserGroupDetail() {
       {tab === 'Panelists' && (
         <div className={`${glass} p-5 sm:p-6 space-y-4`}>
           <h2 className="text-lg font-bold">External Panelists ({panel.length})</h2>
-          <div className="flex gap-2">
-            <input
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="Panelist email (account must exist)"
-              className="h-10 flex-1 rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none focus:border-gold/50"
-            />
-            <button
-              type="button"
-              onClick={invitePanelist}
-              disabled={inviting}
-              className="h-10 rounded-xl bg-gold/20 px-4 text-sm font-semibold text-gold transition hover:bg-gold/30 disabled:opacity-60"
-            >
-              {inviting ? '…' : 'Invite'}
-            </button>
-          </div>
-          <p className="text-xs text-white/50">
-            Panelists are assigned by a System Admin for now. Full email invitation arrives with the domain.
-          </p>
+          {!backendSupport.panelistInvite && (
+            <p className="m-0 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs text-white/60">
+              {unsupportedNote.panelistInvite}
+            </p>
+          )}
           {panel.length === 0 ? (
             <p className="text-sm text-white/50">No panelists assigned.</p>
           ) : (
@@ -305,7 +286,7 @@ export default function AdviserGroupDetail() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => revokePanelist(p.assignment_id)}
+                    onClick={() => setPendingRemoval({ kind: 'panel', id: p.assignment_id, name: p.name })}
                     className="text-xs font-semibold text-rose-300 hover:underline"
                   >
                     Revoke
@@ -331,7 +312,10 @@ export default function AdviserGroupDetail() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="m-0 font-medium truncate">{s.title}</p>
-                      <p className="m-0 text-xs text-white/50">{s.authors} · {s.status} · {s.stage}</p>
+                      <p className="m-0 mt-1 flex flex-wrap items-center gap-2 text-xs text-white/50">
+                        <StatusPill status={s.status} />
+                        <span>{s.stage}</span>
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -346,6 +330,21 @@ export default function AdviserGroupDetail() {
             </ul>
           )}
         </div>
+      )}
+
+      {pendingRemoval && (
+        <ConfirmModal
+          title={pendingRemoval.kind === 'member' ? 'Remove member' : 'Revoke panelist'}
+          message={
+            pendingRemoval.kind === 'member'
+              ? `Remove ${pendingRemoval.name} from this group? Their posts and papers stay.`
+              : `Revoke ${pendingRemoval.name} from this group's panel?`
+          }
+          confirmLabel={pendingRemoval.kind === 'member' ? 'Remove' : 'Revoke'}
+          danger
+          onConfirm={confirmRemoval}
+          onClose={() => setPendingRemoval(null)}
+        />
       )}
 
       {tab === 'Analytics' && (

@@ -65,7 +65,7 @@ const linkCls = ({ isActive }) =>
       : 'text-white/75 hover:bg-white/5 hover:text-white'
   }`
 
-export default function Sidebar({ user, onLogout, navItems = STUDENT_NAV, bottomItems = STUDENT_BOTTOM, roleLabel = 'Student', showComposer = true }) {
+export default function Sidebar({ user, onLogout, navItems = STUDENT_NAV, roleLabel = 'Student', showComposer = true, profileTo = ROUTES.profile }) {
   const name = user?.name ?? user?.full_name ?? 'Student'
   const { pathname } = useLocation()
   const { openComposer } = useForum()
@@ -121,7 +121,7 @@ export default function Sidebar({ user, onLogout, navItems = STUDENT_NAV, bottom
             Add New Post
           </button>
         )}
-        <ProfileTrigger className="flex w-full items-center gap-3 rounded-2xl px-1 py-1 text-left transition hover:bg-white/5">
+        <ProfileTrigger to={profileTo} className="flex w-full items-center gap-3 rounded-2xl px-1 py-1 text-left transition hover:bg-white/5">
           <div className="grid size-10 shrink-0 place-items-center rounded-full bg-gold text-sm font-bold text-ink">
             {initials(name)}
           </div>
@@ -142,10 +142,10 @@ export default function Sidebar({ user, onLogout, navItems = STUDENT_NAV, bottom
   )
 }
 
-export function MobileNav() {
+export function MobileNav({ homeTo = ROUTES.home }) {
   return (
     <div className="flex items-center justify-between font-display lg:hidden">
-      <NavLink to={ROUTES.home} end className="flex items-center gap-2" aria-label="Home">
+      <NavLink to={homeTo} end className="flex items-center gap-2" aria-label="Home">
         <Logo className="size-9 shrink-0 text-gold" />
         <span className="text-lg font-bold tracking-wide">
           CORE <span className="text-gold">V</span>
