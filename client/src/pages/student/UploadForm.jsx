@@ -6,7 +6,7 @@ import { ChevronDownIcon } from '../../components/dashboard/icons'
 import Field, { inputCls } from '../../components/upload/Field'
 import { getMyGroups as fetchMyGroups, uploadPaper, uploadPaperVersion } from '../../services/uploadService'
 import { getPaperDetail, updatePaper } from '../../services/paperService'
-import { splitList } from '../../utils/paperRules'
+import { splitList, canEdit } from '../../utils/paperRules'
 
 const TITLE_MAX = 300
 const ABSTRACT_MIN = 50

@@ -1,9 +1,9 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import useForum from '../../context/useForum'
-import useAuth from '../../context/useAuth'
 import ProfileTrigger from '../profile/ProfileTrigger'
 import { ROUTES } from './constants'
 import Logo from '../Logo'
+import ThemeToggle from '../gallery/ThemeToggle'
 import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon, DocIcon, CommentIcon, UserIcon, FilterIcon, FlagIcon, AlertIcon } from './icons'
 
 export const STUDENT_NAV = [
@@ -74,10 +74,11 @@ export default function Sidebar({ user, onLogout, navItems = STUDENT_NAV, roleLa
   return (
     <aside className="sticky top-6 hidden h-[calc(100dvh-3rem)] w-64 shrink-0 self-start flex-col overflow-y-auto rounded-3xl border border-white/10 bg-panel p-6 font-display shadow-lg shadow-black/20 backdrop-blur-sm lg:flex xl:w-72">
       <div className="flex items-center gap-3 pb-10 pt-1">
-        <Logo className="size-12 shrink-0 text-gold" />
+        <Logo className="size-10 sm:size-11 shrink-0 text-gold" />
         <span className="text-2xl font-bold tracking-wide">
           CORE <span className="text-gold">V</span>
         </span>
+        <ThemeToggle className="ml-auto" />
       </div>
 
       <nav className="flex flex-col gap-1.5">
@@ -146,17 +147,20 @@ export function MobileNav({ homeTo = ROUTES.home }) {
   return (
     <div className="flex items-center justify-between font-display lg:hidden">
       <NavLink to={homeTo} end className="flex items-center gap-2" aria-label="Home">
-        <Logo className="size-9 shrink-0 text-gold" />
+        <Logo className="size-10 sm:size-11 shrink-0 text-gold" />
         <span className="text-lg font-bold tracking-wide">
           CORE <span className="text-gold">V</span>
         </span>
       </NavLink>
-      <NavLink
-        to={ROUTES.gallery}
-        className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 transition hover:text-white"
-      >
-        Gallery
-      </NavLink>
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        <NavLink
+          to={ROUTES.gallery}
+          className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 transition hover:text-white"
+        >
+          Gallery
+        </NavLink>
+      </div>
     </div>
   )
 }

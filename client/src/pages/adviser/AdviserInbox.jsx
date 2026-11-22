@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import api from '../../services/api'
 import { listAccessRequests, getAccessRequest, approveAccessRequest, declineAccessRequest, revokeAccessLink } from '../../services/accessService'
 import { glass } from '../../components/dashboard/constants'
 import { BellIcon, CheckIcon, CloseIcon, SearchIcon } from '../../components/dashboard/icons'
@@ -62,7 +61,7 @@ export default function AdviserInbox() {
     try {
       const d = await getAccessRequest(id)
       setDetail(d)
-    } catch (e) {
+    } catch {
       setError('Failed to load request detail')
     } finally {
       setDetailLoading(false)
@@ -129,8 +128,6 @@ export default function AdviserInbox() {
       // fallback
     }
   }
-
-  const countsTotal = Object.values(counts).reduce((a, b) => a + b, 0)
 
   return (
     <div className="space-y-6 sm:space-y-8">

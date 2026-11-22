@@ -5,8 +5,6 @@ import { ForumContext } from './forumContext'
 import api from '../services/api'
 import AddPostModal from '../components/paper/AddPostModal'
 
-const newId = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
-
 const normalizePost = (row) => ({
   id: row.id ?? row.post_id,
   type: row.type ?? row.post_type ?? 'update',
