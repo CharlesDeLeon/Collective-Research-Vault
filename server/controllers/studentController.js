@@ -3,7 +3,9 @@ const { query } = require('../config/db')
 // GET /api/student/access-requests — list requests matching the logged-in user's email
 const listAccessRequests = async (req, res) => {
   try {
-    const email = req.user.email
+    const userId = req.user.user_id
+    const [users] = await query('SELECT email FROM users WHERE user_id = ?', [userId])
+    const email = users[0]?.email
     if (!email) return res.status(400).json({ message: 'No email on account' })
 
     const [rows] = await query(
@@ -50,8 +52,11 @@ const listAccessRequests = async (req, res) => {
 // POST /api/student/access-requests/:id/consume
 const consumeAccessRequest = async (req, res) => {
   try {
-    const email = req.user.email
+    const userId = req.user.user_id
     const { id } = req.params
+    const [users] = await query('SELECT email FROM users WHERE user_id = ?', [userId])
+    const email = users[0]?.email
+    if (!email) return res.status(400).json({ message: 'No email on account' })
 
     const [reqs] = await query(
       `SELECT r.request_id, r.submission_id, r.email, s.slug AS paper_slug
