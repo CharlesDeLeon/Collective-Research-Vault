@@ -105,3 +105,17 @@ export async function getUserNames() {
   const result = await getAdminUsers({ page: 1, limit: 500 })
   return Object.fromEntries(result.data.map((u) => [u.user_id, u.name]))
 }
+
+export async function listAnnouncements() {
+  const res = await api.get('/admin/notifications')
+  return rows(res)
+}
+
+export async function sendAnnouncement(payload) {
+  const res = await api.post('/admin/notifications', payload)
+  return res.data ?? null
+}
+
+export async function changeOwnPassword(currentPassword, newPassword) {
+  await api.post('/auth/change-password', { currentPassword, newPassword })
+}

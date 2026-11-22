@@ -18,7 +18,6 @@ import StudentLayout from './pages/student/StudentLayout'
 import StudentDashboard from './pages/student/StudentDashboard'
 import UploadForm from './pages/student/UploadForm'
 import MyPapers from './pages/student/MyPapers'
-import MyAccess from './pages/student/MyAccess'
 import PaperDetail from './pages/student/PaperDetail'
 import ActivityHistory from './pages/student/ActivityHistory'
 import Feed from './pages/student/Feed'
@@ -52,6 +51,11 @@ import AdminGroupDetail from './pages/admin/AdminGroupDetail'
 import AdminAccessRequests from './pages/admin/AdminAccessRequests'
 import AdminUserDetail from './pages/admin/AdminUserDetail'
 import AdminRoles from './pages/admin/AdminRoles'
+import AdminReports from './pages/admin/AdminReports'
+import AdminAnalytics from './pages/admin/AdminAnalytics'
+import AdminAnnouncements from './pages/admin/AdminAnnouncements'
+import AdminSettings from './pages/admin/AdminSettings'
+import AdminProfile from './pages/admin/AdminProfile'
 
 // Panelist
 import PanelistLayout from './pages/panelist/PanelistLayout'
@@ -90,7 +94,6 @@ function App() {
             <Route path="upload" element={<UploadForm />} />
             <Route path="my-papers" element={<MyPapers />} />
             <Route path="my-papers/:paperId/edit" element={<UploadForm />} />
-            <Route path="access" element={<MyAccess />} />
             <Route path="paper/:paperId" element={<PaperDetail />} />
             <Route path="feed" element={<Feed />} />
             <Route path="groups" element={<Groups />} />
@@ -169,7 +172,11 @@ function App() {
             <Route path="access-requests" element={<AdminAccessRequests />} />
             <Route path="audit" element={<AuditTrail />} />
             <Route path="storage" element={<ManageStorage />} />
-            <Route path="profile" element={<Profile />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="notifications" element={<AdminAnnouncements />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="profile" element={<AdminProfile />} />
             <Route path="manageUsers" element={<Navigate to="/admin/users" replace />} />
             <Route path="auditTrail" element={<Navigate to="/admin/audit" replace />} />
             <Route path="manageStorage" element={<Navigate to="/admin/storage" replace />} />
