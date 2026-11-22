@@ -36,7 +36,7 @@ export function normalizePaperDetail(d) {
     title: d.title,
     status: d.status,
     abstract: d.abstract,
-    keywords: d.keywords,
+    keywords: d.keywords ? String(d.keywords).split(/[,;]/).map((s) => s.trim()).filter(Boolean) : [],
     program: d.program,
     strand: d.strand || d.program,
     section: d.section,
