@@ -36,6 +36,7 @@ import AdviserSubmissions from './pages/adviser/AdviserSubmissions'
 import AdviserReview from './pages/adviser/AdviserReview'
 import AdviserInbox from './pages/adviser/AdviserInbox'
 import AdviserModeration from './pages/adviser/AdviserModeration'
+import AdviserPanelists from './pages/adviser/AdviserPanelists'
 import AdviserReports from './pages/adviser/AdviserReports'
 import AdviserAnalytics from './pages/adviser/AdviserAnalytics'
 
@@ -127,6 +128,7 @@ function App() {
             <Route path="reviews/:id" element={<AdviserReview />} />
             <Route path="inbox" element={<AdviserInbox />} />
             <Route path="moderation" element={<AdviserModeration />} />
+            <Route path="panelists" element={<AdviserPanelists />} />
             <Route path="analytics" element={<AdviserAnalytics />} />
             <Route path="reports" element={<AdviserReports />} />
             <Route path="notifications" element={<ActivityHistory />} />
