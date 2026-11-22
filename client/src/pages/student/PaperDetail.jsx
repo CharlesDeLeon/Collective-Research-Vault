@@ -1,11 +1,24 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import useToast from '../../context/useToast'
 import { glass, ROUTES } from '../../components/dashboard/constants'
 import { DocIcon, ExternalLinkIcon } from '../../components/dashboard/icons'
 import PaperSummaryCard from '../../components/paper/PaperSummaryCard'
 import SectionHeading from '../../components/paper/SectionHeading'
 import ResubmitModal from '../../components/paper/ResubmitModal'
-import { getPaperDetail, resubmitPaper } from '../../services/paperService'
+import ConsentCard from '../../components/paper/ConsentCard'
+import StatusHistory from '../../components/paper/StatusHistory'
+import ForumSection from '../../components/paper/ForumSection'
+import FeedbackNotes from '../../components/paper/FeedbackNotes'
+import VideoEmbed from '../../components/forum/VideoEmbed'
+import {
+  getPaperDetail,
+  resubmitPaper,
+  setPaperConsent,
+  resolveFeedbackNote,
+  dismissFeedbackNote,
+} from '../../services/paperService'
+import { backendSupport, unsupportedNote } from '../../services/backendSupport'
 import { canEdit, canResubmit, normalizeStatus } from '../../utils/paperRules'
 import { getFileDownloadUrl } from '../../utils/helpers'
 
@@ -19,32 +32,113 @@ function lockedText(status) {
   return ''
 }
 
+// VideoEmbed expects { provider, id } rather than a raw URL.
+function parseVideoLink(url) {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    const host = parsed.hostname.replace(/^www\./, '')
+    if (['youtu.be', 'youtube.com', 'm.youtube.com', 'youtube-nocookie.com'].includes(host)) {
+      const id =
+        host === 'youtu.be'
+          ? parsed.pathname.slice(1).split('/')[0]
+          : parsed.searchParams.get('v') || parsed.pathname.match(/^\/(?:embed|shorts|live)\/([^/]+)/)?.[1]
+      if (id) return { provider: 'youtube', id }
+    }
+    if (['vimeo.com', 'player.vimeo.com'].includes(host)) {
+      const id = parsed.pathname.match(/^\/(?:video\/)?(\d+)/)?.[1]
+      if (id) return { provider: 'vimeo', id }
+    }
+  } catch {
+    // Not a parseable URL — fall back to a plain link.
+  }
+  return null
+}
+
 export default function PaperDetail() {
   const { paperId } = useParams()
-  const [paper, setPaper] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const { toast } = useToast()
+  const [detail, setDetail] = useState({ id: null, paper: null, error: null })
   const [resubmitting, setResubmitting] = useState(false)
+
+  // Derive loading from the loaded id so no setState is needed in the effect body.
+  const loading = detail.id !== paperId
+  const paper = detail.paper
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    setError(null)
     getPaperDetail(paperId)
-      .then((data) => { if (!cancelled) setPaper(data) })
-      .catch(() => { if (!cancelled) setError('Could not load this paper.') })
-      .finally(() => { if (!cancelled) setLoading(false) })
+      .then((data) => {
+        if (cancelled) return
+        setDetail({ id: paperId, paper: data, error: null })
+      })
+      .catch(() => {
+        if (cancelled) return
+        setDetail({ id: paperId, paper: null, error: 'Could not load this paper.' })
+      })
     return () => { cancelled = true }
   }, [paperId])
+
+  const changeConsent = async (granted) => {
+    const result = await setPaperConsent(paper.id, granted)
+    const at =
+      result?.consent?.at ??
+      result?.at ??
+      result?.author_consent_at ??
+      result?.data?.consent?.at ??
+      new Date().toISOString()
+    setDetail((d) => ({
+      ...d,
+      paper: {
+        ...d.paper,
+        consent: { status: granted ? 'granted' : 'declined', at },
+      },
+    }))
+    toast(granted ? 'Public release enabled.' : 'Public release withdrawn.')
+  }
 
   const confirmResubmit = async () => {
     try {
       const data = await resubmitPaper(paperId)
-      setPaper((p) => (p ? { ...p, status: data.status ?? p.status } : p))
+      const nextStatus = data?.status ?? data?.data?.status
+      setDetail((d) => ({
+        ...d,
+        paper: d.paper ? { ...d.paper, status: nextStatus ?? d.paper.status } : d.paper,
+      }))
+      toast('Paper resubmitted for review.')
     } catch {
-      // ignore
+      toast('Could not resubmit the paper.', 'error')
+    } finally {
+      setResubmitting(false)
     }
-    setResubmitting(false)
+  }
+
+  const resolveNote = async (noteId) => {
+    try {
+      await resolveFeedbackNote(paper.id, noteId)
+      setDetail((d) => ({
+        ...d,
+        paper: {
+          ...d.paper,
+          notes: d.paper.notes.map((n) => (n.id === noteId ? { ...n, resolved: true } : n)),
+        },
+      }))
+    } catch {
+      toast('Could not update the feedback note.', 'error')
+    }
+  }
+
+  const dismissNote = async (noteId) => {
+    try {
+      await dismissFeedbackNote(paper.id, noteId)
+      setDetail((d) => ({
+        ...d,
+        paper: { ...d.paper, notes: d.paper.notes.filter((n) => n.id !== noteId) },
+      }))
+      toast('Feedback note dismissed.')
+    } catch {
+      toast('Could not dismiss the feedback note.', 'error')
+    }
   }
 
   if (loading) {
@@ -64,14 +158,14 @@ export default function PaperDetail() {
     )
   }
 
-  if (error || !paper) {
+  if (detail.error || !paper) {
     return (
       <div className="space-y-4 font-display">
         <Link to={ROUTES.myPapers} className="inline-flex min-h-11 items-center gap-2 text-sm text-white/80">
           ‹ My Papers
         </Link>
         <div role="alert" className="rounded-2xl border border-rose-400/30 bg-rose-500/10 p-6">
-          <p className="m-0 text-sm text-rose-200">{error || 'Paper not found.'}</p>
+          <p className="m-0 text-sm text-rose-200">{detail.error || 'Paper not found.'}</p>
           <Link
             to={ROUTES.myPapers}
             className="mt-4 inline-block rounded-lg bg-gold px-5 py-2 text-sm font-semibold text-ink hover:bg-gold-light"
@@ -84,6 +178,7 @@ export default function PaperDetail() {
   }
 
   const locked = lockedText(paper.status)
+  const videoLink = parseVideoLink(paper.videoUrl)
 
   return (
     <div className="space-y-4 font-display">
@@ -139,37 +234,71 @@ export default function PaperDetail() {
             </div>
           </section>
 
-          {paper.versions?.length > 0 && (
-            <section aria-labelledby="files-heading">
-              <div id="files-heading">
-                <SectionHeading icon={ExternalLinkIcon} title="Files" />
+          {paper.videoUrl && (
+            <section aria-labelledby="video-heading">
+              <div id="video-heading">
+                <SectionHeading icon={ExternalLinkIcon} title="Presentation video" />
               </div>
               <div className={`${glass} p-4 sm:p-6`}>
-                <ul className="space-y-2">
-                  {paper.versions.map((v, i) => (
-                    <li key={i} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
-                      <span className="truncate text-sm">{v.fileName}</span>
-                      {v.filePath && (
-                        <a
-                          href={getFileDownloadUrl(v.filePath)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="shrink-0 text-xs font-semibold text-gold hover:underline"
-                        >
-                          Download
-                        </a>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                {videoLink ? (
+                  <VideoEmbed link={videoLink} />
+                ) : (
+                  <a
+                    href={paper.videoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-gold hover:underline"
+                  >
+                    Open video link
+                    <ExternalLinkIcon className="size-4" />
+                  </a>
+                )}
               </div>
             </section>
           )}
+
+          {paper.file && (
+            <section aria-labelledby="file-heading">
+              <div id="file-heading">
+                <SectionHeading icon={ExternalLinkIcon} title="Paper file" />
+              </div>
+              <div className={`${glass} p-4 sm:p-6`}>
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+                  <span className="truncate text-sm">{paper.file.fileName}</span>
+                  <a
+                    href={getFileDownloadUrl(paper.file.filePath)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="shrink-0 text-xs font-semibold text-gold hover:underline"
+                  >
+                    Download
+                  </a>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {paper.notes?.length > 0 && (
+            <FeedbackNotes notes={paper.notes} onDismiss={dismissNote} onResolve={resolveNote} />
+          )}
+
+          {!backendSupport.statusHistory && !paper.statusHistory?.length ? (
+            <p className="text-sm text-white/50">{unsupportedNote.statusHistory}</p>
+          ) : (
+            <StatusHistory history={paper.statusHistory} />
+          )}
+
+          <ForumSection paper={paper} />
         </div>
 
         <aside className="min-w-0 space-y-8">
+          <ConsentCard paper={paper} onChange={changeConsent} />
+
           <div className={`${glass} p-4 sm:p-6`}>
-            <h3 className="mb-3 text-sm font-bold">Details</h3>
+            <h3 className="mb-3 text-sm font-bold">
+              Details
+              {locked && <span className="ml-2 text-xs font-normal text-white/50">Read-only</span>}
+            </h3>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between gap-2"><dt className="text-white/50">Group</dt><dd className="text-right">{paper.groupName || '—'}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-white/50">Strand</dt><dd className="text-right">{paper.strand || paper.program || '—'}</dd></div>

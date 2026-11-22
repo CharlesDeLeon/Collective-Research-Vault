@@ -6,10 +6,12 @@ export const ACCEPTED_EXTENSIONS = ['pdf', 'doc', 'docx']
 
 export async function getMyGroups() {
   const res = await api.get('/papers/my-groups')
-  return Array.isArray(res.data?.data) ? res.data.data : []
+  const rows = res.data?.data ?? res.data
+  if (!Array.isArray(rows)) throw new Error('Unexpected response from the server.')
+  return rows
 }
 
-export async function uploadPaper({ title, authors, program, year, schoolYear, groupId, abstract, keywords, file }) {
+export async function uploadPaper({ title, authors, program, year, schoolYear, groupId, abstract, keywords, videoUrl, file }) {
   const body = new FormData()
   body.append('title', title)
   body.append('authors', authors)
@@ -18,15 +20,17 @@ export async function uploadPaper({ title, authors, program, year, schoolYear, g
   if (schoolYear) body.append('school_year', schoolYear)
   if (abstract) body.append('abstract', abstract)
   if (keywords) body.append('keywords', keywords)
+  if (videoUrl) body.append('video_url', videoUrl)
   body.append('group_id', groupId)
   body.append(FILE_FIELD, file)
   const res = await api.post('/papers/upload', body)
   return res.data
 }
 
-export async function uploadPaperVersion({ paperId, file }) {
+// Replaces the current file in place — no new version is created (handoff: no versioning).
+export async function replacePaperFile(paperId, file) {
   const body = new FormData()
   body.append(FILE_FIELD, file)
-  const res = await api.post(`/papers/${paperId}/versions`, body)
+  const res = await api.post(`/papers/${paperId}/file`, body)
   return res.data
 }
