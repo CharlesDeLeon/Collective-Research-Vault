@@ -48,6 +48,7 @@ export default function Profile() {
   const [infoErrors, setInfoErrors] = useState({})
   const [savingInfo, setSavingInfo] = useState(false)
   const [infoError, setInfoError] = useState('')
+  const [infoPassword, setInfoPassword] = useState('')
 
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' })
   const [pwErrors, setPwErrors] = useState({})
@@ -56,23 +57,31 @@ export default function Profile() {
 
   const [prefs, setPrefs] = useState(loadPrefs)
 
+  const emailChanged = email.trim().toLowerCase() !== (user?.email ?? '').toLowerCase()
+
   const saveInfo = async (e) => {
     e.preventDefault()
     const errs = {}
     if (!name.trim()) errs.name = 'Name is required.'
     if (!EMAIL_RE.test(email.trim())) errs.email = 'Enter a valid email address.'
+    if (emailChanged && !infoPassword) errs.currentPassword = 'Enter your current password to change your email.'
     setInfoErrors(errs)
     if (Object.keys(errs).length > 0) return
 
     setSavingInfo(true)
     setInfoError('')
     try {
-      const result = await updateProfile({ name: name.trim(), email: email.trim() })
+      const result = await updateProfile({
+        name: name.trim(),
+        email: email.trim(),
+        currentPassword: emailChanged ? infoPassword : undefined,
+      })
       const saved = result?.user ?? result?.data ?? result ?? {}
       const nextName = saved.name ?? saved.full_name ?? name.trim()
       const nextEmail = saved.email ?? email.trim()
       setName(nextName)
       setEmail(nextEmail)
+      setInfoPassword('')
       updateUser({ name: nextName, full_name: nextName, email: nextEmail })
       toast('Profile updated.')
     } catch (err) {
@@ -140,6 +149,11 @@ export default function Profile() {
           <Field label="Email" error={infoErrors.email}>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={150} autoComplete="email" {...invalid('email', infoErrors)} />
           </Field>
+          {emailChanged && (
+            <Field label="Current password" error={infoErrors.currentPassword}>
+              <input type="password" value={infoPassword} onChange={(e) => setInfoPassword(e.target.value)} autoComplete="current-password" {...invalid('currentPassword', infoErrors)} />
+            </Field>
+          )}
           {infoError && (
             <p role="alert" className="m-0 text-sm text-danger-ink">{infoError}</p>
           )}
