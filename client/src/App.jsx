@@ -53,6 +53,13 @@ import AdminAccessRequests from './pages/admin/AdminAccessRequests'
 import AdminUserDetail from './pages/admin/AdminUserDetail'
 import AdminRoles from './pages/admin/AdminRoles'
 
+// Panelist
+import PanelistLayout from './pages/panelist/PanelistLayout'
+import PanelistDashboard from './pages/panelist/PanelistDashboard'
+import PanelistGroups from './pages/panelist/PanelistGroups'
+import PanelistGroupDetail from './pages/panelist/PanelistGroupDetail'
+import PanelistPostDetail from './pages/panelist/PanelistPostDetail'
+
 
 function App() {
   return (
@@ -122,6 +129,24 @@ function App() {
             <Route path="assignments/*" element={<Navigate to="/adviser/groups" replace />} />
             <Route path="faculty-assignment" element={<Navigate to="/adviser/groups" replace />} />
             <Route path="*" element={<Navigate to="/adviser/dashboard" replace />} />
+          </Route>
+
+          <Route
+            path="/panelist"
+            element={
+              <ProtectedRoute allowedRole="external_panelist">
+                <PanelistLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/panelist/dashboard" replace />} />
+            <Route path="dashboard" element={<PanelistDashboard />} />
+            <Route path="groups" element={<PanelistGroups />} />
+            <Route path="groups/:groupId" element={<PanelistGroupDetail />} />
+            <Route path="posts/:postId" element={<PanelistPostDetail />} />
+            <Route path="notifications" element={<ActivityHistory />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="*" element={<Navigate to="/panelist/dashboard" replace />} />
           </Route>
 
           <Route

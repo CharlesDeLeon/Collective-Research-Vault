@@ -27,6 +27,9 @@ export const backendSupport = {
   adminCreateGroup: false,
   adminListTotals: false,
   adminEditRoles: false,
+  panelistScopedGroups: false,
+  panelistPaperList: false,
+  adviserExpiredCount: false,
 }
 
 export const unsupportedNote = {
@@ -54,5 +57,7 @@ export const unsupportedNote = {
   adminLastLogin: 'The last sign-in time appears here once the server records it.',
   adminUserGroups: 'The groups this person belongs to appear here once the server provides them.',
   adminEditRoles: 'Permissions are fixed in the server for now, so this page is read-only. Roles can be assigned to people from the Users page.',
+  panelistPaperList: 'Papers are listed from the posts in this group. A full list with files and review status is not available to panelists yet.',
+  adviserExpiredCount: 'Expired requests are not counted by the server yet.',
   adminListTotals: 'Totals for this list are not available yet, so paging only shows whether there is a next page.',
 }
