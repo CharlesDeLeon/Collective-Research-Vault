@@ -33,7 +33,8 @@ CORE-V replaces the school's Facebook-group research workflow:
 ### Hard rules the UI must reflect
 
 - Advisers create their own groups; admins can create for recovery.
-- Advisers see only their own groups.
+- Advisers see only their own groups (for group management).
+- Any adviser can view and approve/decline access requests for any paper.
 - Advisers alone publish papers and approve access requests.
 - **Admins cannot publish papers or approve access requests.**
 - Every group must have an adviser before its papers can be published.
@@ -190,6 +191,8 @@ Adviser action panel (sticky):
 - [ ] Previous / Next group navigation
 
 ### 4.7 Access Inbox — `/adviser/inbox`
+
+Note: All advisers see all access requests (not just their own groups).
 
 - [ ] Counters: Pending · Approved · Declined · Expired
 - [ ] Filters: status, group, paper, date

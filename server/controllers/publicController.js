@@ -239,7 +239,7 @@ const consumeLink = async (req, res) => {
       [l.submission_id]
     )
     const filePath = versions.length ? versions[0].file_path : null
-    const fileUrl = filePath ? `/uploads/${filePath.replace(/^.*\//, '')}` : ''
+    const fileUrl = filePath || ''
 
     await logAccess(l, 'download_success', req)
 
