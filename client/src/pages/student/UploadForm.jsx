@@ -54,7 +54,7 @@ function PaperFormBody({ groups, paper }) {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
-  const group = groups.find((g) => g.id === groupId)
+  const group = groups.find((g) => String(g.id) === String(groupId))
   const keywordList = splitList(keywords)
   const authorList = splitList(authors)
 
@@ -87,7 +87,7 @@ function PaperFormBody({ groups, paper }) {
       return
     }
     setSubmitting(true)
-    const group = groups.find((g) => g.id === groupId)
+    const group = groups.find((g) => String(g.id) === String(groupId))
     const year = group?.schoolYear ? group.schoolYear.split('-')[0] : ''
     try {
       if (editing) {
