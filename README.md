@@ -57,6 +57,9 @@ Collective-Research-Vault
 │  │  │  │  ├─ GalleryNavbar.jsx
 │  │  │  │  ├─ SortSelect.jsx
 │  │  │  │  └─ UserMenu.jsx
+│  │  │  ├─ group
+│  │  │  │  ├─ GroupCard.jsx
+│  │  │  │  └─ GroupSwitcher.jsx
 │  │  │  ├─ login
 │  │  │  │  ├─ belt.css
 │  │  │  │  ├─ fallbackCards.js
@@ -93,9 +96,11 @@ Collective-Research-Vault
 │  │  │  ├─ StatusBadge.jsx
 │  │  │  ├─ ui
 │  │  │  │  ├─ ConfirmModal.jsx
+│  │  │  │  ├─ ErrorBanner.jsx
 │  │  │  │  ├─ ErrorScreen.jsx
 │  │  │  │  ├─ ModalShell.jsx
-│  │  │  │  └─ Select.jsx
+│  │  │  │  ├─ Select.jsx
+│  │  │  │  └─ StatTile.jsx
 │  │  │  └─ upload
 │  │  │     ├─ Field.jsx
 │  │  │     ├─ FileDropzone.jsx
@@ -111,6 +116,7 @@ Collective-Research-Vault
 │  │  │  └─ useToast.js
 │  │  ├─ hooks
 │  │  │  ├─ useAccessGate.js
+│  │  │  ├─ useAssignedGroups.js
 │  │  │  ├─ useDebouncedValue.js
 │  │  │  ├─ useLoginShowcase.js
 │  │  │  ├─ useNotifications.js
@@ -148,6 +154,12 @@ Collective-Research-Vault
 │  │  │  ├─ GalleryPaper.jsx
 │  │  │  ├─ Login.jsx
 │  │  │  ├─ NotFoundPage.jsx
+│  │  │  ├─ panelist
+│  │  │  │  ├─ PanelistDashboard.jsx
+│  │  │  │  ├─ PanelistGroupDetail.jsx
+│  │  │  │  ├─ PanelistGroups.jsx
+│  │  │  │  ├─ PanelistLayout.jsx
+│  │  │  │  └─ PanelistPostDetail.jsx
 │  │  │  ├─ public
 │  │  │  │  ├─ About.jsx
 │  │  │  │  ├─ AccessDownload.jsx
@@ -163,6 +175,7 @@ Collective-Research-Vault
 │  │  │     ├─ Forum.jsx
 │  │  │     ├─ GroupDetail.jsx
 │  │  │     ├─ Groups.jsx
+│  │  │     ├─ MyAccess.jsx
 │  │  │     ├─ MyPapers.jsx
 │  │  │     ├─ NotFound.jsx
 │  │  │     ├─ PaperDetail.jsx
@@ -184,7 +197,9 @@ Collective-Research-Vault
 │  │  │  ├─ galleryService.js
 │  │  │  ├─ loginShowcase.js
 │  │  │  ├─ notificationService.js
+│  │  │  ├─ panelistService.js
 │  │  │  ├─ paperService.js
+│  │  │  ├─ studentAccessService.js
 │  │  │  └─ uploadService.js
 │  │  └─ utils
 │  │     ├─ adminRoles.js
@@ -234,7 +249,8 @@ Collective-Research-Vault
 │  │  ├─ notificationController.js
 │  │  ├─ paperController.js
 │  │  ├─ publicController.js
-│  │  └─ reviewController.js
+│  │  ├─ reviewController.js
+│  │  └─ studentController.js
 │  ├─ generateHash.js
 │  ├─ index.js
 │  ├─ middleware
@@ -257,7 +273,8 @@ Collective-Research-Vault
 │  │  ├─ notification.routes.js
 │  │  ├─ paper.routes.js
 │  │  ├─ public.routes.js
-│  │  └─ review.routes.js
+│  │  ├─ review.routes.js
+│  │  └─ student.routes.js
 │  ├─ scripts
 │  │  ├─ db-check.js
 │  │  ├─ db-setup.js

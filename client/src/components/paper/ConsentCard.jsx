@@ -3,12 +3,14 @@ import { glass } from '../dashboard/constants'
 import { CheckIcon } from '../dashboard/icons'
 import SectionHeading from './SectionHeading'
 import { longDate } from '../../utils/formatDate'
+import { normalizeStatus } from '../../utils/paperRules'
 
 function stateText(paper, locked) {
   const { status, at } = paper.consent ?? { status: 'pending' }
+  const dated = (word) => (at ? `${word} on ${longDate(at)}.` : `${word}.`)
   if (locked) return 'This paper is published. Ask your adviser to unpublish it before you withdraw consent.'
-  if (status === 'granted') return `Granted on ${longDate(at)}. You can withdraw until the paper is published.`
-  if (status === 'declined') return `Withdrawn on ${longDate(at)}. Your adviser can’t publish this paper.`
+  if (status === 'granted') return `${dated('Granted')} You can withdraw until the paper is published.`
+  if (status === 'declined') return `${dated('Withdrawn')} Your adviser can’t publish this paper.`
   return 'Not granted yet. Your adviser can’t publish this paper without it.'
 }
 
@@ -16,7 +18,7 @@ export default function ConsentCard({ paper, onChange }) {
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
   const granted = paper.consent?.status === 'granted'
-  const locked = paper.status === 'published'
+  const locked = normalizeStatus(paper.status) === 'published'
 
   const toggle = async () => {
     setBusy(true)

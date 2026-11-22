@@ -55,7 +55,6 @@ app.use('/api/forum', require('./routes/forum.routes'))
 app.use('/api/papers', require('./routes/paper.routes'))
 app.use('/api/public', require('./routes/public.routes'))
 app.use('/api/adviser', require('./routes/access.routes'))
-app.use('/api/reviews', require('./routes/review.routes'))
 app.use('/api/admin', require('./routes/admin.routes'))
 app.use('/api/notifications', require('./routes/notification.routes'))
 
