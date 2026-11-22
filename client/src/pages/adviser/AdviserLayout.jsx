@@ -16,12 +16,12 @@ export default function AdviserLayout() {
             user={user}
             onLogout={logout}
             navItems={ADVISER_NAV}
-            bottomItems={ADVISER_BOTTOM}
             roleLabel="Adviser"
             showComposer={false}
+            profileTo="/adviser/profile"
           />
           <div className="min-w-0 flex-1">
-            <MobileNav />
+            <MobileNav homeTo="/adviser/dashboard" />
             <main className="mt-6 lg:mt-0">
               <Outlet />
             </main>

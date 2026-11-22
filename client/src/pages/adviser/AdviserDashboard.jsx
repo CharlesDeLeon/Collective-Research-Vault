@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuth from '../../context/useAuth'
-import api from '../../services/api'
+import { getDashboard } from '../../services/adviserService'
 import { glass } from '../../components/dashboard/constants'
 
 const KPI = [
@@ -29,8 +29,7 @@ export default function AdviserDashboard() {
     setLoading(true)
     setError(null)
     try {
-      const res = await api.get('/coordinator/dashboard')
-      setStats(res.data?.data || null)
+      setStats(await getDashboard())
     } catch (e) {
       console.error(e)
       setError('Failed to load dashboard stats')
@@ -58,6 +57,20 @@ export default function AdviserDashboard() {
         <p role="alert" className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
           {error}
         </p>
+      )}
+
+      {!loading && !error && stats && Number(stats.total_groups) === 0 && (
+        <section className="rounded-2xl border-2 border-dashed border-white/20 px-6 py-10 text-center">
+          <p className="m-0 text-lg font-semibold">Create your first group</p>
+          <p className="mb-0 mt-1 text-sm text-white/70">Groups hold your students, their papers and the discussion feed.</p>
+          <button
+            type="button"
+            onClick={() => navigate('/adviser/groups')}
+            className="mt-5 h-12 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft px-7 text-base font-semibold text-ink hover:brightness-105"
+          >
+            Create group
+          </button>
+        </section>
       )}
 
       <section aria-labelledby="kpi-heading">

@@ -26,20 +26,6 @@ import GroupDetail from './pages/student/GroupDetail'
 import Profile from './pages/student/Profile'
 import NotFound from './pages/student/NotFound'
 
-// Faculty
-import FacultyLayout from './pages/faculty/FacultyLayout'
-import FacultyDashboard from './pages/faculty/FacultyDashboard'
-import AssignmentsList from './pages/faculty/AssignmentsList'
-import SubmissionDetail from './pages/faculty/SubmissionDetail'
-
-// Coordinator
-import CoordinatorLayout from './pages/coordinator/CoordinatorLayout'
-import CoordinatorDashboard from './pages/coordinator/CoordinatorDashboard'
-import CoordinatorNotif from './pages/coordinator/CoordinatorNotif'
-import FacultyAssignment from './pages/coordinator/FacultyAssignment'
-import ManageGroups from './pages/coordinator/ManageGroups'
-import ManageSubmissions from './pages/coordinator/ManageSubmissions'
-
 // Adviser
 import AdviserLayout from './pages/adviser/AdviserLayout'
 import AdviserDashboard from './pages/adviser/AdviserDashboard'
@@ -58,6 +44,13 @@ import AdminLayout from './pages/admin/AdminLayout'
 import AuditTrail from './pages/admin/AuditTrail'
 import ManageUsers from './pages/admin/ManageUsers'
 import ManageStorage from './pages/admin/ManageStorage'
+import AdminModeration from './pages/admin/AdminModeration'
+import AdminPosts from './pages/admin/AdminPosts'
+import AdminGroups from './pages/admin/AdminGroups'
+import AdminGroupDetail from './pages/admin/AdminGroupDetail'
+import AdminAccessRequests from './pages/admin/AdminAccessRequests'
+import AdminUserDetail from './pages/admin/AdminUserDetail'
+import AdminRoles from './pages/admin/AdminRoles'
 
 
 function App() {
@@ -100,36 +93,8 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
 
-          <Route
-            path="/faculty"
-            element={
-              <ProtectedRoute allowedRole="adviser">
-                <FacultyLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/faculty/dashboard" replace />} />
-            <Route path="dashboard" element={<FacultyDashboard />} />
-            <Route path="assignments" element={<AssignmentsList />} />
-            <Route path="assignments/:group_id" element={<SubmissionDetail />} />
-            <Route path="submission/:submission_id" element={<SubmissionDetail />} />
-          </Route>
-
-          <Route
-            path="/coordinator"
-            element={
-              <ProtectedRoute allowedRole="adviser">
-                <CoordinatorLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/coordinator/dashboard" replace />} />
-            <Route path="dashboard" element={<CoordinatorDashboard />} />
-            <Route path="coordinatornotif" element={<CoordinatorNotif />} />
-            <Route path="facultyassignment" element={<FacultyAssignment />} />
-            <Route path="managegroups" element={<ManageGroups />} />
-            <Route path="managesubmissions" element={<ManageSubmissions />} />
-          </Route>
+          <Route path="/faculty/*" element={<Navigate to="/adviser/dashboard" replace />} />
+          <Route path="/coordinator/*" element={<Navigate to="/adviser/dashboard" replace />} />
 
           <Route
             path="/adviser"
@@ -143,19 +108,18 @@ function App() {
             <Route path="dashboard" element={<AdviserDashboard />} />
             <Route path="groups" element={<AdviserGroups />} />
             <Route path="groups/:groupId" element={<AdviserGroupDetail />} />
-            <Route path="groups/:groupId" element={<GroupDetail />} />
-            <Route path="submissions" element={<AdviserSubmissions />} />
-            <Route path="assignments" element={<AssignmentsList />} />
-            <Route path="assignments/:group_id" element={<SubmissionDetail />} />
-            <Route path="faculty-assignment" element={<FacultyAssignment />} />
-            <Route path="notifications" element={<CoordinatorNotif />} />
-            <Route path="profile" element={<Profile />} />
             <Route path="reviews" element={<AdviserSubmissions />} />
             <Route path="reviews/:id" element={<AdviserReview />} />
             <Route path="inbox" element={<AdviserInbox />} />
             <Route path="moderation" element={<AdviserModeration />} />
             <Route path="analytics" element={<AdviserAnalytics />} />
             <Route path="reports" element={<AdviserReports />} />
+            <Route path="notifications" element={<ActivityHistory />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="submissions" element={<Navigate to="/adviser/reviews" replace />} />
+            <Route path="assignments/*" element={<Navigate to="/adviser/groups" replace />} />
+            <Route path="faculty-assignment" element={<Navigate to="/adviser/groups" replace />} />
+            <Route path="*" element={<Navigate to="/adviser/dashboard" replace />} />
           </Route>
 
           <Route
@@ -168,9 +132,21 @@ function App() {
           >
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="auditTrail" element={<AuditTrail />} />
-            <Route path="manageUsers" element={<ManageUsers />} />
-            <Route path="manageStorage" element={<ManageStorage />} />
+            <Route path="users" element={<ManageUsers />} />
+            <Route path="users/:userId" element={<AdminUserDetail />} />
+            <Route path="roles" element={<AdminRoles />} />
+            <Route path="groups" element={<AdminGroups />} />
+            <Route path="groups/:groupId" element={<AdminGroupDetail />} />
+            <Route path="posts" element={<AdminPosts />} />
+            <Route path="moderation" element={<AdminModeration />} />
+            <Route path="access-requests" element={<AdminAccessRequests />} />
+            <Route path="audit" element={<AuditTrail />} />
+            <Route path="storage" element={<ManageStorage />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="manageUsers" element={<Navigate to="/admin/users" replace />} />
+            <Route path="auditTrail" element={<Navigate to="/admin/audit" replace />} />
+            <Route path="manageStorage" element={<Navigate to="/admin/storage" replace />} />
+            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
