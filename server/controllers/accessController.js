@@ -9,7 +9,6 @@ const listRequests = async (req, res) => {
   try {
     const { status, group, paper, page = 1, limit = 25 } = req.query
     const offset = (Number(page) - 1) * Number(limit)
-    const userId = req.user.user_id
 
     let sql = `
       SELECT r.*, s.title AS paper_title, s.slug AS paper_slug, s.group_id,
@@ -21,12 +20,8 @@ const listRequests = async (req, res) => {
     `
     const params = []
 
-    // Adviser sees only their groups' requests
-    const role = String(req.user?.role || '').toLowerCase()
-    if (role === 'adviser') {
-      sql += ` AND (rg.adviser_id = ? OR rg.created_by = ?)`
-      params.push(userId, userId)
-    }
+    // All advisers (and admins) can see all access requests for all papers.
+    // (No group scoping — any adviser may approve/decline any request.)
 
     if (status) { sql += ` AND r.status = ?`; params.push(status) }
     if (group) { sql += ` AND s.group_id = ?`; params.push(group) }
@@ -37,19 +32,9 @@ const listRequests = async (req, res) => {
 
     const [rows] = await query(sql, params)
 
-    // Get counts (filtered by adviser's groups)
-    let countSql = `SELECT r.status, COUNT(*)::int AS c
-                    FROM paper_access_requests r
-                    JOIN submissions s ON s.submission_id = r.submission_id
-                    LEFT JOIN research_groups rg ON rg.group_id = s.group_id
-                    WHERE 1=1`
-    const countParams = []
-    if (role === 'adviser') {
-      countSql += ` AND (rg.adviser_id = ? OR rg.created_by = ?)`
-      countParams.push(userId, userId)
-    }
-    countSql += ` GROUP BY r.status`
-    const [counts] = await query(countSql, countParams)
+    // Get counts (all requests — any adviser can see all)
+    const countSql = `SELECT status, COUNT(*)::int AS c FROM paper_access_requests GROUP BY status`
+    const [counts] = await query(countSql)
     const countMap = {}
     for (const c of counts) countMap[c.status] = c.c
 
