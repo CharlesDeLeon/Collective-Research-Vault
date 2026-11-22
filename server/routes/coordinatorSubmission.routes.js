@@ -8,7 +8,7 @@ const roleMiddleware = require('../middleware/roleMiddleware')
 const {
   getSubmissions, getSubmissionById, updateStage, updateStatus,
   removeFromPanel, getDashboardStats, getFacultyList, getStudentList,
-  uploadSubmissionFile, publishSubmission, unpublishSubmission, setConsent,
+  uploadSubmissionFile, publishSubmission, unpublishSubmission, setConsent, setFeatured,
   getReports, getAnalytics,
 } = require('../controllers/coordinatorController')
 
@@ -39,6 +39,7 @@ router.post('/:id/files', upload.single('file'), uploadSubmissionFile)
 router.post('/:id/publish', publishSubmission)
 router.post('/:id/unpublish', unpublishSubmission)
 router.post('/:id/consent', setConsent)
+router.patch('/:id/featured', setFeatured)
 
 // Panel removal
 router.delete('/:assignmentId', removeFromPanel)

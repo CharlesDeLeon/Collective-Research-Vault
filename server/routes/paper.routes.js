@@ -40,16 +40,15 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024 }
 })
 
-router.get('/', (req, res) => res.json({ message: 'paper routes ready' }))
-router.get('/my-groups', authMiddleware, roleMiddleware('Student'), getMyGroups)
-router.get('/my', authMiddleware, roleMiddleware('Student'), getMyPapers)
-router.get('/:paperId', authMiddleware, roleMiddleware('Student'), getPaperDetail)
-router.patch('/:paperId', authMiddleware, roleMiddleware('Student'), updatePaper)
-router.post('/:paperId/resubmit', authMiddleware, roleMiddleware('Student'), resubmitPaper)
+router.get('/my-groups', authMiddleware, roleMiddleware('student'), getMyGroups)
+router.get('/my', authMiddleware, roleMiddleware('student'), getMyPapers)
+router.get('/:paperId', authMiddleware, roleMiddleware('student'), getPaperDetail)
+router.patch('/:paperId', authMiddleware, roleMiddleware('student'), updatePaper)
+router.post('/:paperId/resubmit', authMiddleware, roleMiddleware('student'), resubmitPaper)
 router.post(
   '/upload',
   authMiddleware,
-  roleMiddleware('Student'),
+  roleMiddleware('student'),
   upload.single('file'),
   uploadPaper
 )
@@ -57,7 +56,7 @@ router.post(
 router.post(
   '/:paperId/versions',
   authMiddleware,
-  roleMiddleware('Student'),
+  roleMiddleware('student'),
   upload.single('file'),
   uploadPaperVersion
 )

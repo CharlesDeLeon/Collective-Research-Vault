@@ -638,10 +638,22 @@ const publishSubmission = async (req, res) => {
     }
 
     // Generate slug if missing
-    const [[sub2]] = await db.query(`SELECT title, slug FROM submissions WHERE submission_id = ?`, [id])
+    const [[sub2]] = await db.query(`SELECT title, slug, authors, school_year FROM submissions WHERE submission_id = ?`, [id])
     let slug = sub2.slug
     if (!slug) {
       slug = (sub2.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    }
+
+    // Auto-generate APA 7 citation if not provided
+    let finalCitation = citation
+    if (!finalCitation) {
+      const authors = (sub2.authors || '').split(/[,;]/).map(s => s.trim()).filter(Boolean)
+      const year = (sub2.school_year || '').split('-')[0] || new Date().getFullYear()
+      const authorStr = authors.length === 0 ? 'Unknown Author'
+        : authors.length === 1 ? `${authors[0]}.`
+        : authors.length === 2 ? `${authors[0]} & ${authors[1]}.`
+        : `${authors[0]} et al.`
+      finalCitation = `${authorStr} (${year}). ${sub2.title}. CORE-V Research Vault.`
     }
 
     await db.query(
@@ -649,7 +661,7 @@ const publishSubmission = async (req, res) => {
        SET status = 'published', is_published = TRUE, public_visible = TRUE,
            published_at = NOW(), citation = COALESCE(?, citation), slug = COALESCE(slug, ?), updated_at = NOW()
        WHERE submission_id = ?`,
-      [citation || null, slug, id]
+      [finalCitation || null, slug, id]
     )
 
     res.json({ message: 'Published to gallery', submission_id: id })
@@ -672,6 +684,21 @@ const unpublishSubmission = async (req, res) => {
   } catch (err) {
     console.error('unpublishSubmission error:', err)
     res.status(500).json({ message: 'Failed to unpublish' })
+  }
+}
+
+const setFeatured = async (req, res) => {
+  const { id } = req.params
+  const { featured } = req.body
+  try {
+    await db.query(
+      `UPDATE submissions SET featured = ?, updated_at = NOW() WHERE submission_id = ?`,
+      [featured === true || featured === 'true', id]
+    )
+    res.json({ message: 'Featured updated', featured: featured === true || featured === 'true' })
+  } catch (err) {
+    console.error('setFeatured error:', err)
+    res.status(500).json({ message: 'Failed to update featured' })
   }
 }
 
@@ -821,6 +848,6 @@ module.exports = {
   getSubmissions, getSubmissionById,
   updateStage, updateStatus,
   getDashboardStats,
-  uploadSubmissionFile, publishSubmission, unpublishSubmission, setConsent,
+  uploadSubmissionFile, publishSubmission, unpublishSubmission, setConsent, setFeatured,
   getReports, getAnalytics,
 }

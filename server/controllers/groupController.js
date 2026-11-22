@@ -20,6 +20,9 @@ const listGroups = async (req, res) => {
     } else if (role === 'adviser') {
       sql += ` WHERE rg.adviser_id = ? OR rg.created_by = ?`
       params.push(userId, userId)
+    } else if (role === 'external_panelist') {
+      sql += ` JOIN panel_assignments pa ON pa.group_id = rg.group_id WHERE pa.faculty_id = ?`
+      params.push(userId)
     }
 
     sql += ` ORDER BY rg.group_name ASC`
