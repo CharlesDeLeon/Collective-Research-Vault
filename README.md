@@ -21,6 +21,7 @@ Collective-Research-Vault
 │  │  │  │  ├─ AdviserChip.jsx
 │  │  │  │  ├─ AuditDetailModal.jsx
 │  │  │  │  ├─ ChangeRoleModal.jsx
+│  │  │  │  ├─ Charts.jsx
 │  │  │  │  ├─ Pager.jsx
 │  │  │  │  ├─ PostDetailModal.jsx
 │  │  │  │  ├─ PostSummary.jsx
@@ -128,13 +129,18 @@ Collective-Research-Vault
 │  │  ├─ pages
 │  │  │  ├─ admin
 │  │  │  │  ├─ AdminAccessRequests.jsx
+│  │  │  │  ├─ AdminAnalytics.jsx
+│  │  │  │  ├─ AdminAnnouncements.jsx
 │  │  │  │  ├─ AdminDashboard.jsx
 │  │  │  │  ├─ AdminGroupDetail.jsx
 │  │  │  │  ├─ AdminGroups.jsx
 │  │  │  │  ├─ AdminLayout.jsx
 │  │  │  │  ├─ AdminModeration.jsx
 │  │  │  │  ├─ AdminPosts.jsx
+│  │  │  │  ├─ AdminProfile.jsx
+│  │  │  │  ├─ AdminReports.jsx
 │  │  │  │  ├─ AdminRoles.jsx
+│  │  │  │  ├─ AdminSettings.jsx
 │  │  │  │  ├─ AdminUserDetail.jsx
 │  │  │  │  ├─ AuditTrail.jsx
 │  │  │  │  ├─ ManageStorage.jsx
@@ -187,6 +193,7 @@ Collective-Research-Vault
 │  │  │  ├─ accessLinkService.js
 │  │  │  ├─ accessRequestService.js
 │  │  │  ├─ accessService.js
+│  │  │  ├─ adminInsights.js
 │  │  │  ├─ adminService.js
 │  │  │  ├─ adviserService.js
 │  │  │  ├─ api.js
@@ -207,6 +214,7 @@ Collective-Research-Vault
 │  │     ├─ citation.js
 │  │     ├─ clipboard.js
 │  │     ├─ csv.js
+│  │     ├─ downloadCsv.js
 │  │     ├─ formatDate.js
 │  │     ├─ helpers.js
 │  │     ├─ paperRules.js
@@ -228,7 +236,8 @@ Collective-Research-Vault
 │  └─ setup.js
 ├─ docs
 │  ├─ handoff.md
-│  └─ README.md
+│  ├─ README.md
+│  └─ student-backend-requirements.md
 ├─ package-lock.json
 ├─ package.json
 ├─ README.md
@@ -273,13 +282,14 @@ Collective-Research-Vault
 │  │  ├─ notification.routes.js
 │  │  ├─ paper.routes.js
 │  │  ├─ public.routes.js
-│  │  ├─ review.routes.js
 │  │  └─ student.routes.js
 │  ├─ scripts
 │  │  ├─ db-check.js
 │  │  ├─ db-setup.js
 │  │  ├─ migrate_forum.js
 │  │  └─ migrate_gallery.js
+│  ├─ services
+│  │  └─ mailer.js
 │  └─ utils
 │     └─ auditLogger.js
 ├─ SUPABASE_SETUP.md
