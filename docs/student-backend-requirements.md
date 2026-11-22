@@ -186,7 +186,7 @@ Both require student ownership of the paper. Return `200` on success; the fronte
 
 ## 5. Account endpoints
 
-### `PUT /api/auth/profile`
+### `PATCH /api/auth/profile`
 
 Request: `{ "name": "...", "email": "..." }`
 Response: `{ "user": { "name": "...", "email": "..." } }` (or a flat `{ name, email }` — both work).
@@ -197,7 +197,7 @@ Validate email uniqueness and format. The frontend updates `localStorage.user` a
 
 Request:
 ```json
-{ "current_password": "...", "new_password": "..." }
+{ "currentPassword": "...", "newPassword": "..." }
 ```
 Response: `200` with `{ "message": "Password changed." }`.
 
@@ -225,7 +225,7 @@ Only flip when the corresponding endpoint is confirmed live:
 |---|---|
 | `studentConsent` | `POST /papers/:id/consent` + consent in read responses |
 | `statusHistory` | `statusHistory` in `GET /papers/:id` |
-| `profileSync` | `PUT /auth/profile` |
+| `profileSync` | `PATCH /auth/profile` |
 | `changePassword` | `POST /auth/change-password` |
 
 ---
