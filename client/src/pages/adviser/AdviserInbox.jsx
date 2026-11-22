@@ -209,7 +209,7 @@ function RequestModal({ id, onChanged, onClose }) {
                       Copy
                     </button>
                   </div>
-                  <p className="text-xs text-white/55">Send this link to the requester yourself. Email delivery is not set up yet.</p>
+                  <p className="text-xs text-white/55">An email with this link has been sent to the requester (console transport by default; configure SMTP or Brevo via env vars for real delivery).</p>
                 </div>
               )}
 
