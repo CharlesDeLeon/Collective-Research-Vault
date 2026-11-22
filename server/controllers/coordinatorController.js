@@ -482,9 +482,9 @@ const updateStage = async (req, res) => {
 const updateStatus = async (req, res) => {
   try {
     const { id } = req.params
-    const { status } = req.body
+    const { status, note } = req.body
 
-    const validStatuses = ['submitted', 'under_review', 'needs_revision', 'approved', 'rejected', 'published']
+    const validStatuses = ['proposal', 'submitted', 'under_review', 'for_revision', 'needs_revision', 'approved', 'rejected']
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' })
     }
@@ -494,12 +494,17 @@ const updateStatus = async (req, res) => {
     )
     if (!submission) return res.status(404).json({ message: 'Submission not found' })
 
-    const isPublished = status === 'published' ? true : false
-
     await db.query(
-      `UPDATE submissions SET status = ?, is_published = ?, updated_at = NOW()
+      `UPDATE submissions SET status = ?, updated_at = NOW()
        WHERE submission_id = ?`,
-      [status, isPublished, id]
+      [status, id]
+    )
+
+    // Write status history
+    await db.query(
+      `INSERT INTO submission_status_history (submission_id, status, note, changed_by)
+       VALUES (?, ?, ?, ?)`,
+      [id, status, note || null, req.user.user_id]
     )
 
     const [members] = await db.query(
@@ -602,11 +607,11 @@ const uploadSubmissionFile = async (req, res) => {
 
 const publishSubmission = async (req, res) => {
   const { id } = req.params
-  const { citation, consentGranted } = req.body
+  const { citation } = req.body
 
   try {
     const [subs] = await db.query(
-      `SELECT submission_id, status, group_id FROM submissions WHERE submission_id = ?`, [id]
+      `SELECT submission_id, status, group_id, consent_status, author_consent_at FROM submissions WHERE submission_id = ?`, [id]
     )
     if (!subs.length) return res.status(404).json({ message: 'Submission not found' })
     const sub = subs[0]
@@ -622,19 +627,8 @@ const publishSubmission = async (req, res) => {
       return res.status(400).json({ message: 'Upload at least one file before publishing' })
     }
 
-    const consentAt = consentGranted ? new Date().toISOString() : null
-    if (consentGranted) {
-      await db.query(
-        `UPDATE submissions SET author_consent_at = COALESCE(author_consent_at, ?) WHERE submission_id = ?`,
-        [consentAt, id]
-      )
-    }
-
-    const [consentRows] = await db.query(
-      `SELECT author_consent_at FROM submissions WHERE submission_id = ?`, [id]
-    )
-    if (!consentRows[0]?.author_consent_at) {
-      return res.status(400).json({ message: 'Author consent is required before publishing' })
+    if (sub.consent_status !== 'granted' && !sub.author_consent_at) {
+      return res.status(409).json({ message: 'Author consent is required before publishing' })
     }
 
     // Generate slug if missing
@@ -664,6 +658,12 @@ const publishSubmission = async (req, res) => {
       [finalCitation || null, slug, id]
     )
 
+    await db.query(
+      `INSERT INTO submission_status_history (submission_id, status, note, changed_by)
+       VALUES (?, 'published', 'Published to gallery', ?)`,
+      [id, req.user.user_id]
+    )
+
     res.json({ message: 'Published to gallery', submission_id: id })
   } catch (err) {
     console.error('publishSubmission error:', err)
@@ -680,6 +680,13 @@ const unpublishSubmission = async (req, res) => {
        WHERE submission_id = ?`,
       [id]
     )
+
+    await db.query(
+      `INSERT INTO submission_status_history (submission_id, status, note, changed_by)
+       VALUES (?, 'approved', ?, ?)`,
+      [id, reason ? `Unpublished: ${reason}` : 'Unpublished', req.user.user_id]
+    )
+
     res.json({ message: 'Unpublished', reason: reason || null })
   } catch (err) {
     console.error('unpublishSubmission error:', err)
@@ -708,13 +715,22 @@ const setConsent = async (req, res) => {
   try {
     if (granted) {
       await db.query(
-        `UPDATE submissions SET author_consent_at = COALESCE(author_consent_at, NOW()), updated_at = NOW()
+        `UPDATE submissions
+         SET consent_status = 'granted',
+             consent_at = COALESCE(consent_at, NOW()),
+             author_consent_at = COALESCE(author_consent_at, NOW()),
+             updated_at = NOW()
          WHERE submission_id = ?`,
         [id]
       )
     } else {
       await db.query(
-        `UPDATE submissions SET author_consent_at = NULL, updated_at = NOW() WHERE submission_id = ?`,
+        `UPDATE submissions
+         SET consent_status = 'declined',
+             consent_at = NOW(),
+             author_consent_at = NULL,
+             updated_at = NOW()
+         WHERE submission_id = ?`,
         [id]
       )
     }

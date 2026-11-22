@@ -1,10 +1,10 @@
 export const backendSupport = {
   groupCreateReturnsId: false,
   groupFieldsSavedOnCoordinatorRoutes: false,
-  studentConsent: false,
+  studentConsent: true,
   requestConsent: false,
   statusNote: false,
-  statusHistory: false,
+  statusHistory: true,
   adviserAbstractEdit: false,
   unpublishReasonStored: false,
   finalAndDefendedFiles: false,

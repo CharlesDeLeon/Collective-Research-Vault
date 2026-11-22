@@ -24,7 +24,8 @@ DROP TYPE IF EXISTS notification_type  CASCADE;
 
 CREATE TYPE user_role         AS ENUM ('student','adviser','external_panelist','sysadmin','faculty','coordinator');
 CREATE TYPE submission_stage  AS ENUM ('proposal','defense','final_submission');
-CREATE TYPE submission_status AS ENUM ('submitted','under_review','needs_revision','approved','rejected','published');
+CREATE TYPE submission_status AS ENUM ('proposal','submitted','under_review','for_revision','needs_revision','approved','rejected','published');
+CREATE TYPE consent_status AS ENUM ('pending','granted','declined');
 CREATE TYPE panel_role        AS ENUM ('adviser','panelist');
 CREATE TYPE review_status     AS ENUM ('approved','for_revision','rejected');
 CREATE TYPE notification_type AS ENUM ('status_change','new_comment','assignment','system');
@@ -95,6 +96,11 @@ CREATE TABLE submissions (
   slug              VARCHAR(200)       DEFAULT NULL,
   citation          TEXT               DEFAULT NULL,
   author_consent_at TIMESTAMPTZ        DEFAULT NULL,
+  consent_status    consent_status     NOT NULL DEFAULT 'pending',
+  consent_at        TIMESTAMPTZ        DEFAULT NULL,
+  video_url         VARCHAR(2048)      DEFAULT NULL,
+  file_path         VARCHAR(512)       DEFAULT NULL,
+  file_name         VARCHAR(255)       DEFAULT NULL,
   adviser_name      VARCHAR(150)       DEFAULT NULL,
   published_at      TIMESTAMPTZ        DEFAULT NULL,
   submitted_by      INT                NOT NULL REFERENCES users(user_id),
@@ -152,6 +158,20 @@ CREATE INDEX idx_panelist_invitations_expires ON panelist_invitations(expires_at
 -- ============================================================
 -- reviews
 -- ============================================================
+-- ============================================================
+-- submission_status_history
+-- ============================================================
+CREATE TABLE submission_status_history (
+  id             SERIAL PRIMARY KEY,
+  submission_id  INT         NOT NULL REFERENCES submissions(submission_id),
+  status         VARCHAR(50) NOT NULL,
+  note           TEXT        DEFAULT NULL,
+  changed_by     INT         REFERENCES users(user_id),
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_status_history_submission ON submission_status_history(submission_id);
+
 CREATE TABLE reviews (
   review_id       SERIAL PRIMARY KEY,
   submission_id   INT           NOT NULL REFERENCES submissions(submission_id),
@@ -170,6 +190,7 @@ CREATE TABLE review_comments (
   submission_id INT         NOT NULL REFERENCES submissions(submission_id),
   author_id     INT         NOT NULL REFERENCES users(user_id),
   comment_text  TEXT        NOT NULL,
+  resolved      BOOLEAN     NOT NULL DEFAULT FALSE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
