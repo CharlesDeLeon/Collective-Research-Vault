@@ -18,6 +18,7 @@ import StudentLayout from './pages/student/StudentLayout'
 import StudentDashboard from './pages/student/StudentDashboard'
 import UploadForm from './pages/student/UploadForm'
 import MyPapers from './pages/student/MyPapers'
+import MyAccess from './pages/student/MyAccess'
 import PaperDetail from './pages/student/PaperDetail'
 import ActivityHistory from './pages/student/ActivityHistory'
 import Feed from './pages/student/Feed'
@@ -82,6 +83,7 @@ function App() {
             <Route path="upload" element={<UploadForm />} />
             <Route path="my-papers" element={<MyPapers />} />
             <Route path="my-papers/:paperId/edit" element={<UploadForm />} />
+            <Route path="access" element={<MyAccess />} />
             <Route path="paper/:paperId" element={<PaperDetail />} />
             <Route path="feed" element={<Feed />} />
             <Route path="groups" element={<Groups />} />
