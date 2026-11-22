@@ -28,4 +28,4 @@ export const ADMIN_NAV = [
   { label: 'Announcements', to: '/admin/notifications', icon: BellIcon },
   { label: 'Settings', to: '/admin/settings', icon: PencilIcon },
   { label: 'Profile', to: '/admin/profile', icon: UserIcon },
-]git
+]
