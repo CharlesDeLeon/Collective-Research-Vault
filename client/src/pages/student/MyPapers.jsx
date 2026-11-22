@@ -99,6 +99,7 @@ export default function MyPapers() {
   const [filter, setFilter] = useState('all')
   const [notice, setNotice] = useState(location.state?.notice ?? '')
   const [resubmitting, setResubmitting] = useState(null)
+  const [resubmitError, setResubmitError] = useState('')
   const requestRef = useRef(0)
 
   const loading = !data.loaded
@@ -141,14 +142,20 @@ export default function MyPapers() {
   }, [papers, query, activeFilter])
 
   const confirmResubmit = async (paper) => {
-    const result = await resubmitPaper(paper.id)
-    const nextStatus = result?.status ?? result?.data?.status ?? paper.status
-    setData((d) => ({
-      ...d,
-      papers: d.papers.map((p) => (p.id === paper.id ? { ...p, status: nextStatus } : p)),
-    }))
-    setResubmitting(null)
-    toast('Sent to your adviser for review.')
+    setResubmitError('')
+    try {
+      const result = await resubmitPaper(paper.id)
+      const nextStatus = result?.status ?? result?.data?.status ?? paper.status
+      setData((d) => ({
+        ...d,
+        papers: d.papers.map((p) => (p.id === paper.id ? { ...p, status: nextStatus } : p)),
+      }))
+      setResubmitting(null)
+      toast('Sent to your adviser for review.')
+    } catch (err) {
+      setResubmitError(err?.response?.data?.message || 'Could not resubmit. Please try again.')
+      throw err
+    }
   }
 
   return (
@@ -252,13 +259,28 @@ export default function MyPapers() {
       ) : (
         <div className={GRID}>
           {visible.map((p) => (
-            <PaperRow key={p.id} paper={p} onResubmit={setResubmitting} />
+            <PaperRow
+              key={p.id}
+              paper={p}
+              onResubmit={(paper) => {
+                setResubmitError('')
+                setResubmitting(paper)
+              }}
+            />
           ))}
         </div>
       )}
 
       {resubmitting && (
-        <ResubmitModal paper={resubmitting} onConfirm={confirmResubmit} onClose={() => setResubmitting(null)} />
+        <ResubmitModal
+          paper={resubmitting}
+          error={resubmitError}
+          onConfirm={confirmResubmit}
+          onClose={() => {
+            setResubmitError('')
+            setResubmitting(null)
+          }}
+        />
       )}
     </div>
   )

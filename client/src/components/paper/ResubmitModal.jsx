@@ -2,7 +2,7 @@ import { useState } from 'react'
 import ModalShell from '../ui/ModalShell'
 import { CheckIcon } from '../dashboard/icons'
 
-export default function ResubmitModal({ paper, onConfirm, onClose }) {
+export default function ResubmitModal({ paper, onConfirm, onClose, error }) {
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
 
@@ -26,7 +26,7 @@ export default function ResubmitModal({ paper, onConfirm, onClose }) {
         </p>
         {failed && (
           <p role="alert" className="mb-0 mt-3 text-sm text-danger-ink">
-            Could not resubmit. Please try again.
+            {error || 'Could not resubmit. Please try again.'}
           </p>
         )}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
