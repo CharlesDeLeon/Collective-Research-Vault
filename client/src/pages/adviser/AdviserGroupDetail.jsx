@@ -4,6 +4,7 @@ import useForum from '../../context/useForum'
 import useToast from '../../context/useToast'
 import {
   getGroup,
+  listMyGroups,
   listSubmissions,
   searchStudents,
   addGroupMember,
@@ -16,6 +17,7 @@ import { glass } from '../../components/dashboard/constants'
 import { PlusIcon } from '../../components/dashboard/icons'
 import ForumPostCard from '../../components/forum/ForumPostCard'
 import StatusPill from '../../components/dashboard/StatusPill'
+import GroupSwitcher from '../../components/group/GroupSwitcher'
 
 const TABS = ['Feed', 'Members', 'Panelists', 'Papers', 'Analytics']
 
@@ -26,6 +28,7 @@ export default function AdviserGroupDetail() {
   const { toast } = useToast()
 
   const [group, setGroup] = useState(null)
+  const [allGroups, setAllGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [tab, setTab] = useState('Feed')
@@ -70,6 +73,7 @@ export default function AdviserGroupDetail() {
   }, [groupId])
 
   useEffect(() => { fetchGroup() }, [fetchGroup])
+  useEffect(() => { listMyGroups().then(setAllGroups).catch(() => setAllGroups([])) }, [])
   useEffect(() => { if (group) fetchDetail() }, [group, fetchDetail])
 
   const searchMembers = async (q) => {
@@ -135,9 +139,12 @@ export default function AdviserGroupDetail() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <Link to="/adviser/groups" className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white">
-        ‹ Groups
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link to="/adviser/groups" className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white">
+          ‹ Groups
+        </Link>
+        <GroupSwitcher groups={allGroups} currentId={groupId} basePath="/adviser/groups" />
+      </div>
 
       <header className={`${glass} flex flex-col gap-4 p-5 sm:p-6 md:flex-row md:items-center md:justify-between`}>
         <div className="min-w-0 space-y-3">

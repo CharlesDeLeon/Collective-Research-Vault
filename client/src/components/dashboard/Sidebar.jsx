@@ -47,6 +47,20 @@ export const ADVISER_BOTTOM = [
   { label: 'Profile', to: '/adviser/profile', icon: UserIcon },
 ]
 
+export const PANELIST_NAV = [
+  { label: 'Dashboard', to: '/panelist/dashboard', icon: HomeIcon, end: true },
+  { label: 'Groups', to: '/panelist/groups', icon: UsersIcon },
+  { label: 'Notifications', to: '/panelist/notifications', icon: BellIcon },
+  { label: 'Profile', to: '/panelist/profile', icon: UserIcon },
+]
+
+export const PANELIST_BOTTOM = [
+  { label: 'Dashboard', to: '/panelist/dashboard', icon: HomeIcon },
+  { label: 'Groups', to: '/panelist/groups', icon: UsersIcon },
+  { label: 'Alerts', to: '/panelist/notifications', icon: BellIcon },
+  { label: 'Profile', to: '/panelist/profile', icon: UserIcon },
+]
+
 const initials = (name = '') =>
   name
     .split(' ')

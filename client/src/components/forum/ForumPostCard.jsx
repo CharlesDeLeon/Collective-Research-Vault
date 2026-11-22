@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useForum from '../../context/useForum'
 import { glass, ROUTES } from '../dashboard/constants'
@@ -17,9 +17,9 @@ import { timeAgo } from '../../utils/formatDate'
 
 const TYPE_LABEL = { update: 'Update', video: 'Video', paper: 'Paper' }
 
-export default function ForumPostCard({ post, showGroup = true }) {
+export default function ForumPostCard({ post, showGroup = true, paperHref, defaultOpen = false }) {
   const { me, myGroup, editPost, deletePost, toggleLike, reportPost, loadPost } = useForum()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(post.text)
   const [confirming, setConfirming] = useState(false)
@@ -27,7 +27,12 @@ export default function ForumPostCard({ post, showGroup = true }) {
   const mine = post.authorName === me
   const link = findVideoLink(post.mediaUrl) ?? findVideoLink(post.text)
   const externalMedia = post.mediaUrl && !findVideoLink(post.mediaUrl)
-  const own = post.paperId != null && post.groupId === myGroup.id
+  const own = post.paperId != null && post.groupId === myGroup?.id
+  const href = paperHref ? paperHref(post) : own ? ROUTES.paper(post.paperId) : null
+
+  useEffect(() => {
+    if (defaultOpen) loadPost?.(post.id)
+  }, [defaultOpen, loadPost, post.id])
 
   const items = mine
     ? [
@@ -84,8 +89,8 @@ export default function ForumPostCard({ post, showGroup = true }) {
 
       {post.type === 'paper' && post.paperTitle && (
         <h3 className="mt-3 wrap-break-word text-base font-bold leading-snug">
-          {own ? (
-            <Link to={ROUTES.paper(post.paperId)} className="transition hover:text-gold">
+          {href ? (
+            <Link to={href} className="transition hover:text-gold">
               {post.paperTitle}
             </Link>
           ) : (
