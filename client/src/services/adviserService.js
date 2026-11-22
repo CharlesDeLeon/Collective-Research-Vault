@@ -51,6 +51,11 @@ export async function revokePanelAssignment(assignmentId) {
   await api.delete(`/coordinator/panel/${assignmentId}`)
 }
 
+export async function createPanelistInvite({ email, name }) {
+  const res = await api.post('/invites', { email, name })
+  return res.data
+}
+
 export async function listSubmissions(params = {}) {
   const res = await api.get('/coordinator/submissions', { params })
   return { data: rows(res), total: res.data?.pagination?.total ?? 0 }

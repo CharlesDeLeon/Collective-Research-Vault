@@ -132,6 +132,24 @@ CREATE TABLE panel_assignments (
 );
 
 -- ============================================================
+-- panelist_invitations
+-- ============================================================
+CREATE TABLE panelist_invitations (
+  invitation_id   SERIAL PRIMARY KEY,
+  email           VARCHAR(150)  NOT NULL,
+  name            VARCHAR(150),
+  user_id         INT           REFERENCES users(user_id),
+  token_hash      VARCHAR(128)  NOT NULL UNIQUE,
+  invited_by      INT           NOT NULL REFERENCES users(user_id),
+  expires_at      TIMESTAMPTZ   NOT NULL,
+  accepted_at     TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_panelist_invitations_email ON panelist_invitations(email);
+CREATE INDEX idx_panelist_invitations_expires ON panelist_invitations(expires_at);
+
+-- ============================================================
 -- reviews
 -- ============================================================
 CREATE TABLE reviews (
