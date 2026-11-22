@@ -47,7 +47,8 @@ const createInvite = async (req, res) => {
     } else {
       const [result] = await pool.query(
         `INSERT INTO users (name, email, password, role, is_active, program)
-         VALUES (?, ?, ?, 'external_panelist', FALSE, NULL)`,
+         VALUES (?, ?, ?, 'external_panelist', FALSE, NULL)
+         RETURNING user_id`,
         [name || cleanEmail.split('@')[0], cleanEmail, hashedTemp]
       )
       const [rows] = await pool.query('SELECT * FROM users WHERE user_id = ?', [result.insertId])
