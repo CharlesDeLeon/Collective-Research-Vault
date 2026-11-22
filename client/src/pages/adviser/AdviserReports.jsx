@@ -1,51 +1,76 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import api from '../../services/api'
 import { glass } from '../../components/dashboard/constants'
+import StatTile from '../../components/ui/StatTile'
+import ErrorBanner from '../../components/ui/ErrorBanner'
+import { timeAgo } from '../../utils/formatDate'
+
+const cell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`
+const label = (value) => String(value ?? '').replace(/_/g, ' ')
+const day = (value) => (value ? new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—')
+
+function buildCsv(report) {
+  const lines = ['Research output report', '']
+  const block = (title, head, rows) => {
+    lines.push(title, head.map(cell).join(','))
+    rows.forEach((r) => lines.push(r.map(cell).join(',')))
+    lines.push('')
+  }
+  block('By status', ['Status', 'Count'], (report.byStatus ?? []).map((r) => [label(r.status), r.count]))
+  block('By strand', ['Strand', 'Count'], (report.byStrand ?? []).map((r) => [r.strand, r.count]))
+  block('By school year', ['School year', 'Count'], (report.byYear ?? []).map((r) => [r.school_year, r.count]))
+  block(
+    'Published papers',
+    ['Title', 'Authors', 'Strand', 'Section', 'School year', 'Published'],
+    (report.published ?? []).map((p) => [p.title, p.authors, p.strand, p.section, p.school_year, p.published_at])
+  )
+  return lines.join('\r\n')
+}
+
+function Breakdown({ title, rows, name }) {
+  return (
+    <section className={`${glass} p-4 sm:p-5`}>
+      <h2 className="text-base font-bold">{title}</h2>
+      {rows.length === 0 ? (
+        <p className="mt-3 text-sm text-white/55">Nothing yet.</p>
+      ) : (
+        <ul className="mt-3 divide-y divide-white/10">
+          {rows.map((r, i) => (
+            <li key={`${name(r)}-${i}`} className="flex items-center justify-between gap-3 py-2 text-sm">
+              <span className="min-w-0 truncate capitalize text-white/85">{name(r) || '—'}</span>
+              <span className="font-semibold text-gold">{r.count}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
 
 export default function AdviserReports() {
   const [report, setReport] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState('')
 
-  const fetchReport = useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true)
-    setError(null)
+    setError('')
     try {
       const res = await api.get('/coordinator/submissions/reports')
-      setReport(res.data?.data || null)
+      setReport(res.data?.data ?? null)
     } catch (e) {
-      console.error(e)
-      setError('Failed to load reports')
+      setError(e.response?.data?.message || 'Could not load the report.')
     } finally {
       setLoading(false)
     }
   }, [])
 
-  useEffect(() => { fetchReport() }, [fetchReport])
+  useEffect(() => {
+    load()
+  }, [load])
 
   const exportCsv = () => {
-    if (!report) return
-    const lines = []
-    lines.push('Research Output Report')
-    lines.push('')
-    lines.push('By Status')
-    lines.push('Status,Count')
-    for (const r of report.byStatus || []) lines.push(`${r.status},${r.count}`)
-    lines.push('')
-    lines.push('By Strand')
-    lines.push('Strand,Count')
-    for (const r of report.byStrand || []) lines.push(`${r.strand},${r.count}`)
-    lines.push('')
-    lines.push('By School Year')
-    lines.push('School Year,Count')
-    for (const r of report.byYear || []) lines.push(`${r.school_year},${r.count}`)
-    lines.push('')
-    lines.push('Published Papers')
-    lines.push('Title,Authors,Strand,Section,School Year,Published At')
-    for (const p of report.published || []) {
-      lines.push(`"${p.title}","${p.authors || ''}",${p.strand || ''},${p.section || ''},${p.school_year || ''},${p.published_at || ''}`)
-    }
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
+    const blob = new Blob(['﻿', buildCsv(report)], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -54,123 +79,101 @@ export default function AdviserReports() {
     URL.revokeObjectURL(url)
   }
 
+  const published = report?.published ?? []
+  const accessTotal = (report?.accessStats ?? []).reduce((sum, r) => sum + Number(r.count), 0)
+
   return (
-    <div className="space-y-6 sm:space-y-8">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6 font-display sm:space-y-8">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Reports on Research Outputs</h1>
-          <p className="text-sm text-white/60">Summary of research submissions and published papers.</p>
+          <h1 className="text-2xl font-bold sm:text-3xl">Reports</h1>
+          <p className="mt-1 text-sm text-white/60">Research submissions and published papers from your groups.</p>
         </div>
         <button
           type="button"
           onClick={exportCsv}
           disabled={!report}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft px-5 text-sm font-semibold text-ink transition hover:brightness-105 disabled:opacity-60"
+          className="h-11 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft px-5 text-sm font-semibold text-ink transition enabled:hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Export CSV
         </button>
       </header>
 
-      {error && (
-        <p role="alert" className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-          {error}
-        </p>
-      )}
+      <ErrorBanner message={error} onRetry={load} />
 
       {loading ? (
-        <div className="space-y-2">
+        <div className="space-y-3" aria-busy="true">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-white/[0.07]" />
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-panel" />
           ))}
         </div>
       ) : report ? (
         <>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className={`${glass} p-5`}>
-              <div className="text-3xl font-bold text-gold">{report.totalSubmissions}</div>
-              <div className="mt-1 text-sm text-white/60">Total submissions</div>
-            </div>
-            <div className={`${glass} p-5`}>
-              <div className="text-3xl font-bold text-gold">{report.totalPublished}</div>
-              <div className="mt-1 text-sm text-white/60">Published papers</div>
-            </div>
-            <div className={`${glass} p-5`}>
-              <div className="text-3xl font-bold text-gold">{report.accessStats?.reduce((a, b) => a + b.count, 0) ?? 0}</div>
-              <div className="mt-1 text-sm text-white/60">Access requests</div>
-            </div>
+          <section aria-label="Totals" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <StatTile label="Submissions" value={report.totalSubmissions ?? 0} />
+            <StatTile label="Published" value={report.totalPublished ?? 0} />
+            <StatTile label="Access requests" value={accessTotal} className="col-span-2 sm:col-span-1" />
+          </section>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Breakdown title="By status" rows={report.byStatus ?? []} name={(r) => label(r.status)} />
+            <Breakdown title="By strand" rows={report.byStrand ?? []} name={(r) => r.strand} />
+            <Breakdown title="By school year" rows={report.byYear ?? []} name={(r) => r.school_year} />
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className={`${glass} p-5`}>
-              <h2 className="mb-3 text-lg font-bold">By status</h2>
-              <ul className="space-y-2">
-                {(report.byStatus || []).map((r) => (
-                  <li key={r.status} className="flex justify-between text-sm">
-                    <span className="capitalize text-white/80">{String(r.status).replace(/_/g, ' ')}</span>
-                    <span className="font-semibold text-gold">{r.count}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className={`${glass} p-5`}>
-              <h2 className="mb-3 text-lg font-bold">By strand</h2>
-              <ul className="space-y-2">
-                {(report.byStrand || []).map((r) => (
-                  <li key={r.strand} className="flex justify-between text-sm">
-                    <span className="text-white/80">{r.strand || '—'}</span>
-                    <span className="font-semibold text-gold">{r.count}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className={`${glass} p-5`}>
-              <h2 className="mb-3 text-lg font-bold">By school year</h2>
-              <ul className="space-y-2">
-                {(report.byYear || []).map((r) => (
-                  <li key={r.school_year} className="flex justify-between text-sm">
-                    <span className="text-white/80">{r.school_year || '—'}</span>
-                    <span className="font-semibold text-gold">{r.count}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <div className={`${glass} p-5 sm:p-6`}>
-            <h2 className="mb-4 text-lg font-bold">Published papers</h2>
-            {report.published?.length ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-white/[0.06] text-left text-xs uppercase tracking-wide text-white/60">
-                    <tr>
-                      <th className="px-3 py-2">Title</th>
-                      <th className="px-3 py-2">Authors</th>
-                      <th className="px-3 py-2">Strand</th>
-                      <th className="px-3 py-2">Section</th>
-                      <th className="px-3 py-2">School year</th>
-                      <th className="px-3 py-2">Published</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/10">
-                    {report.published.map((p) => (
-                      <tr key={p.submission_id}>
-                        <td className="px-3 py-2 font-medium">{p.title}</td>
-                        <td className="px-3 py-2 text-white/60">{p.authors}</td>
-                        <td className="px-3 py-2 text-white/60">{p.strand || '—'}</td>
-                        <td className="px-3 py-2 text-white/60">{p.section || '—'}</td>
-                        <td className="px-3 py-2 text-white/60">{p.school_year || '—'}</td>
-                        <td className="px-3 py-2 text-white/50 text-xs">{p.published_at ? new Date(p.published_at).toLocaleDateString() : '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          <section className={`${glass} p-4 sm:p-5`}>
+            <h2 className="text-base font-bold">Published papers</h2>
+            {published.length === 0 ? (
+              <p className="mt-3 text-sm text-white/55">No published papers yet.</p>
             ) : (
-              <p className="text-sm text-white/50">No published papers yet.</p>
+              <>
+                <div className="mt-3 hidden overflow-x-auto md:block">
+                  <table className="w-full min-w-[40rem] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-white/55">
+                        <th scope="col" className="py-3 pr-4 font-semibold">Title</th>
+                        <th scope="col" className="px-4 py-3 font-semibold">Authors</th>
+                        <th scope="col" className="px-4 py-3 font-semibold">Strand</th>
+                        <th scope="col" className="px-4 py-3 font-semibold">School year</th>
+                        <th scope="col" className="py-3 pl-4 font-semibold">Published</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {published.map((p) => (
+                        <tr key={p.submission_id} className="border-b border-white/5 last:border-0">
+                          <td className="max-w-xs py-3 pr-4 font-semibold"><span className="line-clamp-2 wrap-break-word">{p.title}</span></td>
+                          <td className="px-4 py-3 text-white/70">{p.authors || '—'}</td>
+                          <td className="px-4 py-3 text-white/70">{p.strand || '—'}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-white/70">{p.school_year || '—'}</td>
+                          <td className="whitespace-nowrap py-3 pl-4 text-white/70">{day(p.published_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <ul className="mt-3 divide-y divide-white/10 md:hidden">
+                  {published.map((p) => (
+                    <li key={p.submission_id} className="py-3">
+                      <p className="wrap-break-word text-sm font-semibold">{p.title}</p>
+                      <p className="mt-1 text-xs text-white/55">{p.authors || '—'}</p>
+                      <p className="mt-1 text-xs text-white/55">
+                        {[p.strand, p.section, p.school_year].filter(Boolean).join(' · ')} · {p.published_at ? timeAgo(p.published_at) : '—'}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
-          </div>
+          </section>
         </>
-      ) : null}
+      ) : (
+        !error && (
+          <div className={`${glass} px-6 py-12 text-center`}>
+            <p className="font-semibold">No report data yet.</p>
+            <p className="mt-1 text-sm text-white/60">Once your groups submit papers, the totals show up here.</p>
+          </div>
+        )
+      )}
     </div>
   )
 }

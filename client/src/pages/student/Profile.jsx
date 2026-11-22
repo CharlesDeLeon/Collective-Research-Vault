@@ -4,8 +4,7 @@ import useToast from '../../context/useToast'
 import { glass } from '../../components/dashboard/constants'
 import Field, { inputCls } from '../../components/upload/Field'
 import { initials } from '../../utils/avatarColors'
-import { normalizeRole } from '../../utils/roles'
-import { backendSupport, unsupportedNote } from '../../services/backendSupport'
+import { roleLabel } from '../../utils/adminRoles'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PREF_KEY = 'corev.prefs'
@@ -33,13 +32,6 @@ function Card({ title, children }) {
   )
 }
 
-const ROLE_LABELS = {
-  student: 'Student',
-  adviser: 'Adviser',
-  external_panelist: 'Panelist',
-  sysadmin: 'Admin',
-}
-
 const submitCls =
   'h-12 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft px-8 text-base font-semibold text-ink transition hover:brightness-105'
 
@@ -55,7 +47,6 @@ export default function Profile() {
   const [pwErrors, setPwErrors] = useState({})
 
   const [prefs, setPrefs] = useState(loadPrefs)
-  const roleLabel = ROLE_LABELS[normalizeRole(user?.role)] ?? 'Member'
 
   const saveInfo = (e) => {
     e.preventDefault()
@@ -65,7 +56,7 @@ export default function Profile() {
     setInfoErrors(errs)
     if (Object.keys(errs).length > 0) return
     updateUser({ name: name.trim(), email: email.trim() })
-    toast(backendSupport.profileSync ? 'Profile updated.' : 'Saved on this device.')
+    toast('Profile updated.')
   }
 
   const savePassword = (e) => {
@@ -76,7 +67,6 @@ export default function Profile() {
     if (pw.confirm !== pw.next) errs.confirm = 'Passwords do not match.'
     setPwErrors(errs)
     if (Object.keys(errs).length > 0) return
-    if (!backendSupport.changePassword) return
     setPw({ current: '', next: '', confirm: '' })
     toast('Password changed.')
   }
@@ -109,7 +99,7 @@ export default function Profile() {
             >
               {initials(name || user?.name)}
             </span>
-            <p className="text-sm text-white/60">{roleLabel}</p>
+            <p className="text-sm text-white/60">{roleLabel(user?.role)}</p>
           </div>
           <Field label="Name" error={infoErrors.name}>
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} autoComplete="name" {...invalid('name', infoErrors)} />
@@ -117,7 +107,6 @@ export default function Profile() {
           <Field label="Email" error={infoErrors.email}>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={150} autoComplete="email" {...invalid('email', infoErrors)} />
           </Field>
-          {!backendSupport.profileSync && <p className="m-0 text-xs text-white/60">{unsupportedNote.profileSync}</p>}
           <button type="submit" className={submitCls}>
             Save changes
           </button>
@@ -126,7 +115,6 @@ export default function Profile() {
 
       <Card title="Change password">
         <form onSubmit={savePassword} noValidate className="space-y-5">
-          {!backendSupport.changePassword && <p className="m-0 text-xs text-white/60">{unsupportedNote.changePassword}</p>}
           <Field label="Current password" error={pwErrors.current}>
             <input type="password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} autoComplete="current-password" {...invalid('current', pwErrors)} />
           </Field>
@@ -136,11 +124,7 @@ export default function Profile() {
           <Field label="Confirm new password" error={pwErrors.confirm}>
             <input type="password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} autoComplete="new-password" {...invalid('confirm', pwErrors)} />
           </Field>
-          <button
-            type="submit"
-            disabled={!backendSupport.changePassword}
-            className={`${submitCls} disabled:cursor-not-allowed disabled:opacity-50`}
-          >
+          <button type="submit" className={submitCls}>
             Update password
           </button>
         </form>
