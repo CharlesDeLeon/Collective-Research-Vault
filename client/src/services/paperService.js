@@ -48,6 +48,7 @@ export function normalizePaperDetail(d) {
     versions: (d.versions ?? []).map((v) => ({
       number: v.version_number,
       fileName: v.file_name,
+      filePath: v.file_path,
       uploadedAt: v.uploaded_at,
     })),
     notes: (d.reviews ?? []).flatMap((r) =>
