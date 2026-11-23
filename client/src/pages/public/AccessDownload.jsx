@@ -1,23 +1,36 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import PublicShell from '../../components/public/PublicShell'
 import StatePanel, { outlineBtn } from '../../components/public/StatePanel'
 import AccessBlocked, { AccessLoading } from '../../components/public/AccessBlocked'
 import { useAccessGate } from '../../hooks/useAccessGate'
 import { getGalleryPaper } from '../../services/galleryService'
+import { readAccessGrant } from '../../utils/accessGrant'
 
 export default function AccessDownload() {
   const { token } = useParams()
   const { state } = useLocation()
-  const gate = useAccessGate(token, state)
-  const [paper, setPaper] = useState(null)
+  const grant = useMemo(() => {
+    if (state?.paperSlug || state?.fileUrl) return state
+    return readAccessGrant(token)
+  }, [state, token])
+  const gate = useAccessGate(token, grant)
+  const [paperResult, setPaperResult] = useState({ slug: '', paper: null })
+  const grantSlug = grant?.paperSlug || ''
+  const fileUrl = grant?.fileUrl || ''
 
   useEffect(() => {
-    if (!gate.paperSlug) { setPaper(null); return }
+    if (!grantSlug) return undefined
     let cancelled = false
-    getGalleryPaper(gate.paperSlug).then((p) => { if (!cancelled) setPaper(p) }).catch(() => {})
-    return () => { cancelled = true }
-  }, [gate.paperSlug])
+    getGalleryPaper(grantSlug).then((p) => {
+      if (!cancelled) setPaperResult({ slug: grantSlug, paper: p })
+    }).catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [grantSlug])
+
+  const paper = paperResult.slug === grantSlug ? paperResult.paper : null
 
   if (gate.phase === 'loading') return <AccessLoading />
   if (gate.phase === 'confirm') return <Navigate to={`/access/${token}`} replace />
@@ -25,13 +38,20 @@ export default function AccessDownload() {
 
   return (
     <PublicShell>
-      <StatePanel title="Download started" tone="success">
+      <StatePanel title="Your paper is ready" tone="success">
         {paper && <p className="m-0 font-medium">{paper.title}</p>}
         <p className="mb-0 mt-3 text-white/75">
-          Your download will start automatically. This link has now been used.
+          Use Download PDF below. Your browser may ask where to save the file.
         </p>
-        {state.fileUrl && (
-          <a href={state.fileUrl} download className={`${outlineBtn} mt-5`}>Download again</a>
+        <p className="mb-0 mt-3 text-sm text-white/70">
+          This link has been used. You can keep this tab open to download the file. Closing this tab ends your access.
+        </p>
+        {fileUrl ? (
+          <a href={fileUrl} download className={`${outlineBtn} mt-5`}>Download PDF</a>
+        ) : (
+          <p className="mb-0 mt-5 text-white/75">
+            The file is not available yet. Please contact the office or your adviser.
+          </p>
         )}
         <Link to="/gallery" className={`${outlineBtn} mt-3`}>Back to gallery</Link>
       </StatePanel>
