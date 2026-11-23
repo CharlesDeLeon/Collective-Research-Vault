@@ -36,7 +36,7 @@ export default function FilterFields({
               key={value}
               type="button"
               onClick={() => onSearch(value)}
-              className="min-h-10 rounded-full border border-white/40 bg-transparent px-3.5 text-[0.8125rem] text-white/90 hover:bg-white/10 sm:min-h-9"
+              className="min-h-10 rounded-full border border-chip-off-line bg-chip-off-bg px-3.5 text-[0.8125rem] text-chip-off-fg transition-colors hover:bg-fg/10 sm:min-h-9"
             >
               {value}
             </button>

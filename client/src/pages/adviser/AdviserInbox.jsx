@@ -302,21 +302,6 @@ export default function AdviserInbox() {
     load()
   }, [load])
 
-  const openDetail = async (id) => {
-    setDetailLoading(true)
-    setActionError(null)
-    setGeneratedLink(null)
-    setNote('')
-    try {
-      const d = await getAccessRequest(id)
-      setDetail(d)
-    } catch {
-      setError('Failed to load request detail')
-    } finally {
-      setDetailLoading(false)
-    }
-  }
-
   const filtered = Boolean(status || search)
   const clear = () => {
     setStatus('')
@@ -326,60 +311,6 @@ export default function AdviserInbox() {
   const pick = (s) => {
     setStatus((cur) => (cur === s ? '' : s))
     setPage(1)
-  }
-
-  const handleApprove = async () => {
-    if (!detail) return
-    setActing(true)
-    setActionError(null)
-    try {
-      const res = await approveAccessRequest(detail.request_id, note)
-      setGeneratedLink(res)
-      setDetail((d) => (d ? { ...d, status: 'approved' } : d))
-      fetchRequests()
-    } catch (e) {
-      setActionError(e.response?.data?.message || 'Failed to approve')
-    } finally {
-      setActing(false)
-    }
-  }
-
-  const handleDecline = async () => {
-    if (!detail) return
-    setActing(true)
-    setActionError(null)
-    try {
-      await declineAccessRequest(detail.request_id, note)
-      setDetail((d) => (d ? { ...d, status: 'declined' } : d))
-      fetchRequests()
-    } catch (e) {
-      setActionError(e.response?.data?.message || 'Failed to decline')
-    } finally {
-      setActing(false)
-    }
-  }
-
-  const handleRevoke = async (linkId) => {
-    if (!window.confirm('Revoke this access link?')) return
-    try {
-      await revokeAccessLink(linkId)
-      const d = await getAccessRequest(detail.request_id)
-      setDetail(d)
-    } catch (e) {
-      setActionError(e.response?.data?.message || 'Failed to revoke')
-    }
-  }
-
-  const copyLink = async () => {
-    if (!generatedLink?.token) return
-    const url = `${window.location.origin}/access/${generatedLink.token}`
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // fallback
-    }
   }
   const from = requests.length === 0 ? 0 : (page - 1) * LIMIT + 1
   const to = (page - 1) * LIMIT + requests.length
