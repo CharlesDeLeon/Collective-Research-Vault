@@ -154,7 +154,7 @@ function RequestModal({ id, onChanged, onClose }) {
 
               {actionError && <ErrorBanner message={actionError} />}
 
-              {detail.status === 'pending' ? (
+              {['pending', 'verified'].includes(detail.status) ? (
                 <div className="space-y-3">
                   <label className="block">
                     <span className="text-xs font-bold uppercase tracking-wide text-gold">Note to the requester (optional)</span>
@@ -209,7 +209,7 @@ function RequestModal({ id, onChanged, onClose }) {
                       Copy
                     </button>
                   </div>
-                  <p className="text-xs text-white/55">An email with this link has been sent to the requester (console transport by default; configure SMTP or Brevo via env vars for real delivery).</p>
+                  <p className="text-xs text-white/55">Copy this link and send it to the requester yourself. Email delivery is not confirmed automatically.</p>
                 </div>
               )}
 
@@ -248,7 +248,7 @@ function RequestModal({ id, onChanged, onClose }) {
       {confirm?.kind === 'decline' && (
         <ConfirmModal
           title="Decline request"
-          message="The requester will be told their request was declined. This cannot be undone."
+          message="The request will be declined. The requester may not be notified automatically. This cannot be undone."
           confirmLabel="Decline"
           danger
           onConfirm={() => decide('decline')}
@@ -319,7 +319,7 @@ export default function AdviserInbox() {
     <div className="space-y-6 font-display sm:space-y-8">
       <header>
         <h1 className="text-2xl font-bold sm:text-3xl">Access Inbox</h1>
-        <p className="mt-1 text-sm text-white/60">People asking for the full text of a paper from your groups. You decide who gets a link.</p>
+        <p className="mt-1 text-sm text-white/60">People asking for the full text of a paper in the vault. Any adviser can approve or decline a request and share the link.</p>
       </header>
 
       <section aria-label="Requests by status" className="grid grid-cols-2 gap-3 lg:grid-cols-5">

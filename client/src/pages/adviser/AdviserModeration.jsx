@@ -62,7 +62,7 @@ export default function AdviserModeration() {
     <div className="space-y-6 font-display sm:space-y-8">
       <header>
         <h1 className="text-2xl font-bold sm:text-3xl">Moderation</h1>
-        <p className="mt-1 text-sm text-white/60">Posts reported in your groups. You decide what stays. Moderation is manual.</p>
+        <p className="mt-1 text-sm text-white/60">Reported posts across the vault. Any adviser can hide or remove them; moderation is manual. Only the 100 most recent reports are checked.</p>
       </header>
 
       <section className={`${glass} p-4 sm:p-5`}>
@@ -70,7 +70,7 @@ export default function AdviserModeration() {
           <div>
             <span className="text-xs font-semibold uppercase tracking-wide text-white/55">Group</span>
             <Select value={groupId} onChange={(e) => setGroupId(e.target.value)} aria-label="Filter by group" className="border-white/20">
-              <Option value="">All my groups</Option>
+              <Option value="">All groups in queue</Option>
               {groups.map((g) => (
                 <Option key={g.group_id} value={String(g.group_id)}>
                   {g.group_name}
@@ -113,7 +113,7 @@ export default function AdviserModeration() {
         !error && (
           <div className={`${glass} px-6 py-12 text-center`}>
             <p className="font-semibold">{filtered ? 'No reported posts match these filters.' : 'No reported posts.'}</p>
-            <p className="mt-1 text-sm text-white/60">{filtered ? 'Try clearing the filters.' : 'Nothing in your groups needs a decision right now.'}</p>
+            <p className="mt-1 text-sm text-white/60">{filtered ? 'Try clearing the filters.' : 'No reported posts in the loaded queue need a decision right now.'}</p>
           </div>
         )
       ) : (

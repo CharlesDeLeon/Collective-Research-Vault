@@ -12,13 +12,13 @@ import {
   revokePanelAssignment,
   createPanelistInvite,
 } from '../../services/adviserService'
-import { backendSupport, unsupportedNote } from '../../services/backendSupport'
 import ConfirmModal from '../../components/ui/ConfirmModal'
 import { glass } from '../../components/dashboard/constants'
 import { PlusIcon } from '../../components/dashboard/icons'
 import ForumPostCard from '../../components/forum/ForumPostCard'
 import StatusPill from '../../components/dashboard/StatusPill'
 import GroupSwitcher from '../../components/group/GroupSwitcher'
+import { timeAgo } from '../../utils/formatDate'
 
 const TABS = ['Feed', 'Members', 'Panelists', 'Papers', 'Analytics']
 
@@ -177,6 +177,9 @@ export default function AdviserGroupDetail() {
   }
 
   const groupPosts = (posts || []).filter((p) => String(p.groupId) === String(groupId))
+  const groupIndex = allGroups.findIndex((g) => String(g.group_id) === String(groupId))
+  const prevGroup = groupIndex > 0 ? allGroups[groupIndex - 1] : null
+  const nextGroup = groupIndex >= 0 && groupIndex < allGroups.length - 1 ? allGroups[groupIndex + 1] : null
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -184,7 +187,25 @@ export default function AdviserGroupDetail() {
         <Link to="/adviser/groups" className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white">
           ‹ Groups
         </Link>
-        <GroupSwitcher groups={allGroups} currentId={groupId} basePath="/adviser/groups" />
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(`/adviser/groups/${prevGroup.group_id}`)}
+            disabled={!prevGroup}
+            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 enabled:hover:bg-white/10 disabled:opacity-40"
+          >
+            ‹ Previous
+          </button>
+          <GroupSwitcher groups={allGroups} currentId={groupId} basePath="/adviser/groups" />
+          <button
+            type="button"
+            onClick={() => navigate(`/adviser/groups/${nextGroup.group_id}`)}
+            disabled={!nextGroup}
+            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 enabled:hover:bg-white/10 disabled:opacity-40"
+          >
+            Next ›
+          </button>
+        </div>
       </div>
 
       <header className={`${glass} flex flex-col gap-4 p-5 sm:p-6 md:flex-row md:items-center md:justify-between`}>
@@ -214,10 +235,19 @@ export default function AdviserGroupDetail() {
           </div>
           <p className="text-sm text-white/60">Adviser: {group.adviser_name || '—'}</p>
         </div>
-        <div className="text-sm text-white/60">
-          <div>{members.length} members</div>
-          <div>{submissions.length} papers</div>
-          <div>{groupPosts.length} posts</div>
+        <div className="flex flex-col items-start gap-3 md:items-end">
+          <button
+            type="button"
+            onClick={() => navigate(`/adviser/groups?edit=${groupId}`)}
+            className="rounded-xl border border-gold/50 bg-gold/10 px-4 py-2 text-xs font-semibold text-gold hover:bg-gold/20"
+          >
+            Edit group
+          </button>
+          <div className="text-sm text-white/60">
+            <div>{members.length} members</div>
+            <div>{submissions.length} papers</div>
+            <div>{groupPosts.length} posts</div>
+          </div>
         </div>
       </header>
 
@@ -351,7 +381,7 @@ export default function AdviserGroupDetail() {
               disabled={inviteLoading}
               className="rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:opacity-50"
             >
-              {inviteLoading ? 'Sending…' : 'Send invitation'}
+              {inviteLoading ? 'Creating…' : 'Create invitation'}
             </button>
           </form>
 
@@ -359,7 +389,7 @@ export default function AdviserGroupDetail() {
             <div className="space-y-3 rounded-xl border border-gold/30 bg-gold/5 p-4">
               <p className="m-0 text-sm font-semibold text-gold">Invitation created</p>
               <p className="m-0 text-xs text-white/60">
-                Share these with the panelist. The email was also {inviteResult.transport ? 'sent' : 'queued'}.
+                Share the link and temporary password with the panelist yourself. Email delivery is not confirmed automatically.
               </p>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -417,6 +447,9 @@ export default function AdviserGroupDetail() {
       {tab === 'Papers' && (
         <div className={`${glass} p-5 sm:p-6 space-y-4`}>
           <h2 className="text-lg font-bold">Papers ({submissions.length})</h2>
+          <p className="m-0 text-xs text-white/50">
+            Showing matches within the 100 most recently updated submissions in the vault. Older papers for this group may not appear.
+          </p>
           {loadingDetail ? (
             <p className="text-sm text-white/50">Loading…</p>
           ) : submissions.length === 0 ? (
@@ -431,6 +464,8 @@ export default function AdviserGroupDetail() {
                       <p className="m-0 mt-1 flex flex-wrap items-center gap-2 text-xs text-white/50">
                         <StatusPill status={s.status} />
                         <span>{s.stage}</span>
+                        {s.submitted_by_name && <span>by {s.submitted_by_name}</span>}
+                        {s.updated_at && <span>Updated {timeAgo(s.updated_at)}</span>}
                       </p>
                     </div>
                     <button

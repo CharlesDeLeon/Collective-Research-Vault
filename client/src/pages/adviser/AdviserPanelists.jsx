@@ -67,14 +67,14 @@ export default function AdviserPanelists() {
       <header>
         <h1 className="text-2xl font-bold sm:text-3xl">Panelists</h1>
         <p className="mt-1 text-sm text-white/60">
-          Invite external panelists by email. They get platform-wide access to the forum and student paper metadata.
+          Create invitations for external panelists. They get platform-wide access to the forum and student paper metadata.
         </p>
       </header>
 
       {error && <ErrorBanner message={error} onRetry={load} />}
 
       <section className={`${glass} p-5 sm:p-6 space-y-4`}>
-        <h2 className="text-lg font-bold">Send invitation</h2>
+        <h2 className="text-lg font-bold">Create invitation</h2>
         <form onSubmit={onSubmit} className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block space-y-1">
@@ -105,13 +105,16 @@ export default function AdviserPanelists() {
             disabled={submitting}
             className="rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:opacity-50"
           >
-            {submitting ? 'Sending…' : 'Send invitation'}
+            {submitting ? 'Creating…' : 'Create invitation'}
           </button>
         </form>
 
         {result && (
           <div className="space-y-3 rounded-xl border border-gold/30 bg-gold/5 p-4">
             <p className="m-0 text-sm font-semibold text-gold">Invitation created for {result.email}</p>
+            <p className="m-0 text-xs text-white/60">
+              Share the link and temporary password with the panelist yourself. Email delivery is not confirmed automatically.
+            </p>
             <div className="flex items-center gap-2">
               <code className="flex-1 truncate rounded-lg bg-black/30 px-3 py-2 text-xs text-white/80">{result.inviteUrl}</code>
               <button type="button" onClick={() => copy(result.inviteUrl, 'link')} className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/5">
