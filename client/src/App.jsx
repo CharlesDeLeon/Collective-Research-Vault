@@ -66,6 +66,7 @@ import PanelistDashboard from './pages/panelist/PanelistDashboard'
 import PanelistGroups from './pages/panelist/PanelistGroups'
 import PanelistGroupDetail from './pages/panelist/PanelistGroupDetail'
 import PanelistPostDetail from './pages/panelist/PanelistPostDetail'
+import PanelistForum from './pages/panelist/PanelistForum'
 
 
 function App() {
@@ -152,6 +153,8 @@ function App() {
             <Route path="groups" element={<PanelistGroups />} />
             <Route path="groups/:groupId" element={<PanelistGroupDetail />} />
             <Route path="posts/:postId" element={<PanelistPostDetail />} />
+            <Route path="forum" element={<PanelistForum />} />
+            <Route path="gallery" element={<Navigate to="/gallery" replace />} />
             <Route path="notifications" element={<ActivityHistory />} />
             <Route path="profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/panelist/dashboard" replace />} />
