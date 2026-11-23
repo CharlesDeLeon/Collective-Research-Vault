@@ -88,10 +88,13 @@ const createInvite = async (req, res) => {
       '— CORE-V',
     ].join('\n')
 
+    let delivery = { status: 'unknown', provider: process.env.MAIL_TRANSPORT || 'console', sentAt: null, error: null }
     try {
-      await sendEmail({ to: cleanEmail, subject, text })
+      const result = await sendEmail({ to: cleanEmail, subject, text })
+      delivery = { status: result && result.ok ? 'sent' : 'failed', provider: (result && result.transport) || (process.env.MAIL_TRANSPORT || 'console'), sentAt: new Date().toISOString(), error: result && result.ok ? null : ((result && result.error) || null) }
     } catch (e) {
       console.error('invite email failed:', e.message)
+      delivery = { status: 'failed', provider: process.env.MAIL_TRANSPORT || 'console', sentAt: new Date().toISOString(), error: e.message }
     }
 
     res.status(201).json({
@@ -100,6 +103,7 @@ const createInvite = async (req, res) => {
       inviteUrl,
       tempPassword,
       expiresAt,
+      delivery,
     })
   } catch (err) {
     console.error('createInvite error:', err)

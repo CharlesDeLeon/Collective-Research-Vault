@@ -249,11 +249,14 @@ CREATE TABLE forum_posts (
   paper_title VARCHAR(300) DEFAULT NULL,
   status      VARCHAR(30)  DEFAULT NULL,
   likes_count INT          NOT NULL DEFAULT 0,
-  reported    BOOLEAN      NOT NULL DEFAULT FALSE,
-  hidden      BOOLEAN      NOT NULL DEFAULT FALSE,
-  removed     BOOLEAN      NOT NULL DEFAULT FALSE,
-  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-  updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+  reported     BOOLEAN      NOT NULL DEFAULT FALSE,
+  reported_by  INT          REFERENCES users(user_id),
+  report_reason TEXT,
+  reported_at  TIMESTAMPTZ,
+  hidden       BOOLEAN      NOT NULL DEFAULT FALSE,
+  removed      BOOLEAN      NOT NULL DEFAULT FALSE,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================

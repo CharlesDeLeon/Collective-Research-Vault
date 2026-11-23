@@ -1,5 +1,13 @@
 const db = require('../config/db')
 
+async function ownsGroup(groupId, userId) {
+  const [rows] = await db.query(
+    `SELECT group_id FROM research_groups WHERE group_id = ? AND (adviser_id = ? OR created_by = ?)`,
+    [groupId, userId, userId]
+  )
+  return rows.length > 0
+}
+
 // ─────────────────────────────────────────────
 // GROUPS
 // ─────────────────────────────────────────────
@@ -328,13 +336,15 @@ const getStudentList = async (req, res) => {
 // GET /api/coordinator/submissions
 const getSubmissions = async (req, res) => {
   try {
-    const { stage, status, program, search, page = 1, limit = 25 } = req.query
+    const { stage, status, program, search, groupId, strand, section, page = 1, limit = 25 } = req.query
     const offset = (page - 1) * limit
+    const userId = req.user.user_id
+    const role = String(req.user?.role || '').toLowerCase()
 
     let sql = `
       SELECT
         s.submission_id, s.title, s.stage, s.status,
-        s.program, s.school_year, s.created_at, s.updated_at,
+        s.program, s.strand, s.section, s.school_year, s.created_at, s.updated_at,
         rg.group_name, rg.group_id,
         u.name AS submitted_by_name,
         COUNT(DISTINCT dv.version_id) AS version_count
@@ -346,22 +356,36 @@ const getSubmissions = async (req, res) => {
     `
     const params = []
 
+    if (role === 'adviser') {
+      sql += ` AND (rg.adviser_id = ? OR rg.created_by = ?)`
+      params.push(userId, userId)
+    }
+
     if (stage)   { sql += ` AND s.stage = ?`;   params.push(stage) }
     if (status)  { sql += ` AND s.status = ?`;  params.push(status) }
     if (program) { sql += ` AND s.program = ?`; params.push(program) }
+    if (strand)  { sql += ` AND (s.strand = ? OR s.program = ?)`; params.push(strand, strand) }
+    if (section) { sql += ` AND s.section = ?`; params.push(section) }
+    if (groupId) { sql += ` AND s.group_id = ?`; params.push(groupId) }
     if (search)  { sql += ` AND (s.title LIKE ? OR s.authors LIKE ?)`; params.push(`%${search}%`, `%${search}%`) }
 
-    sql += ` GROUP BY s.submission_id, rg.group_name, rg.group_id, u.name, s.title, s.stage, s.status, s.program, s.school_year, s.created_at, s.updated_at ORDER BY s.updated_at DESC LIMIT ? OFFSET ?`
+    sql += ` GROUP BY s.submission_id, rg.group_name, rg.group_id, u.name, s.title, s.stage, s.status, s.program, s.strand, s.section, s.school_year, s.created_at, s.updated_at ORDER BY s.updated_at DESC LIMIT ? OFFSET ?`
     params.push(Number(limit), Number(offset))
 
     const [rows] = await db.query(sql, params)
 
-    // Get total count
-    let countSql = `SELECT COUNT(*) AS total FROM submissions s WHERE 1=1`
+    let countSql = `SELECT COUNT(*) AS total FROM submissions s JOIN research_groups rg ON s.group_id = rg.group_id WHERE 1=1`
     const countParams = []
+    if (role === 'adviser') {
+      countSql += ` AND (rg.adviser_id = ? OR rg.created_by = ?)`
+      countParams.push(userId, userId)
+    }
     if (stage)   { countSql += ` AND s.stage = ?`;   countParams.push(stage) }
     if (status)  { countSql += ` AND s.status = ?`;  countParams.push(status) }
     if (program) { countSql += ` AND s.program = ?`; countParams.push(program) }
+    if (strand)  { countSql += ` AND (s.strand = ? OR s.program = ?)`; countParams.push(strand, strand) }
+    if (section) { countSql += ` AND s.section = ?`; countParams.push(section) }
+    if (groupId) { countSql += ` AND s.group_id = ?`; countParams.push(groupId) }
     if (search)  { countSql += ` AND (s.title LIKE ? OR s.authors LIKE ?)`; countParams.push(`%${search}%`, `%${search}%`) }
 
     const [[{ total }]] = await db.query(countSql, countParams)
@@ -377,15 +401,21 @@ const getSubmissions = async (req, res) => {
 const getSubmissionById = async (req, res) => {
   try {
     const { id } = req.params
+    const userId = req.user.user_id
+    const role = String(req.user?.role || '').toLowerCase()
 
     const [[submission]] = await db.query(
-      `SELECT s.*, rg.group_name, u.name AS submitted_by_name
+      `SELECT s.*, rg.group_name, rg.adviser_id, rg.created_by, u.name AS submitted_by_name
        FROM submissions s
        JOIN research_groups rg ON s.group_id = rg.group_id
        JOIN users u ON s.submitted_by = u.user_id
        WHERE s.submission_id = ?`, [id]
     )
     if (!submission) return res.status(404).json({ message: 'Submission not found' })
+
+    if (role === 'adviser' && submission.adviser_id !== userId && submission.created_by !== userId) {
+      return res.status(404).json({ message: 'Submission not found' })
+    }
 
     const [versions] = await db.query(
       `SELECT dv.*, u.name AS uploaded_by_name
@@ -417,7 +447,24 @@ const getSubmissionById = async (req, res) => {
        WHERE pa.group_id = ?`, [submission.group_id]
     )
 
-    res.json({ data: { ...submission, versions, reviews, comments, panel } })
+    // Status history
+    const [historyRows] = await db.query(
+      `SELECT status, note, changed_by, created_at
+       FROM submission_status_history
+       WHERE submission_id = ?
+       ORDER BY created_at ASC`, [id]
+    )
+    const statusHistory = historyRows.map((h) => ({ status: h.status, note: h.note, at: h.created_at, by: h.changed_by }))
+    const actorIds = [...new Set(statusHistory.map((h) => h.by).filter(Boolean))]
+    let actorNames = {}
+    if (actorIds.length) {
+      const placeholders = actorIds.map(() => '?').join(',')
+      const [actors] = await db.query(`SELECT user_id, name FROM users WHERE user_id IN (${placeholders})`, actorIds)
+      actorNames = actors.reduce((acc, u) => { acc[u.user_id] = u.name; return acc }, {})
+    }
+    statusHistory.forEach((h) => { h.by = actorNames[h.by] || h.by })
+
+    res.json({ data: { ...submission, versions, reviews, comments, panel, statusHistory, status_history: statusHistory } })
   } catch (err) {
     console.error('getSubmissionById error:', err)
     res.status(500).json({ message: 'Failed to fetch submission' })
@@ -436,9 +483,16 @@ const updateStage = async (req, res) => {
     }
 
     const [[submission]] = await db.query(
-      `SELECT submission_id, stage, status, group_id, title FROM submissions WHERE submission_id = ?`, [id]
+      `SELECT s.submission_id, s.stage, s.status, s.group_id, s.title, rg.adviser_id, rg.created_by
+       FROM submissions s JOIN research_groups rg ON rg.group_id = s.group_id
+       WHERE s.submission_id = ?`, [id]
     )
     if (!submission) return res.status(404).json({ message: 'Submission not found' })
+    const userId = req.user.user_id
+    const role = String(req.user?.role || '').toLowerCase()
+    if (role === 'adviser' && submission.adviser_id !== userId && submission.created_by !== userId) {
+      return res.status(404).json({ message: 'Submission not found' })
+    }
 
     const stageOrder = { proposal: 0, defense: 1, final_submission: 2 }
     if (stageOrder[stage] <= stageOrder[submission.stage]) {
@@ -497,9 +551,16 @@ const updateStatus = async (req, res) => {
     }
 
     const [[submission]] = await db.query(
-      `SELECT submission_id, group_id, title FROM submissions WHERE submission_id = ?`, [id]
+      `SELECT s.submission_id, s.group_id, s.title, rg.adviser_id, rg.created_by
+       FROM submissions s JOIN research_groups rg ON rg.group_id = s.group_id
+       WHERE s.submission_id = ?`, [id]
     )
     if (!submission) return res.status(404).json({ message: 'Submission not found' })
+    const userId = req.user.user_id
+    const role = String(req.user?.role || '').toLowerCase()
+    if (role === 'adviser' && submission.adviser_id !== userId && submission.created_by !== userId) {
+      return res.status(404).json({ message: 'Submission not found' })
+    }
 
     await db.query(
       `UPDATE submissions SET status = ?, updated_at = NOW()
@@ -541,26 +602,37 @@ const updateStatus = async (req, res) => {
   }
 }
 
-// GET /api/coordinator/dashboard
+// GET /api/coordinator/dashboard (adviser-scoped)
 const getDashboardStats = async (req, res) => {
   try {
-    const [[{ total_groups }]]      = await db.query(`SELECT COUNT(*) AS total_groups FROM research_groups`)
-    const [[{ total_submissions }]] = await db.query(`SELECT COUNT(*) AS total_submissions FROM submissions`)
-    const [[{ pending_review }]]    = await db.query(`SELECT COUNT(*) AS pending_review FROM submissions WHERE status = 'submitted'`)
-    const [[{ published }]]         = await db.query(`SELECT COUNT(*) AS published FROM submissions WHERE is_published = TRUE`)
+    const userId = req.user.user_id
 
-    const [by_stage] = await db.query(
-      `SELECT stage, COUNT(*) AS count FROM submissions GROUP BY stage`
-    )
+    const [[{ total_groups }]]      = await db.query(`SELECT COUNT(*) AS total_groups FROM research_groups rg WHERE (rg.adviser_id = ? OR rg.created_by = ?)`, [userId, userId])
+    const [[{ total_submissions }]] = await db.query(`SELECT COUNT(*) AS total_submissions FROM submissions s JOIN research_groups rg ON rg.group_id = s.group_id WHERE (rg.adviser_id = ? OR rg.created_by = ?)`, [userId, userId])
+    const [[{ pending_review }]]    = await db.query(`SELECT COUNT(*) AS pending_review FROM submissions s JOIN research_groups rg ON rg.group_id = s.group_id WHERE s.status = 'submitted' AND (rg.adviser_id = ? OR rg.created_by = ?)`, [userId, userId])
+    const [[{ published }]]         = await db.query(`SELECT COUNT(*) AS published FROM submissions s JOIN research_groups rg ON rg.group_id = s.group_id WHERE s.is_published = TRUE AND (rg.adviser_id = ? OR rg.created_by = ?)`, [userId, userId])
+
     const [by_status] = await db.query(
-      `SELECT status, COUNT(*) AS count FROM submissions GROUP BY status`
+      `SELECT s.status, COUNT(*) AS count FROM submissions s JOIN research_groups rg ON rg.group_id = s.group_id WHERE (rg.adviser_id = ? OR rg.created_by = ?) GROUP BY s.status`,
+      [userId, userId]
     )
+
     const [recent] = await db.query(
-      `SELECT s.submission_id, s.title, s.stage, s.status, s.updated_at, rg.group_name
+      `SELECT s.submission_id, s.title, s.status, s.updated_at, rg.group_name
        FROM submissions s
        JOIN research_groups rg ON s.group_id = rg.group_id
-       ORDER BY s.updated_at DESC LIMIT 5`
+       WHERE (rg.adviser_id = ? OR rg.created_by = ?)
+       ORDER BY s.updated_at DESC LIMIT 5`,
+      [userId, userId]
     )
+
+    const recent_activity = recent.map((r) => ({
+      submission_id: r.submission_id,
+      title: r.title,
+      group_name: r.group_name,
+      type: 'status_change',
+      updated_at: r.updated_at,
+    }))
 
     res.json({
       data: {
@@ -568,9 +640,8 @@ const getDashboardStats = async (req, res) => {
         total_submissions,
         pending_review,
         published,
-        by_stage,
         by_status,
-        recent_activity: recent,
+        recent_activity,
       }
     })
   } catch (err) {
@@ -578,6 +649,7 @@ const getDashboardStats = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch dashboard stats' })
   }
 }
+
 
 const uploadSubmissionFile = async (req, res) => {
   const { id } = req.params
@@ -590,8 +662,17 @@ const uploadSubmissionFile = async (req, res) => {
   }
 
   try {
-    const [subs] = await db.query('SELECT submission_id, status FROM submissions WHERE submission_id = ?', [id])
+    const [subs] = await db.query(
+      `SELECT s.submission_id, s.status, rg.adviser_id, rg.created_by
+       FROM submissions s JOIN research_groups rg ON rg.group_id = s.group_id
+       WHERE s.submission_id = ?`, [id]
+    )
     if (!subs.length) return res.status(404).json({ message: 'Submission not found' })
+    const userId = req.user.user_id
+    const role = String(req.user?.role || '').toLowerCase()
+    if (role === 'adviser' && subs[0].adviser_id !== userId && subs[0].created_by !== userId) {
+      return res.status(404).json({ message: 'Submission not found' })
+    }
     if (subs[0].status === 'published') {
       return res.status(409).json({ message: 'You cannot upload files to a published paper.' })
     }
@@ -621,10 +702,19 @@ const publishSubmission = async (req, res) => {
 
   try {
     const [subs] = await db.query(
-      `SELECT submission_id, status, group_id, consent_status, author_consent_at FROM submissions WHERE submission_id = ?`, [id]
+      `SELECT s.submission_id, s.status, s.group_id, s.consent_status, s.author_consent_at,
+              rg.adviser_id, rg.created_by
+       FROM submissions s
+       JOIN research_groups rg ON rg.group_id = s.group_id
+       WHERE s.submission_id = ?`, [id]
     )
     if (!subs.length) return res.status(404).json({ message: 'Submission not found' })
     const sub = subs[0]
+    const userId = req.user.user_id
+    const role = String(req.user?.role || '').toLowerCase()
+    if (role === 'adviser' && sub.adviser_id !== userId && sub.created_by !== userId) {
+      return res.status(404).json({ message: 'Submission not found' })
+    }
 
     if (sub.status !== 'approved') {
       return res.status(400).json({ message: 'Only approved papers can be published' })
@@ -685,6 +775,17 @@ const unpublishSubmission = async (req, res) => {
   const { id } = req.params
   const { reason } = req.body
   try {
+    const [subs] = await db.query(
+      `SELECT s.submission_id, rg.adviser_id, rg.created_by
+       FROM submissions s JOIN research_groups rg ON rg.group_id = s.group_id
+       WHERE s.submission_id = ?`, [id]
+    )
+    if (!subs.length) return res.status(404).json({ message: 'Submission not found' })
+    const userId = req.user.user_id
+    const role = String(req.user?.role || '').toLowerCase()
+    if (role === 'adviser' && subs[0].adviser_id !== userId && subs[0].created_by !== userId) {
+      return res.status(404).json({ message: 'Submission not found' })
+    }
     await db.query(
       `UPDATE submissions SET status = 'approved', is_published = FALSE, public_visible = FALSE, updated_at = NOW()
        WHERE submission_id = ?`,
