@@ -42,7 +42,6 @@ Collective-Research-Vault
 │  │  │  │  ├─ StartDraftCard.jsx
 │  │  │  │  └─ StatusPill.jsx
 │  │  │  ├─ forum
-│  │  │  │  ├─ AttachmentList.jsx
 │  │  │  │  ├─ CommentThread.jsx
 │  │  │  │  ├─ FeedFilters.jsx
 │  │  │  │  ├─ FeedList.jsx
@@ -59,7 +58,7 @@ Collective-Research-Vault
 │  │  │  │  ├─ FilterSheet.jsx
 │  │  │  │  ├─ GalleryCard.jsx
 │  │  │  │  ├─ GalleryNavbar.jsx
-│  │  │  │  ├─ SortSelect.jsx
+│  │  │  │  ├─ ThemeToggle.jsx
 │  │  │  │  └─ UserMenu.jsx
 │  │  │  ├─ group
 │  │  │  │  ├─ GroupCard.jsx
@@ -76,8 +75,6 @@ Collective-Research-Vault
 │  │  │  │  └─ RichMessage.jsx
 │  │  │  ├─ paper
 │  │  │  │  ├─ AddPostModal.jsx
-│  │  │  │  ├─ AttachField.jsx
-│  │  │  │  ├─ AuthorsCard.jsx
 │  │  │  │  ├─ Avatar.jsx
 │  │  │  │  ├─ ConsentCard.jsx
 │  │  │  │  ├─ FeedbackNotes.jsx
@@ -96,7 +93,6 @@ Collective-Research-Vault
 │  │  │  │  ├─ PublicShell.jsx
 │  │  │  │  └─ StatePanel.jsx
 │  │  │  ├─ SessionExpiredModal.jsx
-│  │  │  ├─ StatusBadge.jsx
 │  │  │  ├─ ui
 │  │  │  │  ├─ ConfirmModal.jsx
 │  │  │  │  ├─ ErrorBanner.jsx
@@ -106,16 +102,18 @@ Collective-Research-Vault
 │  │  │  │  └─ StatTile.jsx
 │  │  │  └─ upload
 │  │  │     ├─ Field.jsx
-│  │  │     ├─ FileDropzone.jsx
-│  │  │     └─ programs.js
+│  │  │     └─ FileDropzone.jsx
 │  │  ├─ context
 │  │  │  ├─ AuthContext.jsx
 │  │  │  ├─ forumContext.js
 │  │  │  ├─ ForumProvider.jsx
+│  │  │  ├─ themeContext.js
+│  │  │  ├─ ThemeProvider.jsx
 │  │  │  ├─ toastContext.js
 │  │  │  ├─ ToastProvider.jsx
 │  │  │  ├─ useAuth.js
 │  │  │  ├─ useForum.js
+│  │  │  ├─ useTheme.js
 │  │  │  └─ useToast.js
 │  │  ├─ hooks
 │  │  │  ├─ useAccessGate.js
@@ -165,11 +163,10 @@ Collective-Research-Vault
 │  │  │  ├─ NotFoundPage.jsx
 │  │  │  ├─ panelist
 │  │  │  │  ├─ PanelistDashboard.jsx
-│  │  │  │  ├─ PanelistFeed.jsx
+│  │  │  │  ├─ PanelistForum.jsx
 │  │  │  │  ├─ PanelistGroupDetail.jsx
 │  │  │  │  ├─ PanelistGroups.jsx
 │  │  │  │  ├─ PanelistLayout.jsx
-│  │  │  │  ├─ PanelistPapers.jsx
 │  │  │  │  └─ PanelistPostDetail.jsx
 │  │  │  ├─ public
 │  │  │  │  ├─ About.jsx
@@ -213,7 +210,10 @@ Collective-Research-Vault
 │  │  │  ├─ paperService.js
 │  │  │  ├─ studentAccessService.js
 │  │  │  └─ uploadService.js
+│  │  ├─ theme
+│  │  │  └─ themeRoutes.js
 │  │  └─ utils
+│  │     ├─ accessGrant.js
 │  │     ├─ adminRoles.js
 │  │     ├─ avatarColors.js
 │  │     ├─ citation.js
@@ -244,7 +244,11 @@ Collective-Research-Vault
 │  └─ setup.js
 ├─ docs
 │  ├─ admin-backend-requirements.md
+│  ├─ adviser-backend-requirements.md
+│  ├─ backend-status-report.md
 │  ├─ handoff.md
+│  ├─ panelist-backend-requirements.md
+│  ├─ public-reader-backend-requirements.md
 │  ├─ README.md
 │  └─ student-backend-requirements.md
 ├─ package-lock.json
@@ -258,7 +262,10 @@ Collective-Research-Vault
 │  │  └─ rbac.js
 │  ├─ controllers
 │  │  ├─ accessController.js
+│  │  ├─ adminAnnouncementsController.js
 │  │  ├─ adminController.js
+│  │  ├─ adminSettingsController.js
+│  │  ├─ adminStorageController.js
 │  │  ├─ authController.js
 │  │  ├─ coordinatorController.js
 │  │  ├─ facultyController.js
@@ -299,9 +306,12 @@ Collective-Research-Vault
 │  ├─ scripts
 │  │  ├─ db-check.js
 │  │  ├─ db-setup.js
+│  │  ├─ migrate_admin_backend.js
+│  │  ├─ migrate_adviser_backend.js
 │  │  ├─ migrate_forum.js
 │  │  ├─ migrate_gallery.js
 │  │  ├─ migrate_panelist_invites.js
+│  │  ├─ migrate_public_backend.js
 │  │  └─ migrate_student_backend.js
 │  ├─ services
 │  │  └─ mailer.js
