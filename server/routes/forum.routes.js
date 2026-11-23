@@ -6,6 +6,7 @@ const {
   listPosts, createPost, getPost, updatePost, deletePost,
   toggleLike, reportPost, hidePost, removePost, restorePost, dismissReport,
   listComments, addComment, updateComment, deleteComment, reportComment,
+  hideComment, removeComment,
 } = require('../controllers/forumController')
 
 router.use(authMiddleware)
@@ -29,5 +30,7 @@ router.post('/posts/:id/comments', addComment)
 router.patch('/comments/:id', updateComment)
 router.delete('/comments/:id', deleteComment)
 router.post('/comments/:id/report', reportComment)
+router.post('/comments/:id/hide', roleMiddleware('adviser', 'sysadmin'), hideComment)
+router.post('/comments/:id/remove', roleMiddleware('adviser', 'sysadmin'), removeComment)
 
 module.exports = router

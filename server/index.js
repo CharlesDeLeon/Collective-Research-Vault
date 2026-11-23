@@ -75,10 +75,15 @@ app.get('/api', (req, res ) => {
 app.get('/api/health', async (_req, res) => {
   try {
     await testConnection()
-    res.json({ status: 'ok', database: 'connected' })
+    // Storage check: local uploads dir exists
+    const fs = require('fs')
+    const path = require('path')
+    const uploadsDir = path.join(__dirname, 'uploads')
+    const storageStatus = fs.existsSync(uploadsDir) ? 'connected' : 'unavailable'
+    res.json({ status: 'ok', database: 'connected', storage: storageStatus })
   } catch (err) {
     console.error('Health check failed:', err.message)
-    res.status(503).json({ status: 'error', database: 'disconnected' })
+    res.status(503).json({ status: 'error', database: 'disconnected', storage: 'unavailable' })
   }
 })
 

@@ -18,64 +18,92 @@ const normalizeRole = (role) => {
 // Get all users with pagination
 const getAllUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 20, role = '', search = '', status = '' } = req.query
+    const { page = 1, limit = 20, role = '', search = '', status = '', groupId = '' } = req.query
     const offset = (page - 1) * limit
 
-    let query = `SELECT user_id, name, email, role, is_active, 
-                        CASE WHEN is_active THEN 'active' ELSE 'inactive' END AS status,
-                        program, created_at, updated_at 
-                 FROM users 
+    let query = `SELECT u.user_id, u.name, u.email, u.role, u.is_active,
+                        CASE WHEN u.is_active THEN 'active' ELSE 'inactive' END AS status,
+                        u.program, u.created_at, u.updated_at, u.last_login_at
+                 FROM users u
                  WHERE 1=1`
     const params = []
 
+    if (groupId) {
+      query += ` AND EXISTS (SELECT 1 FROM group_members gm WHERE gm.user_id = u.user_id AND gm.group_id = ?)`
+      params.push(groupId)
+    }
+
     if (role) {
-      query += ` AND role = ?`
+      query += ` AND u.role = ?`
       params.push(role)
     }
 
     if (search) {
-      query += ` AND (name LIKE ? OR email LIKE ?)`
+      query += ` AND (u.name LIKE ? OR u.email LIKE ?)`
       const searchTerm = `%${search}%`
       params.push(searchTerm, searchTerm)
     }
 
     if (status === 'active') {
-      query += ` AND is_active = TRUE`
+      query += ` AND u.is_active = TRUE`
     } else if (status === 'inactive') {
-      query += ` AND is_active = FALSE`
+      query += ` AND u.is_active = FALSE`
     }
 
-    query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    query += ` ORDER BY u.created_at DESC LIMIT ? OFFSET ?`
     params.push(parseInt(limit), offset)
 
     const [users] = await pool.query(query, params)
 
+    // Attach groups to each user
+    const userIds = users.map(u => u.user_id)
+    let groupsByUser = {}
+    if (userIds.length) {
+      const placeholders = userIds.map(() => '?').join(',')
+      const [gm] = await pool.query(
+        `SELECT gm.user_id, rg.group_id, rg.group_name
+         FROM group_members gm JOIN research_groups rg ON rg.group_id = gm.group_id
+         WHERE gm.user_id IN (${placeholders})`,
+        userIds
+      )
+      for (const g of gm) {
+        if (!groupsByUser[g.user_id]) groupsByUser[g.user_id] = []
+        groupsByUser[g.user_id].push({ group_id: g.group_id, group_name: g.group_name })
+      }
+    }
+    const enriched = users.map(u => ({ ...u, groups: groupsByUser[u.user_id] || [] }))
+
     // Get total count
-    let countQuery = `SELECT COUNT(*) as total FROM users WHERE 1=1`
+    let countQuery = `SELECT COUNT(*) as total FROM users u WHERE 1=1`
     const countParams = []
 
+    if (groupId) {
+      countQuery += ` AND EXISTS (SELECT 1 FROM group_members gm WHERE gm.user_id = u.user_id AND gm.group_id = ?)`
+      countParams.push(groupId)
+    }
+
     if (role) {
-      countQuery += ` AND role = ?`
+      countQuery += ` AND u.role = ?`
       countParams.push(role)
     }
 
     if (search) {
-      countQuery += ` AND (name LIKE ? OR email LIKE ?)`
+      countQuery += ` AND (u.name LIKE ? OR u.email LIKE ?)`
       const searchTerm = `%${search}%`
       countParams.push(searchTerm, searchTerm)
     }
 
     if (status === 'active') {
-      countQuery += ` AND is_active = TRUE`
+      countQuery += ` AND u.is_active = TRUE`
     } else if (status === 'inactive') {
-      countQuery += ` AND is_active = FALSE`
+      countQuery += ` AND u.is_active = FALSE`
     }
 
     const [countResult] = await pool.query(countQuery, countParams)
     const total = countResult[0].total
 
     res.json({
-      data: users,
+      data: enriched,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -95,7 +123,7 @@ const getUserDetail = async (req, res) => {
     const { userId } = req.params
 
     const [users] = await pool.query(
-      `SELECT user_id, name, email, role, is_active, program, created_at, updated_at 
+      `SELECT user_id, name, email, role, is_active, program, created_at, updated_at, last_login_at
        FROM users 
        WHERE user_id = ?`,
       [userId]
@@ -106,8 +134,13 @@ const getUserDetail = async (req, res) => {
     }
 
     const user = users[0]
+    const [gm] = await pool.query(
+      `SELECT rg.group_id, rg.group_name FROM group_members gm JOIN research_groups rg ON rg.group_id = gm.group_id WHERE gm.user_id = ?`,
+      [userId]
+    )
     res.json({
       ...user,
+      groups: gm.map(g => ({ group_id: g.group_id, group_name: g.group_name })),
       permissions: rolePermissions[user.role] || {}
     })
   } catch (err) {
@@ -268,6 +301,13 @@ const updateUser = async (req, res) => {
       }
     )
 
+    if (req.body.groupIds !== undefined && Array.isArray(req.body.groupIds)) {
+      await pool.query('DELETE FROM group_members WHERE user_id = ?', [userId])
+      for (const gid of req.body.groupIds) {
+        await pool.query('INSERT INTO group_members (group_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING', [gid, userId])
+      }
+    }
+
     res.json({ message: 'User updated successfully' })
   } catch (err) {
     console.error(err)
@@ -278,7 +318,7 @@ const updateUser = async (req, res) => {
 // Create a new user
 const createUser = async (req, res) => {
   try {
-    const { name, email, password, role, program } = req.body
+    const { name, email, password, role, program, groupIds } = req.body
     const normalizedRole = normalizeRole(role || 'student')
 
     if (!name || !email || !password) {
@@ -326,6 +366,12 @@ const createUser = async (req, res) => {
         created_by: req.user.user_id
       }
     )
+
+    if (Array.isArray(groupIds)) {
+      for (const gid of groupIds) {
+        await pool.query('INSERT INTO group_members (group_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING', [gid, result.insertId])
+      }
+    }
 
     res.status(201).json({
       message: 'User created successfully',
@@ -425,6 +471,29 @@ const getAllRolePermissions = async (req, res) => {
   }
 }
 
+// Get overview stats for admin dashboard
+const getOverviewStats = async (req, res) => {
+  try {
+    const [[{ c: total_groups }]] = await pool.query(`SELECT COUNT(*) AS c FROM research_groups`)
+    const [[{ c: total_posts }]] = await pool.query(`SELECT COUNT(*) AS c FROM forum_posts WHERE removed = FALSE`)
+    const [[{ c: total_published }]] = await pool.query(`SELECT COUNT(*) AS c FROM submissions WHERE is_published = TRUE OR status = 'published'`)
+    const [[{ c: total_requests }]] = await pool.query(`SELECT COUNT(*) AS c FROM paper_access_requests`)
+    const [[{ c: storage_bytes }]] = await pool.query(`SELECT COALESCE(SUM(file_size),0) AS c FROM document_versions`)
+    res.json({
+      data: {
+        totalGroups: Number(total_groups),
+        totalPosts: Number(total_posts),
+        totalPublished: Number(total_published),
+        totalAccessRequests: Number(total_requests),
+        storageUsed: Number(storage_bytes),
+      }
+    })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: 'Server error' })
+  }
+}
+
 // Get user count by role
 const getUserStats = async (req, res) => {
   try {
@@ -444,7 +513,7 @@ const getUserStats = async (req, res) => {
 // Get audit logs
 const getAuditLogsList = async (req, res) => {
   try {
-    const { page = 1, limit = 50, action, targetType, targetId, userId, dateFrom, dateTo } = req.query
+    const { page = 1, limit = 50, action, targetType, targetId, userId, dateFrom, dateTo, search } = req.query
 
     const filters = {}
     if (action) filters.action = action
@@ -453,6 +522,7 @@ const getAuditLogsList = async (req, res) => {
     if (userId) filters.userId = userId
     if (dateFrom) filters.dateFrom = dateFrom
     if (dateTo) filters.dateTo = dateTo
+    if (search) filters.search = search
 
     const result = await getAuditLogs(filters, parseInt(page), parseInt(limit))
     res.json(result)
@@ -479,6 +549,45 @@ const getAuditLogsSummary = async (req, res) => {
   }
 }
 
+// Reset a user's password (admin)
+const resetUserPassword = async (req, res) => {
+  try {
+    const { userId } = req.params
+    const [users] = await pool.query('SELECT user_id, name, email FROM users WHERE user_id = ?', [userId])
+    if (!users.length) return res.status(404).json({ message: 'User not found' })
+
+    const tempPassword = Math.random().toString(36).slice(-10) + 'A1!'
+    const hashed = await bcrypt.hash(tempPassword, 10)
+    await pool.query('UPDATE users SET password = ?, updated_at = NOW() WHERE user_id = ?', [hashed, userId])
+
+    await logAction(req.user.user_id, 'reset_password', 'user', userId, { reset_by: req.user.user_id })
+
+    res.json({ temporaryPassword: tempPassword, data: { temporaryPassword: tempPassword } })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: 'Server error' })
+  }
+}
+
+// Create/update group assignment for a user
+const updateUserGroups = async (req, res) => {
+  try {
+    const { userId } = req.params
+    const { groupIds } = req.body
+    if (!Array.isArray(groupIds)) return res.status(400).json({ message: 'groupIds must be an array' })
+
+    // Remove existing memberships
+    await pool.query('DELETE FROM group_members WHERE user_id = ?', [userId])
+    for (const gid of groupIds) {
+      await pool.query('INSERT INTO group_members (group_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING', [gid, userId])
+    }
+    res.json({ message: 'Groups updated' })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: 'Server error' })
+  }
+}
+
 module.exports = {
   getAllUsers,
   getUserDetail,
@@ -486,9 +595,12 @@ module.exports = {
   deleteUser,
   updateUserRole,
   updateUser,
+  resetUserPassword,
+  updateUserGroups,
   getRolePermissions,
   getAllRolePermissions,
   getUserStats,
+  getOverviewStats,
   getAuditLogsList,
   getAuditLogsSummary
 }

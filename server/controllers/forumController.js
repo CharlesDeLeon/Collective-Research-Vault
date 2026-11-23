@@ -48,7 +48,7 @@ const normalizeComment = (row) => ({
 const listPosts = async (req, res) => {
   try {
     const userId = req.user.user_id
-    const { groupId, strand, section, yearLevel, schoolYear, status, search, reported, page = 1, limit = 25 } = req.query
+    const { groupId, strand, section, yearLevel, schoolYear, status, search, reported, type, authorId, visibility, dateFrom, dateTo, includeRemoved, page = 1, limit = 25 } = req.query
     const offset = (Number(page) - 1) * Number(limit)
 
     let sql = `
@@ -59,18 +59,28 @@ const listPosts = async (req, res) => {
       JOIN users u ON u.user_id = fp.author_id
       LEFT JOIN research_groups rg ON rg.group_id = fp.group_id
       LEFT JOIN users ru ON ru.user_id = fp.reported_by
-      WHERE fp.removed = FALSE
+      WHERE 1=1
     `
     const params = []
 
     const role = String(req.user?.role || '').toLowerCase()
+    if (includeRemoved !== 'true') {
+      sql += ` AND fp.removed = FALSE`
+    }
     if (role === 'adviser') {
       sql += ` AND (rg.adviser_id = ? OR rg.created_by = ? OR rg.group_id IS NULL)`
       params.push(userId, userId)
     }
 
     if (groupId) { sql += ` AND fp.group_id = ?`; params.push(groupId) }
+    if (type) { sql += ` AND fp.post_type = ?`; params.push(type) }
+    if (authorId) { sql += ` AND fp.author_id = ?`; params.push(authorId) }
     if (reported === 'true') { sql += ` AND fp.reported = TRUE` }
+    if (visibility === 'hidden') { sql += ` AND fp.hidden = TRUE` }
+    if (visibility === 'reported') { sql += ` AND fp.reported = TRUE` }
+    if (visibility === 'visible') { sql += ` AND fp.hidden = FALSE AND fp.reported = FALSE` }
+    if (dateFrom) { sql += ` AND fp.created_at >= ?`; params.push(dateFrom) }
+    if (dateTo) { sql += ` AND fp.created_at <= ?`; params.push(dateTo) }
     if (strand) { sql += ` AND fp.strand = ?`; params.push(strand) }
     if (section) { sql += ` AND fp.section = ?`; params.push(section) }
     if (yearLevel) { sql += ` AND fp.year_level = ?`; params.push(yearLevel) }
@@ -107,11 +117,20 @@ const listPosts = async (req, res) => {
     const posts = rows.map(r => ({ ...normalizePost(r, likedSet.has(r.post_id)), commentCount: countMap[r.post_id] || 0 }))
 
     // Total count (same filters, without pagination)
-    let countSql = `SELECT COUNT(*)::int AS total FROM forum_posts fp LEFT JOIN research_groups rg ON rg.group_id = fp.group_id WHERE fp.removed = FALSE`
+    let countSql = `SELECT COUNT(*)::int AS total FROM forum_posts fp LEFT JOIN research_groups rg ON rg.group_id = fp.group_id WHERE 1=1`
+    if (includeRemoved !== 'true') { countSql += ` AND fp.removed = FALSE` }
+    if (role === 'adviser') { countSql += ` AND (rg.adviser_id = ? OR rg.created_by = ? OR rg.group_id IS NULL)` }
     const countParams = []
     if (role === 'adviser') { countSql += ` AND (rg.adviser_id = ? OR rg.created_by = ? OR rg.group_id IS NULL)`; countParams.push(userId, userId) }
     if (groupId) { countSql += ` AND fp.group_id = ?`; countParams.push(groupId) }
+    if (type) { countSql += ` AND fp.post_type = ?`; countParams.push(type) }
+    if (authorId) { countSql += ` AND fp.author_id = ?`; countParams.push(authorId) }
     if (reported === 'true') { countSql += ` AND fp.reported = TRUE` }
+    if (visibility === 'hidden') { countSql += ` AND fp.hidden = TRUE` }
+    if (visibility === 'reported') { countSql += ` AND fp.reported = TRUE` }
+    if (visibility === 'visible') { countSql += ` AND fp.hidden = FALSE AND fp.reported = FALSE` }
+    if (dateFrom) { countSql += ` AND fp.created_at >= ?`; countParams.push(dateFrom) }
+    if (dateTo) { countSql += ` AND fp.created_at <= ?`; countParams.push(dateTo) }
     if (strand) { countSql += ` AND fp.strand = ?`; countParams.push(strand) }
     if (section) { countSql += ` AND fp.section = ?`; countParams.push(section) }
     if (yearLevel) { countSql += ` AND fp.year_level = ?`; countParams.push(yearLevel) }
@@ -452,8 +471,36 @@ const reportComment = async (req, res) => {
   }
 }
 
+// POST /api/forum/comments/:id/hide (adviser/admin)
+const hideComment = async (req, res) => {
+  try {
+    const { id } = req.params
+    const { hidden } = req.body || {}
+    await query('UPDATE forum_comments SET hidden = ? WHERE comment_id = ?', [hidden !== false, id])
+    try { if (req.audit) await req.audit.log({ action: 'HIDE_COMMENT', target_type: 'forum_comment', target_id: Number(id), changes: { hidden: hidden !== false } }) } catch (e) { console.error(e) }
+    res.json({ message: 'Updated' })
+  } catch (err) {
+    console.error('hideComment error:', err)
+    res.status(500).json({ message: 'Failed to hide comment' })
+  }
+}
+
+// POST /api/forum/comments/:id/remove (adviser/admin)
+const removeComment = async (req, res) => {
+  try {
+    const { id } = req.params
+    await query('UPDATE forum_comments SET removed = TRUE WHERE comment_id = ?', [id])
+    try { if (req.audit) await req.audit.log({ action: 'REMOVE_COMMENT', target_type: 'forum_comment', target_id: Number(id) }) } catch (e) { console.error(e) }
+    res.json({ message: 'Removed' })
+  } catch (err) {
+    console.error('removeComment error:', err)
+    res.status(500).json({ message: 'Failed to remove comment' })
+  }
+}
+
 module.exports = {
   listPosts, createPost, getPost, updatePost, deletePost,
   toggleLike, reportPost, hidePost, removePost, restorePost, dismissReport,
   listComments, addComment, updateComment, deleteComment, reportComment,
+  hideComment, removeComment,
 }
