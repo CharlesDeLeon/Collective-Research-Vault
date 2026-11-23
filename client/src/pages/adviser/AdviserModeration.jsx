@@ -138,7 +138,13 @@ export default function AdviserModeration() {
                     <button type="button" onClick={() => request(p, 'remove')} className={danger}>
                       Remove
                     </button>
-                    <button type="button" disabled title={unsupportedNote.adminDismissReport} className={ghost}>
+                    <button
+                      type="button"
+                      onClick={() => request(p, 'dismiss')}
+                      disabled={!backendSupport.adminDismissReport}
+                      title={!backendSupport.adminDismissReport ? unsupportedNote.adminDismissReport : undefined}
+                      className={ghost}
+                    >
                       Dismiss report
                     </button>
                   </div>

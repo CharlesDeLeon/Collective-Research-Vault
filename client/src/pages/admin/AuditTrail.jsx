@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getAuditLogs, getAuditSummary, apiMessage } from '../../services/adminService'
+import { getAuditLogs, getAuditSummary, getUserNames, apiMessage } from '../../services/adminService'
 import { glass } from '../../components/dashboard/constants'
 import Select, { Option } from '../../components/ui/Select'
 import AuditDetailModal from '../../components/admin/AuditDetailModal'
-import { CheckIcon } from '../../components/dashboard/icons'
+import { CheckIcon, SearchIcon } from '../../components/dashboard/icons'
 import { formatAction } from '../../utils/adminRoles'
 import { toCsv, downloadCsv } from '../../utils/csv'
 import { backendSupport, unsupportedNote } from '../../services/backendSupport'
@@ -23,7 +23,10 @@ const dateInputCls =
 export default function AuditTrail() {
   const [logs, setLogs] = useState([])
   const [total, setTotal] = useState(0)
-  const [summary, setSummary] = useState({ actions: [], targets: [] })
+  const [summary, setSummary] = useState({ actions: [], targets: [], actors: [] })
+  const [actors, setActors] = useState([])
+  const [actor, setActor] = useState('')
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
@@ -34,13 +37,23 @@ export default function AuditTrail() {
   const [open, setOpen] = useState(null)
   const requestId = useRef(0)
 
-  const hasFilters = Boolean(action || targetType || dateFrom || dateTo)
+  const hasFilters = Boolean(actor || action || targetType || dateFrom || dateTo || search)
   const rangeInvalid = Boolean(dateFrom && dateTo && dateFrom > dateTo)
 
   useEffect(() => {
-    getAuditSummary()
-      .then(setSummary)
-      .catch(() => setSummary({ actions: [], targets: [] }))
+    Promise.all([getAuditSummary(), getUserNames().catch(() => ({}))])
+      .then(([summaryResult, names]) => {
+        setSummary(summaryResult)
+        const counts = Object.fromEntries((summaryResult.actors ?? []).map((row) => [row.name, row.count]))
+        setActors(
+          Object.entries(names).map(([id, name]) => ({
+            id,
+            name,
+            count: counts[name] ?? 0,
+          }))
+        )
+      })
+      .catch(() => setSummary({ actions: [], targets: [], actors: [] }))
   }, [])
 
   const load = useCallback(async () => {
@@ -52,10 +65,12 @@ export default function AuditTrail() {
       const result = await getAuditLogs({
         page,
         limit: PAGE_SIZE,
+        userId: actor || undefined,
         action: action || undefined,
         targetType: targetType || undefined,
         dateFrom: dateFrom ? `${dateFrom}T00:00:00` : undefined,
         dateTo: dateTo ? `${dateTo}T23:59:59` : undefined,
+        ...(backendSupport.adminAuditSearch ? { search: search || undefined } : {}),
       })
       if (id !== requestId.current) return
       setLogs(result.data)
@@ -66,7 +81,7 @@ export default function AuditTrail() {
     } finally {
       if (id === requestId.current) setLoading(false)
     }
-  }, [page, action, targetType, dateFrom, dateTo, rangeInvalid])
+  }, [page, actor, action, targetType, dateFrom, dateTo, search, rangeInvalid])
 
   useEffect(() => {
     load()
@@ -78,16 +93,18 @@ export default function AuditTrail() {
   }
 
   const clearFilters = () => {
+    setActor('')
     setAction('')
     setTargetType('')
     setDateFrom('')
     setDateTo('')
+    setSearch('')
     setPage(1)
   }
 
   const exportPage = () => {
     const csv = toCsv(
-      ['Time', 'Actor', 'Email', 'Action', 'Target type', 'Target id', 'IP address'],
+      ['Time', 'Actor', 'Email', 'Action', 'Target type', 'Target id', 'IP address', 'Request id'],
       logs.map((a) => [
         a.created_at ? new Date(a.created_at).toISOString() : '',
         a.user_name || 'System',
@@ -96,6 +113,7 @@ export default function AuditTrail() {
         a.target_type || '',
         a.target_id || '',
         a.ip_address || '',
+        a.request_id ?? a.requestId ?? '',
       ])
     )
     downloadCsv(`corev-audit-page-${page}.csv`, csv)
@@ -123,7 +141,33 @@ export default function AuditTrail() {
       </header>
 
       <section className={`${glass} p-4 sm:p-5`}>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(6,minmax(0,1fr))_auto]">
+          <label className="relative block sm:col-span-2 xl:col-span-1">
+            <span className="sr-only">Search audit entries</span>
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/50" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(1)
+              }}
+              disabled={!backendSupport.adminAuditSearch}
+              placeholder="Search entries"
+              className="mt-1 h-11 w-full rounded-lg border border-white/20 bg-navy-900/60 pl-10 pr-3 text-sm text-white outline-none transition placeholder:text-white/40 focus:border-gold/60 focus:ring-2 focus:ring-gold/20 disabled:opacity-50"
+            />
+          </label>
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/55">Actor</span>
+            <Select value={actor} onChange={change(setActor)} aria-label="Filter by actor" className="border-white/20">
+              <Option value="">All actors</Option>
+              {actors.map((a) => (
+                <Option key={a.id} value={a.id}>
+                  {a.name}{a.count ? ` (${a.count})` : ''}
+                </Option>
+              ))}
+            </Select>
+          </div>
           <div>
             <span className="text-xs font-semibold uppercase tracking-wide text-white/55">Action</span>
             <Select value={action} onChange={change(setAction)} aria-label="Filter by action" className="border-white/20">
@@ -195,7 +239,7 @@ export default function AuditTrail() {
       ) : (logs.length === 0 ? null : (
         <>
           <div className={`${glass} hidden overflow-x-auto md:block ${loading ? 'opacity-60' : ''}`}>
-            <table className="w-full min-w-[46rem] text-left text-sm">
+            <table className="w-full min-w-[52rem] text-left text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-white/55">
                   <th scope="col" className="px-5 py-3 font-semibold">Time</th>
@@ -203,6 +247,7 @@ export default function AuditTrail() {
                   <th scope="col" className="px-5 py-3 font-semibold">Action</th>
                   <th scope="col" className="px-5 py-3 font-semibold">Target</th>
                   <th scope="col" className="px-5 py-3 font-semibold">IP</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">Request ID</th>
                   <th scope="col" className="px-5 py-3 font-semibold"><span className="sr-only">Details</span></th>
                 </tr>
               </thead>
@@ -218,6 +263,7 @@ export default function AuditTrail() {
                     </td>
                     <td className="px-5 py-3 text-white/75">{targetText(a)}</td>
                     <td className="px-5 py-3 text-white/75">{a.ip_address || '—'}</td>
+                    <td className="px-5 py-3 text-white/75">{a.request_id ?? a.requestId ?? '—'}</td>
                     <td className="px-5 py-3 text-right">
                       <button type="button" onClick={() => setOpen(a)} className={smallBtn}>
                         View
@@ -241,6 +287,7 @@ export default function AuditTrail() {
                   </span>
                   <span className="mt-2 block text-sm">{a.user_name || 'System'}</span>
                   <span className="block text-xs text-white/55">{targetText(a)}</span>
+                  {(a.request_id ?? a.requestId) && <span className="mt-1 block text-xs text-white/45">Request {a.request_id ?? a.requestId}</span>}
                 </button>
               </li>
             ))}

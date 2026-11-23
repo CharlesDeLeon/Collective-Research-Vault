@@ -8,12 +8,14 @@ import {
   changeAdminUserRole,
   deactivateAdminUser,
   reactivateAdminUser,
+  listAdminPosts,
   apiMessage,
 } from '../../services/adminService'
 import { glass } from '../../components/dashboard/constants'
 import ConfirmModal from '../../components/ui/ConfirmModal'
 import UserFormModal from '../../components/admin/UserFormModal'
 import ChangeRoleModal from '../../components/admin/ChangeRoleModal'
+import ResetPasswordModal from '../../components/admin/ResetPasswordModal'
 import UserActivity from '../../components/admin/UserActivity'
 import { Avatar, RoleBadge, StatusBadge } from '../../components/admin/UserBits'
 import { ROLE_LABELS, canonicalRole } from '../../utils/adminRoles'
@@ -52,7 +54,10 @@ export default function AdminUserDetail() {
   const [form, setForm] = useState(false)
   const [roleOpen, setRoleOpen] = useState(false)
   const [toggleOpen, setToggleOpen] = useState(false)
+  const [resetOpen, setResetOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [posts, setPosts] = useState([])
+  const [postsLoading, setPostsLoading] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -71,6 +76,25 @@ export default function AdminUserDetail() {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    if (!backendSupport.adminUserPosts || !person?.user_id) return undefined
+    let active = true
+    setPostsLoading(true)
+    listAdminPosts({ authorId: person.user_id, limit: 5 })
+      .then((rows) => {
+        if (active) setPosts(rows)
+      })
+      .catch(() => {
+        if (active) setPosts([])
+      })
+      .finally(() => {
+        if (active) setPostsLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [person?.user_id, refreshKey])
 
   const myId = me?.user_id ?? me?.id
   const isSelf = person ? Number(person.user_id) === Number(myId) : false
@@ -180,6 +204,15 @@ export default function AdminUserDetail() {
           <button type="button" onClick={() => setRoleOpen(true)} disabled={isSelf} title={selfHint} className={ghostBtn}>
             Change role
           </button>
+          <button
+            type="button"
+            onClick={() => setResetOpen(true)}
+            disabled={!backendSupport.adminResetPassword || isSelf}
+            title={!backendSupport.adminResetPassword ? unsupportedNote.adminResetPassword : selfHint}
+            className={ghostBtn}
+          >
+            Reset password
+          </button>
           {active ? (
             <button type="button" onClick={() => setToggleOpen(true)} disabled={isSelf} title={selfHint} className={dangerBtn}>
               Deactivate
@@ -193,7 +226,31 @@ export default function AdminUserDetail() {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
-        <div className="order-2 min-w-0 lg:order-1">
+        <div className="order-2 min-w-0 space-y-6 lg:order-1">
+          <section className={`${glass} p-4 sm:p-5`}>
+            <h2 className="text-base font-bold">Recent posts</h2>
+            {!backendSupport.adminUserPosts ? (
+              <p className="mt-2 text-xs text-white/50">{unsupportedNote.adminUserPosts}</p>
+            ) : postsLoading ? (
+              <p className="mt-2 text-sm text-white/60">Loading posts…</p>
+            ) : posts.length === 0 ? (
+              <p className="mt-2 text-sm text-white/60">This person has not made any posts yet.</p>
+            ) : (
+              <ul className="mt-3 divide-y divide-white/10">
+                {posts.map((post) => (
+                  <li key={post.id} className="py-3 first:pt-0 last:pb-0">
+                    <p className="wrap-break-word text-sm text-white/90">
+                      {post.type === 'paper' && post.paperTitle ? post.paperTitle : post.text || '—'}
+                    </p>
+                    <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-white/50">
+                      {post.groupName && <span>{post.groupName}</span>}
+                      {post.createdAt && <span>{longDate(post.createdAt)}</span>}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
           <UserActivity userId={person.user_id} refreshKey={refreshKey} />
         </div>
 
@@ -206,10 +263,10 @@ export default function AdminUserDetail() {
               <Row label="Joined">{longDate(person.created_at)}</Row>
               <Row label="Updated">{longDate(person.updated_at)}</Row>
               <Row label="Last sign-in" note={!backendSupport.adminLastLogin ? unsupportedNote.adminLastLogin : undefined}>
-                {person.last_login ? longDate(person.last_login) : '—'}
+                {(person.last_login_at ?? person.last_login) ? longDate(person.last_login_at ?? person.last_login) : '—'}
               </Row>
               <Row label="Groups" note={!backendSupport.adminUserGroups ? unsupportedNote.adminUserGroups : undefined}>
-                {Array.isArray(person.groups) && person.groups.length > 0 ? person.groups.map((g) => g.name).join(', ') : '—'}
+                {Array.isArray(person.groups) && person.groups.length > 0 ? person.groups.map((g) => g.group_name ?? g.name).join(', ') : '—'}
               </Row>
             </dl>
           </section>
@@ -245,6 +302,13 @@ export default function AdminUserDetail() {
 
       {form && <UserFormModal user={person} onSubmit={submitForm} onClose={() => setForm(false)} />}
       {roleOpen && <ChangeRoleModal user={person} onSubmit={submitRole} onClose={() => setRoleOpen(false)} />}
+      {resetOpen && (
+        <ResetPasswordModal
+          user={person}
+          onClose={() => setResetOpen(false)}
+          onDone={() => after('Password reset.')}
+        />
+      )}
       {toggleOpen && (
         <ConfirmModal
           title={active ? 'Deactivate user' : 'Reactivate user'}

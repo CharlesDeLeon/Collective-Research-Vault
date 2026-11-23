@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getAdminGroup, listAdminPosts, apiMessage } from '../../services/adminService'
+import useToast from '../../context/useToast'
+import { getAdminGroup, listAdminPosts, archiveAdminGroup, apiMessage } from '../../services/adminService'
 import { glass } from '../../components/dashboard/constants'
 import StatusPill from '../../components/dashboard/StatusPill'
 import AdviserChip from '../../components/admin/AdviserChip'
+import ConfirmModal from '../../components/ui/ConfirmModal'
+import ReassignAdviserModal from '../../components/admin/ReassignAdviserModal'
 import { normalizeStatus } from '../../utils/paperRules'
 import { timeAgo, fullDate } from '../../utils/formatDate'
 import { backendSupport, unsupportedNote } from '../../services/backendSupport'
@@ -27,11 +30,15 @@ const empty = (text) => <p className="py-4 text-center text-sm text-white/55">{t
 
 export default function AdminGroupDetail() {
   const { groupId } = useParams()
+  const { toast } = useToast()
   const [group, setGroup] = useState(null)
   const [papers, setPapers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [missing, setMissing] = useState(false)
+  const [reassignOpen, setReassignOpen] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
+  const [archiving, setArchiving] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -52,6 +59,20 @@ export default function AdminGroupDetail() {
   useEffect(() => {
     load()
   }, [load])
+
+  const confirmArchive = async () => {
+    setArchiving(true)
+    try {
+      await archiveAdminGroup(group.group_id)
+      setArchiveOpen(false)
+      toast(`${group.group_name} was archived.`)
+      load()
+    } catch (e) {
+      toast(apiMessage(e, 'Could not archive this group.'), 'error')
+    } finally {
+      setArchiving(false)
+    }
+  }
 
   const back = (
     <Link to="/admin/groups" className="text-sm font-semibold text-gold underline-offset-2 hover:underline">
@@ -101,10 +122,20 @@ export default function AdminGroupDetail() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={!backendSupport.adminReassignAdviser} className={`${ghost} h-11 px-4 text-sm`}>
+          <button
+            type="button"
+            onClick={() => setReassignOpen(true)}
+            disabled={!backendSupport.adminReassignAdviser}
+            className={`${ghost} h-11 px-4 text-sm`}
+          >
             Reassign adviser
           </button>
-          <button type="button" disabled={!backendSupport.adminArchiveGroup} className={`${ghost} h-11 px-4 text-sm`}>
+          <button
+            type="button"
+            onClick={() => setArchiveOpen(true)}
+            disabled={!backendSupport.adminArchiveGroup}
+            className={`${ghost} h-11 px-4 text-sm`}
+          >
             Archive group
           </button>
         </div>
@@ -180,6 +211,28 @@ export default function AdminGroupDetail() {
           </ul>
         )}
       </Section>
+
+      {reassignOpen && (
+        <ReassignAdviserModal
+          group={group}
+          onClose={() => setReassignOpen(false)}
+          onDone={() => {
+            setReassignOpen(false)
+            toast('Adviser reassigned.')
+            load()
+          }}
+        />
+      )}
+      {archiveOpen && (
+        <ConfirmModal
+          title="Archive group"
+          message={`Archive ${group.group_name}? It will leave the active group list. This does not delete any paper files, and the group cannot be restored from this screen.`}
+          confirmLabel={archiving ? 'Archiving…' : 'Archive group'}
+          danger
+          onConfirm={confirmArchive}
+          onClose={() => setArchiveOpen(false)}
+        />
+      )}
     </div>
   )
 }
