@@ -400,3 +400,6 @@ CREATE TRIGGER trg_submissions_updated_at
 CREATE TRIGGER trg_reviews_updated_at
   BEFORE UPDATE ON reviews
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;

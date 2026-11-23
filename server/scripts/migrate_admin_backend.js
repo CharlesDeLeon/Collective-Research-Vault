@@ -16,6 +16,8 @@ async function run() {
     settings JSONB NOT NULL DEFAULT '{}'::jsonb,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`)
+  await query(`ALTER TABLE announcements ENABLE ROW LEVEL SECURITY`)
+  await query(`ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY`)
   console.log('admin backend migration applied')
   process.exit(0)
 }
