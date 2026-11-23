@@ -70,9 +70,6 @@ const listPosts = async (req, res) => {
     if (role === 'adviser') {
       sql += ` AND (rg.adviser_id = ? OR rg.created_by = ? OR rg.group_id IS NULL)`
       params.push(userId, userId)
-    } else if (role === 'external_panelist') {
-      sql += ` AND (rg.group_id IS NULL OR rg.group_id IN (SELECT group_id FROM panel_assignments WHERE faculty_id = ?))`
-      params.push(userId)
     }
 
     if (groupId) { sql += ` AND fp.group_id = ?`; params.push(groupId) }
@@ -125,7 +122,6 @@ const listPosts = async (req, res) => {
     if (role === 'adviser') { countSql += ` AND (rg.adviser_id = ? OR rg.created_by = ? OR rg.group_id IS NULL)` }
     const countParams = []
     if (role === 'adviser') { countSql += ` AND (rg.adviser_id = ? OR rg.created_by = ? OR rg.group_id IS NULL)`; countParams.push(userId, userId) }
-    else if (role === 'external_panelist') { countSql += ` AND (rg.group_id IS NULL OR rg.group_id IN (SELECT group_id FROM panel_assignments WHERE faculty_id = ?))`; countParams.push(userId) }
     if (groupId) { countSql += ` AND fp.group_id = ?`; countParams.push(groupId) }
     if (type) { countSql += ` AND fp.post_type = ?`; countParams.push(type) }
     if (authorId) { countSql += ` AND fp.author_id = ?`; countParams.push(authorId) }
@@ -211,16 +207,6 @@ const getPost = async (req, res) => {
       [id]
     )
     if (!rows.length) return res.status(404).json({ message: 'Post not found' })
-
-    const role = String(req.user?.role || '').toLowerCase()
-    const foundPost = rows[0]
-    if (role === 'external_panelist' && foundPost.group_id) {
-      const [pa] = await query(
-        `SELECT 1 FROM panel_assignments WHERE group_id = ? AND faculty_id = ?`,
-        [foundPost.group_id, userId]
-      )
-      if (!pa.length) return res.status(404).json({ message: 'Post not found' })
-    }
 
     const [comments] = await query(
       `SELECT fc.*, u.name AS author_name, u.role AS author_role

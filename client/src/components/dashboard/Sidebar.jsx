@@ -49,6 +49,8 @@ export const ADVISER_BOTTOM = [
 export const PANELIST_NAV = [
   { label: 'Dashboard', to: '/panelist/dashboard', icon: HomeIcon, end: true },
   { label: 'Groups', to: '/panelist/groups', icon: UsersIcon },
+  { label: 'Forum', to: '/panelist/forum', icon: CommentIcon },
+  { label: 'Gallery', to: '/gallery', icon: BookIcon },
   { label: 'Notifications', to: '/panelist/notifications', icon: BellIcon },
   { label: 'Profile', to: '/panelist/profile', icon: UserIcon },
 ]
@@ -56,6 +58,7 @@ export const PANELIST_NAV = [
 export const PANELIST_BOTTOM = [
   { label: 'Dashboard', to: '/panelist/dashboard', icon: HomeIcon },
   { label: 'Groups', to: '/panelist/groups', icon: UsersIcon },
+  { label: 'Forum', to: '/panelist/forum', icon: CommentIcon },
   { label: 'Alerts', to: '/panelist/notifications', icon: BellIcon },
   { label: 'Profile', to: '/panelist/profile', icon: UserIcon },
 ]

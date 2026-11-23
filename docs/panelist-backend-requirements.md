@@ -2,7 +2,9 @@
 
 **Purpose:** implementation checklist for the External Panelist backend contract the frontend is prepared to consume. The panelist frontend is complete through P5; this document records the exact endpoints, fields and response shapes that still need backend support. It is not a redesign and not a request to change `docs/handoff.md`.
 
-**Source of truth:** `docs/handoff.md`. If anything here conflicts with the handoff, `docs/handoff.md` wins and is not edited here. Panelist-relevant hard rules still apply:
+**Source of truth:** `docs/handoff.md`.
+
+**Product override (2026-11-24):** Forum access is **platform-wide**. Panelists may read and comment on every forum post/group and paper metadata across the vault; assignment scoping was removed. This intentionally diverges from `docs/handoff.md:271-273` (assigned group cards / group feed) and from the earlier scoped design in this document. Hard rule still holds: panelists cannot set status, upload files, publish, or approve access, and cannot use moderation endpoints. If anything here conflicts with the handoff, `docs/handoff.md` wins and is not edited here. Panelist-relevant hard rules still apply:
 
 **Backend status:** substantial implementation landed. See `docs/backend-status-report.md` for the current state, required migrations, and Phase R flag guidance.
 

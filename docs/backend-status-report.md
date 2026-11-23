@@ -87,10 +87,10 @@ ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
 - Invite creation returns real delivery status
 
 ### External panelist
-- `GET /groups` scoped to panel assignments; `GET /groups/:id` ownership check
-- `GET /panelist/groups` dedicated assigned-groups endpoint
-- `GET /panelist/papers` scoped by assignment, returns `group_id` + stable `hasFile`
-- `GET /forum/posts` and `GET /forum/posts/:id` scoped to assigned groups
+- Platform-wide read/comment access: `GET /groups`, `GET /groups/:id`, `GET /forum/posts`, `GET /forum/posts/:id`, and `GET /panelist/papers` are no longer assignment-scoped
+- `GET /panelist/groups` still available (now returns all groups) for compatibility
+- `GET /panelist/papers` returns `group_id` + stable `hasFile` for every submission
+- Hard rule preserved: panelists cannot set status, upload files, publish, or approve access; moderation endpoints stay adviser/admin-only
 
 ### Public reader
 - `POST /public/access-requests` requires consent; stores `consent_given`

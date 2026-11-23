@@ -26,18 +26,8 @@ export default function PanelistGroupDetail() {
   const [error, setError] = useState('')
   const [tab, setTab] = useState('Feed')
 
-  const isAssigned = useMemo(
-    () => assigned.some((g) => String(g.group_id) === String(groupId)),
-    [assigned, groupId]
-  )
 
   const load = useCallback(async () => {
-    if (!isAssigned) {
-      setGroup(null)
-      setError('')
-      setLoading(false)
-      return
-    }
     setLoading(true)
     setError('')
     setGroup(null)
@@ -49,7 +39,7 @@ export default function PanelistGroupDetail() {
     } finally {
       setLoading(false)
     }
-  }, [groupId, isAssigned])
+  }, [groupId])
 
   useEffect(() => {
     load()
@@ -64,7 +54,7 @@ export default function PanelistGroupDetail() {
     </Link>
   )
 
-  if (assignedLoading || (isAssigned && !error && (loading || !group))) {
+  if (assignedLoading || (!error && (loading || !group))) {
     return (
       <div className="space-y-6 font-display" aria-busy="true">
         {back}
@@ -78,18 +68,6 @@ export default function PanelistGroupDetail() {
       <div className="space-y-6 font-display">
         {back}
         <ErrorBanner message={assignedError} onRetry={reloadAssigned} />
-      </div>
-    )
-  }
-
-  if (!isAssigned) {
-    return (
-      <div className="space-y-6 font-display">
-        {back}
-        <div className={`${glass} px-6 py-12 text-center`}>
-          <p className="font-semibold">You are not assigned to this group.</p>
-          <p className="mt-1 text-sm text-white/60">Ask a System Admin to add you to the panel if you should review it.</p>
-        </div>
       </div>
     )
   }

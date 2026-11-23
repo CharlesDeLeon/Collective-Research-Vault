@@ -5,7 +5,7 @@ import ForumPostCard from './ForumPostCard'
 
 const PAGE = 5
 
-export default function FeedList({ groupId = null }) {
+export default function FeedList({ groupId = null, allowCompose = true }) {
   const { posts, groups, openComposer } = useForum()
   const [filters, setFilters] = useState({ ...EMPTY_FILTERS, group: groupId ?? '' })
   const [shown, setShown] = useState(PAGE)
@@ -53,13 +53,15 @@ export default function FeedList({ groupId = null }) {
           ) : (
             <>
               <p>No posts yet. Start the conversation!</p>
-              <button
-                type="button"
-                onClick={() => openComposer({})}
-                className="mt-3 font-semibold text-gold transition hover:text-gold-light"
-              >
-                Add new post
-              </button>
+              {allowCompose && (
+                <button
+                  type="button"
+                  onClick={() => openComposer({})}
+                  className="mt-3 font-semibold text-gold transition hover:text-gold-light"
+                >
+                  Add new post
+                </button>
+              )}
             </>
           )}
         </div>

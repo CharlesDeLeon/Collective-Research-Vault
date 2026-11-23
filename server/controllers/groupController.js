@@ -7,10 +7,11 @@ const listGroups = async (req, res) => {
     let sql = `
       SELECT rg.group_id, rg.group_name, rg.program, rg.strand, rg.section,
              rg.year_level, rg.school_year, rg.created_by, rg.adviser_id,
-             rg.created_at,
+             rg.created_at, ua.name AS adviser_name,
              (SELECT COUNT(*)::int FROM group_members gm WHERE gm.group_id = rg.group_id) AS member_count,
              (SELECT COUNT(*)::int FROM submissions s WHERE s.group_id = rg.group_id) AS submission_count
       FROM research_groups rg
+      LEFT JOIN users ua ON ua.user_id = rg.adviser_id
     `
     const params = []
 
@@ -20,9 +21,6 @@ const listGroups = async (req, res) => {
     } else if (role === 'adviser') {
       sql += ` WHERE rg.adviser_id = ? OR rg.created_by = ?`
       params.push(userId, userId)
-    } else if (role === 'external_panelist') {
-      sql += ` WHERE rg.group_id IN (SELECT group_id FROM panel_assignments WHERE faculty_id = ?)`
-      params.push(userId)
     }
 
     sql += ` ORDER BY rg.group_name ASC`
@@ -43,13 +41,6 @@ const isGroupOwner = async (groupId, userId, role) => {
     )
     return rows.length > 0
   }
-  if (role === 'external_panelist') {
-    const [rows] = await query(
-      `SELECT 1 FROM panel_assignments WHERE group_id = ? AND faculty_id = ?`,
-      [groupId, userId]
-    )
-    return rows.length > 0
-  }
   const [rows] = await query(
     `SELECT 1 FROM research_groups WHERE group_id = ? AND (adviser_id = ? OR created_by = ?)`,
     [groupId, userId, userId]
@@ -62,7 +53,7 @@ const getGroup = async (req, res) => {
     const { id } = req.params
     const role = String(req.user?.role || '').toLowerCase()
     const userId = req.user.user_id
-    if (!(await isGroupOwner(id, userId, role))) {
+    if (role !== 'external_panelist' && !(await isGroupOwner(id, userId, role))) {
       return res.status(404).json({ message: 'Group not found' })
     }
 

@@ -19,8 +19,8 @@ export default function PanelistGroups() {
     <div className="space-y-6 font-display sm:space-y-8">
       <header>
         <h1 className="text-2xl font-bold sm:text-3xl">Groups</h1>
-        <p className="mt-1 text-sm text-white/60">Groups where you are listed on the review panel.</p>
-        <p className="mt-2 text-xs text-white/45">Assignment is read from each group's panel list for now.</p>
+        <p className="mt-1 text-sm text-white/60">All groups in the vault.</p>
+        <p className="mt-2 text-xs text-white/45">You can read and comment across the platform; posting and moderation stay with the group's adviser.</p>
       </header>
 
       {groups.length > 3 && (
