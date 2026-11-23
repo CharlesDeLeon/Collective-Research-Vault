@@ -59,7 +59,7 @@ const getGroup = async (req, res) => {
     const [groups] = await query(
       `SELECT rg.group_id, rg.group_name, rg.program, rg.strand, rg.section,
               rg.year_level, rg.school_year, rg.created_by, rg.adviser_id,
-              rg.created_at,
+              rg.archived, rg.created_at,
               u.name AS adviser_name
        FROM research_groups rg
        LEFT JOIN users u ON u.user_id = rg.adviser_id
@@ -121,11 +121,11 @@ const updateGroup = async (req, res) => {
     const { id } = req.params
     const role = String(req.user?.role || '').toLowerCase()
     const userId = req.user.user_id
-    if (!(await isGroupOwner(id, userId, role))) {
+    if (role === 'adviser' && !(await isGroupOwner(id, userId, role))) {
       return res.status(404).json({ message: 'Group not found' })
     }
 
-    const { group_name, strand, section, year_level, school_year, program } = req.body
+    const { group_name, strand, section, year_level, school_year, program, adviser_id } = req.body
 
     // Duplicate name check within same section/school_year
     if (group_name) {
@@ -139,6 +139,20 @@ const updateGroup = async (req, res) => {
       }
     }
 
+    // Adviser reassignment (admin/sysadmin only) — validate target is an adviser
+    if (adviser_id !== undefined) {
+      if (role !== 'sysadmin' && role !== 'admin') {
+        return res.status(403).json({ message: 'Only admins can reassign advisers' })
+      }
+      const [target] = await query(
+        `SELECT user_id FROM users WHERE user_id = ? AND role IN ('adviser','faculty','coordinator') AND is_active = TRUE`,
+        [adviser_id]
+      )
+      if (!target.length) {
+        return res.status(400).json({ message: 'Target user is not an active adviser' })
+      }
+    }
+
     await query(
       `UPDATE research_groups
        SET group_name = COALESCE(?, group_name),
@@ -146,10 +160,15 @@ const updateGroup = async (req, res) => {
            strand = COALESCE(?, strand),
            section = COALESCE(?, section),
            year_level = COALESCE(?, year_level),
-           school_year = COALESCE(?, school_year)
+           school_year = COALESCE(?, school_year),
+           adviser_id = COALESCE(?, adviser_id)
        WHERE group_id = ?`,
-      [group_name || null, program || null, strand || null, section || null, year_level || null, school_year || null, id]
+      [group_name || null, program || null, strand || null, section || null, year_level || null, school_year || null, adviser_id || null, id]
     )
+
+    if (adviser_id !== undefined) {
+      try { if (req.audit) await req.audit.log({ action: 'REASSIGN_ADVISER', target_type: 'group', target_id: Number(id), changes: { adviser_id } }) } catch (e) { console.error(e) }
+    }
     res.json({ message: 'Group updated' })
   } catch (err) {
     console.error('updateGroup error:', err)
@@ -217,7 +236,24 @@ const searchStudents = async (req, res) => {
   }
 }
 
+const archiveGroup = async (req, res) => {
+  try {
+    const { id } = req.params
+    const role = String(req.user?.role || '').toLowerCase()
+    const userId = req.user.user_id
+    if (role === 'adviser' && !(await isGroupOwner(id, userId, role))) {
+      return res.status(404).json({ message: 'Group not found' })
+    }
+    await query('UPDATE research_groups SET archived = TRUE WHERE group_id = ?', [id])
+    try { if (req.audit) await req.audit.log({ action: 'ARCHIVE_GROUP', target_type: 'group', target_id: Number(id) }) } catch (e) { console.error(e) }
+    res.json({ message: 'Group archived' })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: 'Server error' })
+  }
+}
+
 module.exports = {
-  listGroups, getGroup, createGroup, updateGroup, deleteGroup,
+  listGroups, getGroup, createGroup, updateGroup, deleteGroup, archiveGroup,
   addMember, removeMember, searchStudents,
 }

@@ -59,6 +59,7 @@ CREATE TABLE research_groups (
   school_year VARCHAR(20)   DEFAULT NULL,
   created_by  INT           NOT NULL REFERENCES users(user_id),
   adviser_id  INT           REFERENCES users(user_id),
+  archived    BOOLEAN       NOT NULL DEFAULT FALSE,
   created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
@@ -175,6 +176,29 @@ CREATE TABLE submission_status_history (
 CREATE INDEX idx_status_history_submission ON submission_status_history(submission_id);
 
 ALTER TABLE submission_status_history ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
+-- announcements
+-- ============================================================
+CREATE TABLE IF NOT EXISTS announcements (
+  announcement_id SERIAL PRIMARY KEY,
+  title          VARCHAR(200) NOT NULL,
+  body           TEXT         NOT NULL,
+  audience       VARCHAR(20)  NOT NULL DEFAULT 'all',
+  role           VARCHAR(50)  DEFAULT NULL,
+  group_id       INT          REFERENCES research_groups(group_id),
+  created_by     INT          REFERENCES users(user_id),
+  created_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
+-- app_settings
+-- ============================================================
+CREATE TABLE IF NOT EXISTS app_settings (
+  id          SERIAL PRIMARY KEY,
+  settings    JSONB        NOT NULL DEFAULT '{}'::jsonb,
+  updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
 
 CREATE TABLE reviews (
   review_id       SERIAL PRIMARY KEY,

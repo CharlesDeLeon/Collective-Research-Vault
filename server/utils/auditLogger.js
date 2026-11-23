@@ -44,7 +44,7 @@ const logAction = async (
  */
 const getAuditLogs = async (filters = {}, page = 1, limit = 50) => {
   try {
-    const { action, targetType, targetId, userId, dateFrom, dateTo } = filters
+    const { action, targetType, targetId, userId, dateFrom, dateTo, search } = filters
     const offset = (page - 1) * limit
 
     let query = `SELECT 
@@ -52,11 +52,15 @@ const getAuditLogs = async (filters = {}, page = 1, limit = 50) => {
                   al.user_id,
                   u.name as user_name,
                   u.email as user_email,
+                  al.actor_name,
                   al.action,
                   al.target_type,
                   al.target_id,
                   al.details,
+                  al.changes,
                   al.ip_address,
+                  al.request_id,
+                  al.user_agent,
                   al.created_at
                 FROM audit_logs al
                 LEFT JOIN users u ON al.user_id = u.user_id
@@ -94,13 +98,40 @@ const getAuditLogs = async (filters = {}, page = 1, limit = 50) => {
       params.push(dateTo)
     }
 
+    if (search) {
+      query += ` AND (al.action ILIKE ? OR u.name ILIKE ? OR u.email ILIKE ? OR al.target_type ILIKE ? OR CAST(al.target_id AS TEXT) ILIKE ? OR al.details ILIKE ? OR al.request_id ILIKE ?)`
+      const t = `%${search}%`
+      params.push(t, t, t, t, t, t, t)
+    }
+
     query += ` ORDER BY al.created_at DESC LIMIT ? OFFSET ?`
     params.push(parseInt(limit), offset)
 
     const [logs] = await pool.query(query, params)
 
+    // Normalize changes -> before_values/after_values
+    const normalized = logs.map((l) => {
+      let before = null, after = null
+      if (l.changes) {
+        const c = (typeof l.changes === 'string') ? (() => { try { return JSON.parse(l.changes) } catch { return null } })() : l.changes
+        if (c && typeof c === 'object') {
+          before = c.before ?? c.before_values ?? null
+          after = c.after ?? c.after_values ?? c.changes ?? null
+          if (before === null && after === null && (c.previous_role || c.new_role || c.previous_data)) {
+            before = c.previous_data || (c.previous_role ? { role: c.previous_role } : null)
+            after = c.new_role ? { role: c.new_role } : null
+          }
+        }
+      }
+      return {
+        ...l,
+        before_values: before,
+        after_values: after,
+      }
+    })
+
     // Get total count
-    let countQuery = `SELECT COUNT(*) as total FROM audit_logs al WHERE 1=1`
+    let countQuery = `SELECT COUNT(*) as total FROM audit_logs al LEFT JOIN users u ON al.user_id = u.user_id WHERE 1=1`
     const countParams = []
 
     if (action) {
@@ -133,11 +164,17 @@ const getAuditLogs = async (filters = {}, page = 1, limit = 50) => {
       countParams.push(dateTo)
     }
 
+    if (search) {
+      countQuery += ` AND (al.action ILIKE ? OR u.name ILIKE ? OR u.email ILIKE ? OR al.target_type ILIKE ? OR CAST(al.target_id AS TEXT) ILIKE ? OR al.details ILIKE ? OR al.request_id ILIKE ?)`
+      const t = `%${search}%`
+      countParams.push(t, t, t, t, t, t, t)
+    }
+
     const [countResult] = await pool.query(countQuery, countParams)
     const total = countResult[0].total
 
     return {
-      data: logs,
+      data: normalized,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
