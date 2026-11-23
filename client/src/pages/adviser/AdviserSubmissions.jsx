@@ -51,7 +51,7 @@ export default function AdviserSubmissions() {
       <header>
         <h1 className="m-0 text-2xl font-bold tracking-tight sm:text-3xl">Review Queue</h1>
         <p className="mb-0 mt-1 text-sm text-white/60">
-          {loading ? 'Loading…' : `${total} ${total === 1 ? 'paper' : 'papers'}`} · Review and publish research from your groups.
+          {loading ? 'Loading…' : `${total} ${total === 1 ? 'paper' : 'papers'}`} · All submissions in the vault. Review and publish research.
         </p>
       </header>
 
