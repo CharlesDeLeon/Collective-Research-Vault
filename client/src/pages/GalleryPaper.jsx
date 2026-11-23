@@ -8,7 +8,7 @@ import { getGalleryPaper, getRelatedPapers, fetchGalleryPapers } from '../servic
 import { copyText } from '../utils/clipboard'
 import { longDate } from '../utils/formatDate'
 
-const dt = 'text-xs font-semibold uppercase tracking-[0.06em] text-gold'
+const dt = 'text-xs font-semibold uppercase tracking-[0.06em] text-link'
 
 export default function GalleryPaper() {
   const { slug } = useParams()
@@ -40,10 +40,10 @@ export default function GalleryPaper() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-navy-900 to-navy-500 font-display text-white">
+    <div className="min-h-screen bg-page font-display text-fg">
       <div className="mx-auto max-w-7xl px-4 pb-16 sm:px-8">
         <GalleryNavbar />
-        <Link to="/gallery" className="mt-2 inline-flex min-h-11 items-center gap-2 text-[0.9375rem] text-white/85">
+        <Link to="/gallery" className="mt-2 inline-flex min-h-11 items-center gap-2 text-[0.9375rem] text-fg/85">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5" aria-hidden="true">
             <path d="M15 6l-6 6 6 6" />
           </svg>
@@ -51,15 +51,15 @@ export default function GalleryPaper() {
         </Link>
 
         {loading ? (
-          <div className="mt-6 rounded-[1.25rem] border-[0.094rem] border-dashed border-white/30 px-6 py-12 text-center text-white/60">
+          <div className="mt-6 rounded-card border-[0.094rem] border-dashed border-control-line-soft px-6 py-12 text-center text-fg-on-page-subtle">
             Loading paper…
           </div>
         ) : !paper ? (
-          <div className="mt-6 rounded-[1.25rem] border-[0.094rem] border-dashed border-white/30 px-6 py-12 text-center">
-            <p className="m-0 text-lg font-semibold">This paper could not be found</p>
+          <div className="mt-6 rounded-card border-[0.094rem] border-dashed border-control-line-soft px-6 py-12 text-center">
+            <p className="m-0 text-lg font-semibold text-heading">This paper could not be found</p>
             <Link
               to="/gallery"
-              className="mt-5 inline-flex min-h-12 items-center rounded-xl bg-linear-to-br from-gold to-gold-soft px-7 text-base font-semibold text-ink"
+              className="mt-5 inline-flex min-h-12 items-center rounded-xl bg-cta px-7 text-base font-semibold text-cta-fg"
             >
               Browse the gallery
             </Link>
@@ -68,25 +68,30 @@ export default function GalleryPaper() {
           <>
             <div className="mt-4 flex flex-col items-start gap-8 lg:flex-row">
               <main className="w-full min-w-0 flex-1">
-                <span className="inline-block rounded-full bg-gold/15 px-3.5 py-1 text-[0.8125rem] font-semibold text-gold">
+                <span className="inline-block rounded-full bg-pill-bg px-3.5 py-1 text-[0.8125rem] font-semibold text-pill-fg">
                   {paper.strand} · {paper.section} · {paper.schoolYear}
                 </span>
-                <h1 className="mb-0 mt-4 text-[1.625rem] font-semibold leading-tight wrap-break-word sm:text-[2.5rem]">{paper.title}</h1>
-                <p className="mb-0 mt-4 text-base text-white/85">{paper.authors.join(', ')}</p>
+                <h1 className="mb-0 mt-4 text-[1.625rem] font-semibold leading-tight wrap-break-word text-heading sm:text-[2.5rem]">{paper.title}</h1>
+                <p className="mb-0 mt-4 text-base text-fg/85">{paper.authors.join(', ')}</p>
 
                 <section className="mt-9" aria-labelledby="abs-h">
-                  <h2 id="abs-h" className="mb-3 mt-0 text-xl font-semibold">Abstract</h2>
-                  <p className="m-0 max-w-3xl text-base leading-[1.75] text-white/90">{paper.abstract}</p>
+                  <h2 id="abs-h" className="mb-3 mt-0 text-xl font-semibold text-heading">Abstract</h2>
+                  <p className="m-0 max-w-3xl text-base leading-[1.75] text-fg/90">{paper.abstract}</p>
                 </section>
 
                 <section className="mt-8" aria-labelledby="kw-h">
-                  <h2 id="kw-h" className="mb-3 mt-0 text-xl font-semibold">Keywords</h2>
+                  <h2 id="kw-h" className="mb-3 mt-0 text-xl font-semibold text-heading">Keywords</h2>
                   <div className="flex flex-wrap gap-2">
                     {paper.keywords.map((k) => (
                       <Link
                         key={k}
+<<<<<<< HEAD
+                        to={`/gallery?kw=${encodeURIComponent(k)}`}
+                        className="inline-flex min-h-9 items-center rounded-full border border-keyword-line bg-keyword-bg px-3.5 text-sm text-keyword-fg hover:bg-link/10"
+=======
                         to={`/gallery?q=${encodeURIComponent(k)}`}
                         className="inline-flex min-h-9 items-center rounded-full border border-gold/60 px-3.5 text-sm text-[#FFD27F] hover:bg-gold/10"
+>>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
                       >
                         {k}
                       </Link>
@@ -95,14 +100,14 @@ export default function GalleryPaper() {
                 </section>
 
                 <section className="mt-8" aria-labelledby="cite-h">
-                  <h2 id="cite-h" className="mb-3 mt-0 text-xl font-semibold">Cite this paper</h2>
+                  <h2 id="cite-h" className="mb-3 mt-0 text-xl font-semibold text-heading">Cite this paper</h2>
                   <CitationCard paper={paper} />
                 </section>
               </main>
 
               <aside
                 aria-label="Paper details"
-                className="box-border w-full shrink-0 rounded-[1.25rem] border border-white/12 bg-field/40 p-6 lg:w-80"
+                className="box-border w-full shrink-0 rounded-card border border-line bg-surface-strong p-6 card-shadow lg:w-80"
               >
                 <dl className="m-0 grid gap-4">
                   <div>
@@ -129,14 +134,14 @@ export default function GalleryPaper() {
                 <button
                   type="button"
                   onClick={() => setRequesting(true)}
-                  className="mt-6 min-h-12 w-full rounded-xl bg-linear-to-br from-gold to-gold-soft text-base font-semibold text-ink"
+                  className="mt-6 min-h-12 w-full rounded-xl bg-cta text-base font-semibold text-cta-fg"
                 >
                   Request access
                 </button>
                 <button
                   type="button"
                   onClick={shareLink}
-                  className="mt-2.5 min-h-12 w-full rounded-xl border-[0.094rem] border-white/35 bg-transparent text-[0.9375rem] font-medium text-white hover:bg-white/10"
+                  className="mt-2.5 min-h-12 w-full rounded-xl border-[0.094rem] border-control-line bg-transparent text-[0.9375rem] font-medium text-fg hover:bg-fg/10"
                 >
                   {copied ? 'Link copied' : 'Share link'}
                 </button>
@@ -156,7 +161,7 @@ function RelatedSection({ related }) {
   if (!related || !related.length) return null
   return (
     <section className="mt-14" aria-labelledby="rel-h">
-      <h2 id="rel-h" className="mb-4 mt-0 text-[1.375rem] font-semibold">Related research</h2>
+      <h2 id="rel-h" className="mb-4 mt-0 text-[1.375rem] font-semibold text-heading">Related research</h2>
       <div className="grid gap-5 md:grid-cols-3">
         {related.map((p) => (
           <GalleryCard key={p.id} paper={p} featured />

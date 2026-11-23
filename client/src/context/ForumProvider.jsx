@@ -5,11 +5,14 @@ import { ForumContext } from './forumContext'
 import api from '../services/api'
 import AddPostModal from '../components/paper/AddPostModal'
 
+<<<<<<< HEAD
+=======
 const newId = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 
 const ROLE_DISPLAY = { student: 'Student', adviser: 'Adviser', external_panelist: 'Panelist', sysadmin: 'Admin', faculty: 'Adviser', coordinator: 'Adviser' }
 const displayRole = (r) => ROLE_DISPLAY[String(r || '').toLowerCase()] ?? r
 
+>>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
 const normalizePost = (row) => ({
   id: row.id ?? row.post_id,
   type: row.type ?? row.post_type ?? 'update',

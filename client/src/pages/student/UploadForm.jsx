@@ -7,7 +7,11 @@ import Field, { inputCls } from '../../components/upload/Field'
 import FileDropzone, { validateFile } from '../../components/upload/FileDropzone'
 import { getMyGroups as fetchMyGroups, uploadPaper, replacePaperFile } from '../../services/uploadService'
 import { getPaperDetail, updatePaper } from '../../services/paperService'
+<<<<<<< HEAD
+import { splitList, canEdit } from '../../utils/paperRules'
+=======
 import { canEdit, splitList } from '../../utils/paperRules'
+>>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
 
 const TITLE_MAX = 300
 const ABSTRACT_MIN = 50

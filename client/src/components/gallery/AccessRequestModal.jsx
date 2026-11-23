@@ -24,7 +24,7 @@ function validate(v) {
   return errors
 }
 
-const border = (error) => (error ? 'border-danger' : 'border-white/15')
+const border = (error) => (error ? 'border-danger-border' : 'border-form-line-soft')
 
 export default function AccessRequestModal({ paper, onClose }) {
   const { user } = useAuth()
@@ -67,8 +67,8 @@ export default function AccessRequestModal({ paper, onClose }) {
   return (
     <ModalShell title="Request full paper" icon={DocIcon} onClose={onClose}>
       <form onSubmit={submit} noValidate className="px-1 pb-1 pt-4">
-        <p className="m-0 mb-5 line-clamp-2 text-sm leading-relaxed text-white/70">
-          For: <span className="font-medium text-white">{paper.title}</span>
+        <p className="m-0 mb-5 line-clamp-2 text-sm leading-relaxed text-fg-subtle">
+          For: <span className="font-medium text-fg">{paper.title}</span>
         </p>
         <div className="grid gap-5">
           <Field label="Full name" error={errors.name}>
@@ -113,17 +113,17 @@ export default function AccessRequestModal({ paper, onClose }) {
               placeholder="State why you need access to this paper and how you plan to use it."
               className={`${inputCls} h-auto min-h-32 resize-y py-3 leading-relaxed ${border(errors.purpose)}`}
             />
-            <span className="mt-1 block text-right text-xs text-white/50">
+            <span className="mt-1 block text-right text-xs text-fg-ghost">
               {values.purpose.length}/{PURPOSE_MAX}
             </span>
           </Field>
           <div>
-            <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-white/85">
+            <label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-fg/85">
               <input
                 type="checkbox"
                 checked={values.consent}
                 onChange={set('consent')}
-                className="mt-0.5 size-5 shrink-0 accent-gold"
+                className="mt-0.5 size-5 shrink-0 accent-primary"
               />
               <span>
                 I agree that my details may be shared with the paper’s adviser and authors so they can review
@@ -131,21 +131,21 @@ export default function AccessRequestModal({ paper, onClose }) {
               </span>
             </label>
             {errors.consent && (
-              <p role="alert" className="mb-0 mt-1.5 text-xs text-danger-ink">
+              <p role="alert" className="mb-0 mt-1.5 text-xs text-danger-fg">
                 {errors.consent}
               </p>
             )}
           </div>
         </div>
         {status === 'error' && (
-          <p role="alert" className="mb-0 mt-4 text-sm text-danger-ink">
+          <p role="alert" className="mb-0 mt-4 text-sm text-danger-fg">
             We couldn’t send your request. Please try again.
           </p>
         )}
         <button
           type="submit"
           disabled={status === 'sending'}
-          className="mt-6 min-h-12 w-full rounded-xl bg-linear-to-br from-gold to-gold-soft text-base font-semibold text-ink disabled:opacity-60"
+          className="mt-6 min-h-12 w-full rounded-xl bg-cta text-base font-semibold text-cta-fg disabled:opacity-60"
         >
           {status === 'sending' ? 'Sending…' : 'Send request'}
         </button>

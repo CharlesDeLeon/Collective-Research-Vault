@@ -1,4 +1,4 @@
-const label = 'mb-1 block p-0 text-[0.8125rem] font-semibold uppercase tracking-[0.06em] text-gold'
+const label = 'mb-1 block p-0 text-[0.8125rem] font-semibold uppercase tracking-[0.06em] text-link'
 
 export default function FilterFields({
   groups,
@@ -20,10 +20,10 @@ export default function FilterFields({
                 name={group.key}
                 checked={o.checked}
                 onChange={() => onToggle(group.key, o.value)}
-                className={`m-0 accent-gold ${boxClass}`}
+                className={`m-0 accent-primary ${boxClass}`}
               />
               <span className="flex-1">{o.value}</span>
-              <span className="text-[0.8125rem] text-white/70">{o.count}</span>
+              <span className="text-[0.8125rem] text-fg-subtle">{o.count}</span>
             </label>
           ))}
         </fieldset>
@@ -35,8 +35,18 @@ export default function FilterFields({
             <button
               key={value}
               type="button"
+<<<<<<< HEAD
+              aria-pressed={k.on}
+              onClick={() => onKeyword(k.value)}
+              className={`min-h-10 rounded-full border px-3.5 text-[0.8125rem] sm:min-h-9 ${
+                k.on
+                  ? 'border-chip-line bg-chip-bg text-chip-fg'
+                  : 'border-chip-off-line bg-chip-off-bg text-chip-off-fg hover:bg-fg/10'
+              }`}
+=======
               onClick={() => onSearch(value)}
               className="min-h-10 rounded-full border border-white/40 bg-transparent px-3.5 text-[0.8125rem] text-white/90 hover:bg-white/10 sm:min-h-9"
+>>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
             >
               {value}
             </button>
