@@ -21,11 +21,14 @@ Collective-Research-Vault
 │  │  │  │  ├─ AdviserChip.jsx
 │  │  │  │  ├─ AuditDetailModal.jsx
 │  │  │  │  ├─ ChangeRoleModal.jsx
-│  │  │  │  ├─ Charts.jsx
+│  │  │  │  ├─ charts.jsx
+│  │  │  │  ├─ CreateGroupModal.jsx
 │  │  │  │  ├─ Pager.jsx
 │  │  │  │  ├─ PostDetailModal.jsx
 │  │  │  │  ├─ PostSummary.jsx
+│  │  │  │  ├─ ReassignAdviserModal.jsx
 │  │  │  │  ├─ RequestStatusChip.jsx
+│  │  │  │  ├─ ResetPasswordModal.jsx
 │  │  │  │  ├─ UserActivity.jsx
 │  │  │  │  ├─ UserBits.jsx
 │  │  │  │  └─ UserFormModal.jsx
@@ -85,7 +88,6 @@ Collective-Research-Vault
 │  │  │  │  ├─ StatusHistory.jsx
 │  │  │  │  └─ VersionHistory.jsx
 │  │  │  ├─ profile
-│  │  │  │  ├─ ProfileModal.jsx
 │  │  │  │  └─ ProfileTrigger.jsx
 │  │  │  ├─ ProtectedRoute.jsx
 │  │  │  ├─ public
@@ -153,6 +155,7 @@ Collective-Research-Vault
 │  │  │  │  ├─ AdviserInbox.jsx
 │  │  │  │  ├─ AdviserLayout.jsx
 │  │  │  │  ├─ AdviserModeration.jsx
+│  │  │  │  ├─ AdviserPanelists.jsx
 │  │  │  │  ├─ AdviserReports.jsx
 │  │  │  │  ├─ AdviserReview.jsx
 │  │  │  │  └─ AdviserSubmissions.jsx
@@ -162,15 +165,18 @@ Collective-Research-Vault
 │  │  │  ├─ NotFoundPage.jsx
 │  │  │  ├─ panelist
 │  │  │  │  ├─ PanelistDashboard.jsx
+│  │  │  │  ├─ PanelistFeed.jsx
 │  │  │  │  ├─ PanelistGroupDetail.jsx
 │  │  │  │  ├─ PanelistGroups.jsx
 │  │  │  │  ├─ PanelistLayout.jsx
+│  │  │  │  ├─ PanelistPapers.jsx
 │  │  │  │  └─ PanelistPostDetail.jsx
 │  │  │  ├─ public
 │  │  │  │  ├─ About.jsx
 │  │  │  │  ├─ AccessDownload.jsx
 │  │  │  │  ├─ AccessLink.jsx
 │  │  │  │  ├─ AccessView.jsx
+│  │  │  │  ├─ InviteAccept.jsx
 │  │  │  │  ├─ Landing.jsx
 │  │  │  │  ├─ RequestStatus.jsx
 │  │  │  │  └─ RequestSubmitted.jsx
@@ -178,7 +184,6 @@ Collective-Research-Vault
 │  │  │  └─ student
 │  │  │     ├─ ActivityHistory.jsx
 │  │  │     ├─ Feed.jsx
-│  │  │     ├─ Forum.jsx
 │  │  │     ├─ GroupDetail.jsx
 │  │  │     ├─ Groups.jsx
 │  │  │     ├─ MyAccess.jsx
@@ -199,9 +204,9 @@ Collective-Research-Vault
 │  │  │  ├─ api.js
 │  │  │  ├─ authService.js
 │  │  │  ├─ backendSupport.js
-│  │  │  ├─ feedData.js
 │  │  │  ├─ galleryData.js
 │  │  │  ├─ galleryService.js
+│  │  │  ├─ inviteService.js
 │  │  │  ├─ loginShowcase.js
 │  │  │  ├─ notificationService.js
 │  │  │  ├─ panelistService.js
@@ -215,9 +220,12 @@ Collective-Research-Vault
 │  │     ├─ clipboard.js
 │  │     ├─ csv.js
 │  │     ├─ downloadCsv.js
+│  │     ├─ downloadJson.js
+│  │     ├─ formatBytes.js
 │  │     ├─ formatDate.js
 │  │     ├─ helpers.js
 │  │     ├─ paperRules.js
+│  │     ├─ parseDetails.js
 │  │     ├─ permissionLabels.js
 │  │     ├─ roleHome.js
 │  │     ├─ roles.js
@@ -235,6 +243,7 @@ Collective-Research-Vault
 │  ├─ seed.sql
 │  └─ setup.js
 ├─ docs
+│  ├─ admin-backend-requirements.md
 │  ├─ handoff.md
 │  ├─ README.md
 │  └─ student-backend-requirements.md
@@ -255,7 +264,9 @@ Collective-Research-Vault
 │  │  ├─ facultyController.js
 │  │  ├─ forumController.js
 │  │  ├─ groupController.js
+│  │  ├─ inviteController.js
 │  │  ├─ notificationController.js
+│  │  ├─ panelistController.js
 │  │  ├─ paperController.js
 │  │  ├─ publicController.js
 │  │  ├─ reviewController.js
@@ -279,7 +290,9 @@ Collective-Research-Vault
 │  │  ├─ faculty.routes.js
 │  │  ├─ forum.routes.js
 │  │  ├─ group.routes.js
+│  │  ├─ invite.routes.js
 │  │  ├─ notification.routes.js
+│  │  ├─ panelist.routes.js
 │  │  ├─ paper.routes.js
 │  │  ├─ public.routes.js
 │  │  └─ student.routes.js
@@ -287,7 +300,9 @@ Collective-Research-Vault
 │  │  ├─ db-check.js
 │  │  ├─ db-setup.js
 │  │  ├─ migrate_forum.js
-│  │  └─ migrate_gallery.js
+│  │  ├─ migrate_gallery.js
+│  │  ├─ migrate_panelist_invites.js
+│  │  └─ migrate_student_backend.js
 │  ├─ services
 │  │  └─ mailer.js
 │  └─ utils

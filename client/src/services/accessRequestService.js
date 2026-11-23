@@ -18,10 +18,11 @@ export async function getRequestStatus(ref) {
   return {
     ref: d.ref,
     paperSlug: d.paperSlug,
+    paperTitle: d.paperTitle ?? null,
     status: d.status,
     createdAt: d.createdAt,
-    decidedAt: null,
+    decidedAt: d.decidedAt ?? d.decided_at ?? d.updatedAt ?? d.updated_at ?? null,
     reason: d.decisionNote || '',
-    linkStatus: d.linkStatus,
+    linkStatus: d.linkStatus ?? null,
   }
 }

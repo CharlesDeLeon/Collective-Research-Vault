@@ -3,8 +3,8 @@ const label = 'mb-1 block p-0 text-[0.8125rem] font-semibold uppercase tracking-
 export default function FilterFields({
   groups,
   onToggle,
-  keywords,
-  onKeyword,
+  searches,
+  onSearch,
   rowClass = 'min-h-11 text-[0.9375rem]',
   boxClass = 'size-5',
 }) {
@@ -16,7 +16,8 @@ export default function FilterFields({
           {group.options.map((o) => (
             <label key={o.value} className={`flex cursor-pointer items-center gap-3 ${rowClass}`}>
               <input
-                type="checkbox"
+                type="radio"
+                name={group.key}
                 checked={o.checked}
                 onChange={() => onToggle(group.key, o.value)}
                 className={`m-0 accent-gold ${boxClass}`}
@@ -28,21 +29,16 @@ export default function FilterFields({
         </fieldset>
       ))}
       <div>
-        <h3 className={`${label} mb-2.5`}>Keywords</h3>
+        <h3 className={`${label} mb-2.5`}>Popular searches</h3>
         <div className="flex flex-wrap gap-2">
-          {keywords.map((k) => (
+          {searches.map((value) => (
             <button
-              key={k.value}
+              key={value}
               type="button"
-              aria-pressed={k.on}
-              onClick={() => onKeyword(k.value)}
-              className={`min-h-10 rounded-full border px-3.5 text-[0.8125rem] sm:min-h-9 ${
-                k.on
-                  ? 'border-gold bg-gold/20 text-[#FFD27F]'
-                  : 'border-white/40 bg-transparent text-white/90 hover:bg-white/10'
-              }`}
+              onClick={() => onSearch(value)}
+              className="min-h-10 rounded-full border border-white/40 bg-transparent px-3.5 text-[0.8125rem] text-white/90 hover:bg-white/10 sm:min-h-9"
             >
-              {k.value}
+              {value}
             </button>
           ))}
         </div>

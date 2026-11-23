@@ -4,7 +4,8 @@ import { copyText } from '../../utils/clipboard'
 
 export default function CitationCard({ paper }) {
   const [copied, setCopied] = useState(false)
-  const text = apaCitation(paper)
+  const storedCitation = typeof paper?.citation === 'string' ? paper.citation.trim() : ''
+  const text = storedCitation || apaCitation(paper)
 
   const copy = async () => {
     if (await copyText(text)) {
