@@ -77,8 +77,9 @@ const uploadPaper = async (req, res) => {
     return res.status(400).json({ message: 'File is required' })
   }
 
-  const connection = await pool.getConnection()
+  let connection
   try {
+    connection = await pool.getConnection()
     await connection.beginTransaction()
 
     const [groupRows] = await connection.query(
@@ -192,11 +193,11 @@ const uploadPaper = async (req, res) => {
     })
 
   } catch (err) {
-    await connection.rollback()
+    if (connection) await connection.rollback()
     console.error(err)
     res.status(500).json({ message: 'Server error during upload' })
   } finally {
-    connection.release()
+    if (connection) connection.release()
   }
 }
 
@@ -355,19 +356,32 @@ const getPaperDetail = async (req, res) => {
       [paperId]
     )
 
-    const reviewsWithComments = await Promise.all(
-      reviews.map(async (review) => {
-        const [comments] = await pool.query(
-          `SELECT rc.comment_id, rc.author_id, u.name AS author_name, rc.comment_text, rc.resolved, rc.created_at
-           FROM review_comments rc
-           JOIN users u ON u.user_id = rc.author_id
-           WHERE rc.submission_id = ? AND rc.author_id = ?
-           ORDER BY rc.created_at ASC`,
-          [paperId, review.reviewer_id]
-        )
-        return { ...review, comments }
-      })
+    const [allComments] = await pool.query(
+      `SELECT rc.comment_id, rc.author_id, u.name AS author_name, rc.comment_text, rc.resolved, rc.created_at
+       FROM review_comments rc
+       JOIN users u ON u.user_id = rc.author_id
+       WHERE rc.submission_id = ?
+       ORDER BY rc.created_at ASC`,
+      [paperId]
     )
+
+    const reviewsWithComments = reviews.map((review) => ({
+      ...review,
+      comments: allComments.filter((c) => c.author_id === review.reviewer_id)
+    }))
+
+    const reviewerIds = new Set(reviews.map((r) => r.reviewer_id))
+    const orphanComments = allComments.filter((c) => !reviewerIds.has(c.author_id))
+    if (orphanComments.length) {
+      reviewsWithComments.push({
+        review_id: null,
+        reviewer_id: null,
+        reviewer_name: 'Adviser',
+        status_assigned: null,
+        reviewed_at: null,
+        comments: orphanComments
+      })
+    }
 
     const [historyRows] = await pool.query(
       `SELECT status, note, changed_by, created_at
@@ -440,6 +454,8 @@ const updatePaper = async (req, res) => {
   const { paperId } = req.params
   const userId = req.user.user_id
   const { title, abstract, keywords, authors, program, school_year, video_url, videoUrl } = req.body
+  const vidProvided = Object.prototype.hasOwnProperty.call(req.body, 'video_url') || Object.prototype.hasOwnProperty.call(req.body, 'videoUrl')
+  const vid = vidProvided ? (video_url ?? videoUrl ?? null) : null
 
   try {
     const [rows] = await pool.query(
@@ -453,8 +469,6 @@ const updatePaper = async (req, res) => {
       return res.status(409).json({ message: 'You cannot edit this paper after it has been approved or published.' })
     }
 
-    const vid = video_url ?? videoUrl ?? null
-
     await pool.query(
       `UPDATE submissions
        SET title = COALESCE(?, title),
@@ -463,10 +477,10 @@ const updatePaper = async (req, res) => {
            authors = COALESCE(?, authors),
            program = COALESCE(?, program),
            school_year = COALESCE(?, school_year),
-           video_url = COALESCE(?, video_url),
+           video_url = CASE WHEN ? THEN ? ELSE video_url END,
            updated_at = NOW()
        WHERE submission_id = ?`,
-      [title || null, abstract || null, keywords || null, authors || null, program || null, school_year || null, vid, paperId]
+      [title || null, abstract || null, keywords || null, authors || null, program || null, school_year || null, vidProvided, vid, paperId]
     )
 
     res.json({ message: 'Paper updated', paperId })
@@ -514,7 +528,7 @@ const setPaperConsent = async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT submission_id, status FROM submissions WHERE submission_id = ? AND submitted_by = ?`,
+      `SELECT submission_id, status, consent_status FROM submissions WHERE submission_id = ? AND submitted_by = ?`,
       [paperId, userId]
     )
     if (rows.length === 0) {
@@ -525,6 +539,7 @@ const setPaperConsent = async (req, res) => {
     }
 
     const newStatus = granted ? 'granted' : 'declined'
+    const prevStatus = rows[0].consent_status
     await pool.query(
       `UPDATE submissions
        SET consent_status = ?, consent_at = NOW(),
@@ -534,7 +549,9 @@ const setPaperConsent = async (req, res) => {
       [newStatus, newStatus, paperId]
     )
 
-    await notifyAdviser(paperId, `Consent for paper ${paperId} was ${granted ? 'granted' : 'withdrawn'} by the student.`)
+    if (prevStatus !== newStatus) {
+      await notifyAdviser(paperId, `Consent for paper ${paperId} was ${granted ? 'granted' : 'withdrawn'} by the student.`)
+    }
 
     res.json({ consent: { status: newStatus, at: new Date().toISOString() }, status: newStatus })
   } catch (err) {

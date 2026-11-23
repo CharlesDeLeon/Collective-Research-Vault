@@ -63,6 +63,9 @@ const updateProfile = async (req, res) => {
   if (!name && !email) {
     return res.status(400).json({ message: 'Provide name or email to update' })
   }
+  if (email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    return res.status(400).json({ message: 'Invalid email format' })
+  }
 
   try {
     const [rows] = await pool.query('SELECT * FROM users WHERE user_id = ?', [userId])
