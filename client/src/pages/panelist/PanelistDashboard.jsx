@@ -15,7 +15,8 @@ export default function PanelistDashboard() {
   const { groups, loading, error, reload } = useAssignedGroups()
 
   const ids = useMemo(() => new Set(groups.map((g) => String(g.group_id))), [groups])
-  const recent = useMemo(() => (posts ?? []).filter((p) => ids.has(String(p.groupId))).slice(0, 5), [posts, ids])
+  const matchingPosts = useMemo(() => (posts ?? []).filter((p) => ids.has(String(p.groupId))), [posts, ids])
+  const recent = useMemo(() => matchingPosts.slice(0, 5), [matchingPosts])
   const paperCount = groups.reduce((sum, g) => sum + Number(g.submission_count ?? 0), 0)
   const firstName = String(user?.name ?? user?.full_name ?? '').split(' ')[0]
 
@@ -23,7 +24,7 @@ export default function PanelistDashboard() {
     <div className="space-y-6 font-display sm:space-y-8">
       <header>
         <h1 className="text-2xl font-bold sm:text-3xl">{firstName ? `Welcome, ${firstName}` : 'Dashboard'}</h1>
-        <p className="mt-1 text-sm text-white/60">The groups you were invited to. You can read their posts and add comments.</p>
+        <p className="mt-1 text-sm text-white/60">Groups where you are on the review panel. You can read their posts and add comments.</p>
       </header>
 
       <ErrorBanner message={error} onRetry={reload} />
@@ -31,7 +32,7 @@ export default function PanelistDashboard() {
       <section aria-label="Summary" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatTile label="Assigned groups" value={loading ? '…' : groups.length} />
         <StatTile label="Papers" value={loading ? '…' : paperCount} />
-        <StatTile label="Recent posts" value={loading ? '…' : recent.length} className="col-span-2 sm:col-span-1" />
+        <StatTile label="Recent posts" value={loading ? '…' : matchingPosts.length} className="col-span-2 sm:col-span-1" />
       </section>
 
       <section aria-labelledby="groups-heading" className="space-y-3">
@@ -65,6 +66,7 @@ export default function PanelistDashboard() {
 
       <section aria-labelledby="recent-heading" className="space-y-3">
         <h2 id="recent-heading" className="text-lg font-bold">Recent posts</h2>
+        <p className="text-xs text-white/45">Only the 200 most recent posts in the vault are checked.</p>
         {recent.length === 0 ? (
           <div className={`${glass} px-6 py-8 text-center text-sm text-white/60`}>
             {loading ? 'Loading…' : 'No posts in your groups yet.'}

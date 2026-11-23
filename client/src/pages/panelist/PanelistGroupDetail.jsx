@@ -20,15 +20,27 @@ const postHref = (p) => `/panelist/posts/${p.id}`
 export default function PanelistGroupDetail() {
   const { groupId } = useParams()
   const { posts } = useForum()
-  const { groups: assigned } = useAssignedGroups()
+  const { groups: assigned, loading: assignedLoading, error: assignedError, reload: reloadAssigned } = useAssignedGroups()
   const [group, setGroup] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [tab, setTab] = useState('Feed')
 
+  const isAssigned = useMemo(
+    () => assigned.some((g) => String(g.group_id) === String(groupId)),
+    [assigned, groupId]
+  )
+
   const load = useCallback(async () => {
+    if (!isAssigned) {
+      setGroup(null)
+      setError('')
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError('')
+    setGroup(null)
     try {
       setGroup(await getGroup(groupId))
     } catch (e) {
@@ -37,7 +49,7 @@ export default function PanelistGroupDetail() {
     } finally {
       setLoading(false)
     }
-  }, [groupId])
+  }, [groupId, isAssigned])
 
   useEffect(() => {
     load()
@@ -52,11 +64,32 @@ export default function PanelistGroupDetail() {
     </Link>
   )
 
-  if (loading && !group) {
+  if (assignedLoading || (isAssigned && !error && (loading || !group))) {
     return (
       <div className="space-y-6 font-display" aria-busy="true">
         {back}
         <div className="h-32 animate-pulse rounded-2xl bg-panel" />
+      </div>
+    )
+  }
+
+  if (assignedError) {
+    return (
+      <div className="space-y-6 font-display">
+        {back}
+        <ErrorBanner message={assignedError} onRetry={reloadAssigned} />
+      </div>
+    )
+  }
+
+  if (!isAssigned) {
+    return (
+      <div className="space-y-6 font-display">
+        {back}
+        <div className={`${glass} px-6 py-12 text-center`}>
+          <p className="font-semibold">You are not assigned to this group.</p>
+          <p className="mt-1 text-sm text-white/60">Ask a System Admin to add you to the panel if you should review it.</p>
+        </div>
       </div>
     )
   }
@@ -109,19 +142,24 @@ export default function PanelistGroupDetail() {
         ))}
       </div>
 
-      {tab === 'Feed' &&
-        (groupPosts.length === 0 ? (
-          <div className={`${glass} px-6 py-10 text-center text-sm text-white/60`}>No posts in this group yet.</div>
-        ) : (
-          <div className="space-y-4">
-            {groupPosts.map((p) => (
-              <ForumPostCard key={p.id} post={p} showGroup={false} paperHref={postHref} />
-            ))}
-          </div>
-        ))}
+      {tab === 'Feed' && (
+        <div className="space-y-3">
+          <p className="text-xs text-white/45">Only the 200 most recent posts in the vault are checked.</p>
+          {groupPosts.length === 0 ? (
+            <div className={`${glass} px-6 py-10 text-center text-sm text-white/60`}>No posts in this group yet.</div>
+          ) : (
+            <div className="space-y-4">
+              {groupPosts.map((p) => (
+                <ForumPostCard key={p.id} post={p} showGroup={false} paperHref={postHref} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {tab === 'Papers' && (
         <section className={`${glass} p-4 sm:p-6`}>
+          <p className="mb-3 text-xs text-white/45">Only the 200 most recent posts in the vault are checked.</p>
           {!backendSupport.panelistPaperList && <p className="mb-4 text-xs text-white/55">{unsupportedNote.panelistPaperList}</p>}
           {paperPosts.length === 0 ? (
             <p className="text-sm text-white/60">No paper posts in this group yet.</p>
