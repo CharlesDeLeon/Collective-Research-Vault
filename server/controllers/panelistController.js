@@ -2,7 +2,6 @@ const { query } = require('../config/db')
 
 const listPapers = async (req, res) => {
   try {
-    const userId = req.user.user_id
     const [rows] = await query(
       `SELECT s.submission_id, s.title, s.authors, s.abstract, s.keywords,
               s.program, s.strand, s.section, s.school_year, s.status,
@@ -13,9 +12,8 @@ const listPapers = async (req, res) => {
        FROM submissions s
        LEFT JOIN research_groups rg ON rg.group_id = s.group_id
        LEFT JOIN users u ON u.user_id = s.submitted_by
-       WHERE s.group_id IN (SELECT group_id FROM panel_assignments WHERE faculty_id = ?)
        ORDER BY s.updated_at DESC, s.created_at DESC`,
-      [userId]
+      []
     )
     const data = rows.map(r => ({
       id: r.submission_id,
@@ -46,16 +44,14 @@ const listPapers = async (req, res) => {
 
 const listAssignedGroups = async (req, res) => {
   try {
-    const userId = req.user.user_id
     const [rows] = await query(
       `SELECT rg.group_id, rg.group_name, rg.program, rg.strand, rg.section,
               rg.year_level, rg.school_year,
               (SELECT COUNT(*)::int FROM group_members gm WHERE gm.group_id = rg.group_id) AS member_count,
               (SELECT COUNT(*)::int FROM submissions s WHERE s.group_id = rg.group_id) AS submission_count
        FROM research_groups rg
-       WHERE rg.group_id IN (SELECT group_id FROM panel_assignments WHERE faculty_id = ?)
        ORDER BY rg.group_name ASC`,
-      [userId]
+      []
     )
     res.json({ data: rows })
   } catch (err) {
