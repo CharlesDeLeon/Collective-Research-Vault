@@ -184,6 +184,7 @@ export default function PostDetailModal({ post, onAction, onClose }) {
           )}
         </div>
         {!backendSupport.adminRestoreRemoved && <p className="text-center text-xs text-white/45">{unsupportedNote.adminRestoreRemoved}</p>}
+        {!backendSupport.adminDismissReport && current.reported && <p className="text-center text-xs text-white/45">{unsupportedNote.adminDismissReport}</p>}
         <p className="text-center text-xs text-white/45">{roleNote}</p>
       </div>
     </ModalShell>

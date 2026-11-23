@@ -24,10 +24,6 @@ export const STUDENT_BOTTOM = [
   { label: 'Profile', to: ROUTES.profile, icon: UserIcon },
 ]
 
-// Backwards-compat aliases
-export const NAV = STUDENT_NAV
-export const BOTTOM = STUDENT_BOTTOM
-
 export const ADVISER_NAV = [
   { label: 'Dashboard', to: '/adviser/dashboard', icon: HomeIcon, end: true },
   { label: 'Groups', to: '/adviser/groups', icon: UsersIcon },
