@@ -59,17 +59,18 @@ export default function AdminDrawer({ open, onClose, user, onLogout }) {
         </div>
 
         <nav className="flex flex-col gap-1.5">
-          {ADMIN_NAV.map(({ label, to, icon: Icon, end, disabled }) =>
-            disabled ? (
-              <span key={label} aria-disabled="true" className={`${itemBase} cursor-not-allowed text-white/30`}>
+          {ADMIN_NAV.map((item) => {
+            const Icon = item.icon
+            return item.disabled ? (
+              <span key={item.label} aria-disabled="true" className={`${itemBase} cursor-not-allowed text-white/30`}>
                 <Icon className="size-5" />
-                {label}
+                {item.label}
               </span>
             ) : (
               <NavLink
-                key={to}
-                to={to}
-                end={end}
+                key={item.to}
+                to={item.to}
+                end={item.end}
                 onClick={onClose}
                 className={({ isActive }) =>
                   `${itemBase} ${
@@ -80,10 +81,10 @@ export default function AdminDrawer({ open, onClose, user, onLogout }) {
                 }
               >
                 <Icon className="size-5" />
-                {label}
+                {item.label}
               </NavLink>
             )
-          )}
+          })}
         </nav>
 
         <div className="mt-auto pt-6">

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { listAccessRequests, listAdminGroups, getUserNames, apiMessage } from '../../services/adminService'
 import { glass } from '../../components/dashboard/constants'
 import Select, { Option } from '../../components/ui/Select'
@@ -78,6 +79,20 @@ export default function AdminAccessRequests() {
   }
 
   const adviserName = (r) => (r.adviser_id ? names[r.adviser_id] ?? `User #${r.adviser_id}` : null)
+
+  const reassignControl = (r) => {
+    if (r.adviser_id || !r.group_id) return null
+    const cls = `${ghost} hover:bg-white/10 hover:text-white`
+    return backendSupport.adminReassignAdviser ? (
+      <Link to={`/admin/groups/${r.group_id}`} className={cls}>
+        Reassign adviser
+      </Link>
+    ) : (
+      <button type="button" disabled title={unsupportedNote.adminReassignAdviser} className={cls}>
+        Reassign adviser
+      </button>
+    )
+  }
 
   return (
     <div className="space-y-6 font-display">
@@ -188,9 +203,12 @@ export default function AdminAccessRequests() {
                     <td className="px-5 py-3"><RequestStatusChip status={r.status} /></td>
                     <td className="whitespace-nowrap px-5 py-3 text-white/75">{timeAgo(r.created_at)}</td>
                     <td className="px-5 py-3 text-right">
-                      <button type="button" onClick={() => setOpen(r)} className={ghost}>
-                        View
-                      </button>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {reassignControl(r)}
+                        <button type="button" onClick={() => setOpen(r)} className={ghost}>
+                          View
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -215,6 +233,7 @@ export default function AdminAccessRequests() {
                     <span>{timeAgo(r.created_at)}</span>
                   </span>
                 </button>
+                {reassignControl(r) && <div className="mt-2">{reassignControl(r)}</div>}
               </li>
             ))}
           </ul>
@@ -225,7 +244,6 @@ export default function AdminAccessRequests() {
             onPage={setPage}
             summary={`${requests.length} ${requests.length === 1 ? 'request' : 'requests'} shown`}
           />
-          {!backendSupport.adminListTotals && <p className="text-xs text-white/45">{unsupportedNote.adminListTotals}</p>}
         </>
       )}
 

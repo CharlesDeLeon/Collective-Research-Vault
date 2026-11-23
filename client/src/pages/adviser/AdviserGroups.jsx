@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   listMyGroups,
   getGroup,
@@ -10,6 +10,7 @@ import {
   searchStudents,
 } from '../../services/adviserService'
 import useToast from '../../context/useToast'
+import useAuth from '../../context/useAuth'
 import { glass } from '../../components/dashboard/constants'
 import { PlusIcon, PencilIcon, SearchIcon } from '../../components/dashboard/icons'
 import Select, { Option } from '../../components/ui/Select'
@@ -22,7 +23,9 @@ const inputCls =
 
 export default function AdviserGroups() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { toast } = useToast()
+  const { user } = useAuth()
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -32,8 +35,10 @@ export default function AdviserGroups() {
   const [editTarget, setEditTarget] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [formError, setFormError] = useState('')
+  const [formAdviserName, setFormAdviserName] = useState('')
   const [saving, setSaving] = useState(false)
   const [modalMembers, setModalMembers] = useState([])
+  const [membersLoading, setMembersLoading] = useState(false)
   const [memberSearch, setMemberSearch] = useState('')
   const [memberResults, setMemberResults] = useState([])
 
@@ -64,13 +69,15 @@ export default function AdviserGroups() {
     setEditTarget(null)
     setForm(EMPTY_FORM)
     setFormError('')
+    setFormAdviserName(user?.name ?? user?.full_name ?? 'Adviser')
     setModalMembers([])
+    setMembersLoading(false)
     setMemberSearch('')
     setMemberResults([])
     setModalOpen(true)
   }
 
-  const openEdit = async (g) => {
+  const openEdit = useCallback(async (g) => {
     setEditTarget(g)
     setForm({
       group_name: g.group_name || '',
@@ -80,26 +87,41 @@ export default function AdviserGroups() {
       school_year: g.school_year || '',
     })
     setFormError('')
+    setFormAdviserName(g.adviser_name || '')
     setMemberSearch('')
     setMemberResults([])
     setModalMembers([])
+    setMembersLoading(true)
     setModalOpen(true)
     try {
       const full = await getGroup(g.group_id)
+      setFormAdviserName(full?.adviser_name || g.adviser_name || '—')
       setModalMembers((full?.members || []).map((m) => ({ user_id: m.user_id, name: m.name, email: m.email })))
     } catch (e) {
       console.error(e)
       toast('Could not load the current members.', 'error')
+    } finally {
+      setMembersLoading(false)
     }
-  }
+  }, [toast])
 
   const closeModal = () => {
     setModalOpen(false)
     setEditTarget(null)
     setForm(EMPTY_FORM)
     setFormError('')
+    setFormAdviserName('')
     setModalMembers([])
+    setMembersLoading(false)
   }
+
+  useEffect(() => {
+    const targetId = searchParams.get('edit')
+    if (!targetId || loading) return
+    const target = groups.find((g) => String(g.group_id) === String(targetId))
+    if (target && !modalOpen) openEdit(target)
+    setSearchParams({}, { replace: true })
+  }, [searchParams, setSearchParams, loading, groups, modalOpen, openEdit])
 
   const onSearchMembers = async (q) => {
     setMemberSearch(q)
@@ -142,6 +164,7 @@ export default function AdviserGroups() {
   }
 
   const saveGroup = async () => {
+    if (membersLoading) return
     const problem = validate()
     setFormError(problem)
     if (problem) return
@@ -168,15 +191,8 @@ export default function AdviserGroups() {
         }
         toast('Group updated.')
       } else {
-        const newId = await createGroup(payload)
-        if (newId) {
-          for (const m of modalMembers) {
-            await addGroupMember(newId, m.user_id)
-          }
-          toast('Group created.')
-        } else {
-          toast('Group created, but the members could not be added. Open the group to add them.', 'error')
-        }
+        await createGroup(payload)
+        toast('Group created. Open it to add students.')
       }
       closeModal()
       fetchGroups()
@@ -310,6 +326,16 @@ export default function AdviserGroups() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1 sm:col-span-2">
+                <span className="text-xs font-semibold text-white/70">Adviser</span>
+                <input
+                  value={formAdviserName}
+                  readOnly
+                  aria-label="Adviser"
+                  className={`${inputCls} cursor-default text-white/60`}
+                />
+              </label>
+
+              <label className="flex flex-col gap-1 sm:col-span-2">
                 <span className="text-xs font-semibold text-white/70">Group name</span>
                 <input
                   value={form.group_name}
@@ -376,49 +402,57 @@ export default function AdviserGroups() {
 
             <div className="mt-5">
               <h3 className="mb-2 mt-0 text-sm font-semibold text-white/70">Members</h3>
-              <input
-                value={memberSearch}
-                onChange={(e) => onSearchMembers(e.target.value)}
-                placeholder="Search students by name or email…"
-                aria-label="Search students"
-                className={`${inputCls} h-10 w-full`}
-              />
-              {memberSearch.trim() && memberResults.length === 0 && (
-                <p className="mb-0 mt-2 text-xs text-white/60">
-                  No student found. Ask a System Admin to create the account.
-                </p>
-              )}
-              {memberResults.length > 0 && (
-                <ul className="m-0 mt-2 max-h-36 list-none overflow-y-auto rounded-xl border border-white/10 bg-white/[0.04] p-0">
-                  {memberResults.map((s) => (
-                    <li key={s.user_id}>
-                      <button
-                        type="button"
-                        onClick={() => addMember(s)}
-                        className="block w-full px-3 py-2 text-left text-sm hover:bg-white/10"
-                      >
-                        {s.name} <span className="text-white/50">({s.email})</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {modalMembers.length > 0 && (
-                <ul className="m-0 mt-2 flex list-none flex-wrap gap-2 p-0">
-                  {modalMembers.map((m) => (
-                    <li key={m.user_id} className="flex items-center gap-2 rounded-full bg-gold/10 py-1 pl-3 pr-1 text-xs text-gold">
-                      {m.name}
-                      <button
-                        type="button"
-                        onClick={() => removeMember(m.user_id)}
-                        aria-label={`Remove ${m.name}`}
-                        className="grid size-6 place-items-center rounded-full text-gold/70 hover:bg-gold/20 hover:text-gold"
-                      >
-                        ×
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+              {!editTarget ? (
+                <p className="m-0 text-xs text-white/55">Add students after the group is created, from the group page.</p>
+              ) : (
+                <>
+                  {membersLoading && <p className="mb-0 text-xs text-white/55">Loading current members…</p>}
+                  <input
+                    value={memberSearch}
+                    onChange={(e) => onSearchMembers(e.target.value)}
+                    placeholder="Search students by name or email…"
+                    aria-label="Search students"
+                    disabled={membersLoading}
+                    className={`${inputCls} h-10 w-full disabled:opacity-60`}
+                  />
+                  {memberSearch.trim() && memberResults.length === 0 && (
+                    <p className="mb-0 mt-2 text-xs text-white/60">
+                      No student found. Ask a System Admin to create the account.
+                    </p>
+                  )}
+                  {memberResults.length > 0 && (
+                    <ul className="m-0 mt-2 max-h-36 list-none overflow-y-auto rounded-xl border border-white/10 bg-white/[0.04] p-0">
+                      {memberResults.map((s) => (
+                        <li key={s.user_id}>
+                          <button
+                            type="button"
+                            onClick={() => addMember(s)}
+                            className="block w-full px-3 py-2 text-left text-sm hover:bg-white/10"
+                          >
+                            {s.name} <span className="text-white/50">({s.email})</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {modalMembers.length > 0 && (
+                    <ul className="m-0 mt-2 flex list-none flex-wrap gap-2 p-0">
+                      {modalMembers.map((m) => (
+                        <li key={m.user_id} className="flex items-center gap-2 rounded-full bg-gold/10 py-1 pl-3 pr-1 text-xs text-gold">
+                          {m.name}
+                          <button
+                            type="button"
+                            onClick={() => removeMember(m.user_id)}
+                            aria-label={`Remove ${m.name}`}
+                            className="grid size-6 place-items-center rounded-full text-gold/70 hover:bg-gold/20 hover:text-gold"
+                          >
+                            ×
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
               )}
             </div>
 
@@ -439,10 +473,10 @@ export default function AdviserGroups() {
               <button
                 type="button"
                 onClick={saveGroup}
-                disabled={saving}
+                disabled={saving || membersLoading}
                 className="h-11 rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft px-5 text-sm font-semibold text-ink transition hover:brightness-105 disabled:opacity-60"
               >
-                {saving ? 'Saving…' : editTarget ? 'Save changes' : 'Create group'}
+                {membersLoading ? 'Loading members…' : saving ? 'Saving…' : editTarget ? 'Save changes' : 'Create group'}
               </button>
             </div>
           </div>

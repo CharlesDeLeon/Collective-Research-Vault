@@ -3,27 +3,34 @@ import ModalShell from '../ui/ModalShell'
 import { DocIcon, ExternalLinkIcon } from '../dashboard/icons'
 import RoleBadge from '../forum/RoleBadge'
 import PostSummary from './PostSummary'
-import { getAdminPost } from '../../services/adminService'
-import { badgeRole } from '../../utils/adminRoles'
+import useToast from '../../context/useToast'
+import useAuth from '../../context/useAuth'
+import { getAdminPost, hideAdminComment, removeAdminComment, apiMessage } from '../../services/adminService'
+import { badgeRole, canonicalRole } from '../../utils/adminRoles'
 import { timeAgo } from '../../utils/formatDate'
 import { backendSupport, unsupportedNote } from '../../services/backendSupport'
 
-const btn =
-  'h-11 rounded-xl border text-sm font-semibold transition'
+const btn = 'h-11 rounded-xl border text-sm font-semibold transition'
+const tinyBtn = 'rounded-lg border px-2.5 py-1 text-xs font-semibold transition'
 
 export default function PostDetailModal({ post, onAction, onClose }) {
+  const { toast } = useToast()
+  const { user } = useAuth()
   const [full, setFull] = useState(null)
   const [failed, setFailed] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
+  const [busyComment, setBusyComment] = useState(null)
 
   useEffect(() => {
     let live = true
+    setFailed(false)
     getAdminPost(post.id)
       .then((data) => live && setFull(data))
       .catch(() => live && setFailed(true))
     return () => {
       live = false
     }
-  }, [post.id])
+  }, [post.id, reloadKey])
 
   const current = full ?? post
   const comments = full?.comments ?? []
@@ -33,6 +40,28 @@ export default function PostDetailModal({ post, onAction, onClose }) {
     onClose()
     onAction(current, kind)
   }
+
+  const moderateComment = async (comment, kind) => {
+    setBusyComment(comment.id)
+    try {
+      if (kind === 'remove') await removeAdminComment(comment.id)
+      else await hideAdminComment(comment.id, !comment.hidden)
+      toast(kind === 'remove' ? 'Comment removed.' : comment.hidden ? 'Comment is visible again.' : 'Comment hidden.')
+      setReloadKey((k) => k + 1)
+    } catch (e) {
+      toast(apiMessage(e, 'Could not update this comment.'), 'error')
+    } finally {
+      setBusyComment(null)
+    }
+  }
+
+  const reason = current.reason ?? current.reasonText
+  const reporter = current.reporterName ?? current.reporter_name ?? current.reporter
+  const reporterEmail = current.reporterEmail ?? current.reporter_email
+  const roleNote =
+    canonicalRole(user?.role) === 'adviser'
+      ? 'Advisers decide what stays in their own groups. Publishing and access approval remain adviser actions.'
+      : 'Admins moderate content only. Publishing and access approval stay with the group adviser.'
 
   return (
     <ModalShell title="Post" icon={DocIcon} onClose={onClose}>
@@ -58,6 +87,21 @@ export default function PostDetailModal({ post, onAction, onClose }) {
           {(full ? comments.length : current.commentCount) === 1 ? 'comment' : 'comments'}
         </p>
 
+        {current.reported && (
+          <section>
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gold">Report</h3>
+            {backendSupport.adminModerationReason ? (
+              <div className="space-y-1 rounded-xl border border-warn/30 bg-warn/5 px-3 py-2 text-xs text-white/80">
+                <p><span className="text-white/55">Reason:</span> {reason || '—'}</p>
+                <p><span className="text-white/55">Reporter:</span> {reporter || '—'}</p>
+                {reporterEmail && <p><span className="text-white/55">Email:</span> {reporterEmail}</p>}
+              </div>
+            ) : (
+              <p className="text-xs text-white/45">{unsupportedNote.adminModerationReason}</p>
+            )}
+          </section>
+        )}
+
         <section>
           <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gold">Comments</h3>
           {failed ? (
@@ -75,8 +119,29 @@ export default function PostDetailModal({ post, onAction, onClose }) {
                     <RoleBadge role={badgeRole(c.authorRole)} />
                     <span className="text-white/45">{timeAgo(c.createdAt)}</span>
                     {c.reported && <span className="text-warn-ink">Reported</span>}
+                    {c.hidden && <span className="text-white/50">Hidden</span>}
                   </div>
                   <p className="mt-1 wrap-break-word whitespace-pre-line text-sm text-white/80">{c.text}</p>
+                  {backendSupport.adminCommentModeration && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={busyComment === c.id}
+                        onClick={() => moderateComment(c, 'hide')}
+                        className={`${tinyBtn} border-white/20 text-white/75 enabled:hover:bg-white/10 disabled:opacity-50`}
+                      >
+                        {c.hidden ? 'Make visible' : 'Hide'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busyComment === c.id}
+                        onClick={() => moderateComment(c, 'remove')}
+                        className={`${tinyBtn} border-danger/50 text-danger-ink enabled:hover:bg-danger/15 disabled:opacity-50`}
+                      >
+                        {busyComment === c.id ? 'Working…' : 'Remove'}
+                      </button>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -99,8 +164,27 @@ export default function PostDetailModal({ post, onAction, onClose }) {
           >
             Remove post
           </button>
+          {backendSupport.adminRestoreRemoved && current.removed && (
+            <button
+              type="button"
+              onClick={() => act('restore')}
+              className={`${btn} border-success/40 bg-success/10 text-success-ink hover:bg-success/20`}
+            >
+              Restore post
+            </button>
+          )}
+          {backendSupport.adminDismissReport && current.reported && (
+            <button
+              type="button"
+              onClick={() => act('dismiss')}
+              className={`${btn} border-white/20 text-white/85 hover:bg-white/10`}
+            >
+              Dismiss report
+            </button>
+          )}
         </div>
-        <p className="text-center text-xs text-white/45">Admins moderate content only. Publishing and access approval stay with the group adviser.</p>
+        {!backendSupport.adminRestoreRemoved && <p className="text-center text-xs text-white/45">{unsupportedNote.adminRestoreRemoved}</p>}
+        <p className="text-center text-xs text-white/45">{roleNote}</p>
       </div>
     </ModalShell>
   )

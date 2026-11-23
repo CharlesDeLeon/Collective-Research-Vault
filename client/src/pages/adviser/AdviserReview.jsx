@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   getSubmission,
+  listSubmissions,
   setSubmissionStage,
   setSubmissionStatus,
   addFeedbackComment,
@@ -42,12 +43,12 @@ function Note({ children }) {
 
 function UnpublishModal({ title, busy, error, onConfirm, onClose }) {
   const [reason, setReason] = useState('')
-  const ready = reason.trim().length > 0
+  const reasonStored = backendSupport.unpublishReasonStored
+  const ready = reasonStored ? reason.trim().length > 0 : true
   return (
     <ModalShell title="Unpublish paper" icon={AlertIcon} onClose={onClose}>
       <p className="mt-4 px-1 text-sm leading-relaxed text-white/75">
-        <span className="font-medium text-white">{title}</span> will be removed from the public gallery. Tell the group
-        why, so they know what to fix.
+        <span className="font-medium text-white">{title}</span> will be removed from the public gallery.
       </p>
       <label className="mt-4 block px-1">
         <span className="text-xs font-semibold text-white/70">Reason</span>
@@ -59,6 +60,11 @@ function UnpublishModal({ title, busy, error, onConfirm, onClose }) {
           placeholder="Why is this paper being unpublished?"
         />
       </label>
+      {!reasonStored && (
+        <div className="mt-2 px-1">
+          <Note>The reason is not saved by the server yet.</Note>
+        </div>
+      )}
       {error && (
         <p role="alert" className="mb-0 mt-3 px-1 text-xs text-danger-ink">
           {error}
@@ -102,7 +108,7 @@ function PublishModal({ paper, citation, consentAt, busy, error, onConfirm, onCl
           <p className="m-0 mt-1 text-sm text-white/80">{citation}</p>
         </div>
         <p className="m-0 text-xs text-white/60">
-          Author consent recorded {consentAt ? fullDate(consentAt) : 'now, when you confirm'}.
+          {consentAt ? `Author consent recorded ${fullDate(consentAt)}.` : 'Author consent is required before publishing.'}
         </p>
       </div>
       {error && (
@@ -136,6 +142,7 @@ export default function AdviserReview() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const [paper, setPaper] = useState(null)
+  const [queue, setQueue] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [newStage, setNewStage] = useState('')
@@ -143,7 +150,6 @@ export default function AdviserReview() {
   const [statusNote, setStatusNote] = useState('')
   const [updating, setUpdating] = useState(false)
   const [updateError, setUpdateError] = useState(null)
-  const [consentConfirmed, setConsentConfirmed] = useState(false)
   const [citation, setCitation] = useState('')
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
@@ -164,7 +170,6 @@ export default function AdviserReview() {
       setPaper(d)
       setNewStage(d.stage)
       setNewStatus(d.status === 'published' ? 'approved' : d.status === 'submitted' ? 'under_review' : d.status)
-      setConsentConfirmed(!!d.author_consent_at)
       setCitation(d.citation || '')
     } catch (e) {
       console.error(e)
@@ -176,13 +181,30 @@ export default function AdviserReview() {
 
   useEffect(() => { fetchPaper() }, [fetchPaper])
 
-  const files = paper?.versions ?? paper?.files ?? []
+  useEffect(() => {
+    let active = true
+    listSubmissions({ limit: 100 })
+      .then(({ data }) => { if (active) setQueue(data) })
+      .catch(() => { if (active) setQueue([]) })
+    return () => { active = false }
+  }, [])
+
+  const queueIndex = queue.findIndex((s) => String(s.submission_id) === String(id))
+  const prevPaper = queueIndex > 0 ? queue[queueIndex - 1] : null
+  const nextPaper = queueIndex >= 0 && queueIndex < queue.length - 1 ? queue[queueIndex + 1] : null
+  const versions = Array.isArray(paper?.versions) ? paper.versions : []
+  const currentFile = paper?.file_path
+    ? { file_name: paper.file_name || 'Paper file', file_path: paper.file_path }
+    : versions.length
+      ? { file_name: versions[0].file_name || 'Paper file', file_path: versions[0].file_path }
+      : null
+  const files = currentFile ? [currentFile] : []
   const consentAt = paper?.author_consent_at ?? null
   const isPublished = paper?.status === 'published'
   const generatedCitation = paper ? submissionCitation(paper) : ''
   const finalCitation = citation.trim() || generatedCitation
 
-  const consentOk = consentAt ? true : consentConfirmed
+  const consentOk = Boolean(consentAt)
   const checklist = paper
     ? [
         { label: 'Status is Approved', ok: paper.status === 'approved' || isPublished },
@@ -203,7 +225,7 @@ export default function AdviserReview() {
     setUpdateError(null)
     try {
       if (newStage !== paper.stage) await setSubmissionStage(paper.submission_id, newStage)
-      if (newStatus !== currentStatus) await setSubmissionStatus(paper.submission_id, newStatus)
+      if (newStatus !== currentStatus) await setSubmissionStatus(paper.submission_id, newStatus, statusNote)
       toast('Status updated.')
       setStatusNote('')
       fetchPaper()
@@ -215,7 +237,7 @@ export default function AdviserReview() {
   }
 
   const handleUploadFile = async () => {
-    if (!file) return
+    if (!file || isPublished) return
     setUploading(true)
     setUpdateError(null)
     try {
@@ -234,7 +256,7 @@ export default function AdviserReview() {
     setPublishing(true)
     setPublishError(null)
     try {
-      await publishSubmission(paper.submission_id, { citation: finalCitation, consentGranted: consentOk })
+      await publishSubmission(paper.submission_id, { citation: finalCitation })
       setShowPublish(false)
       toast('Published to the gallery.')
       fetchPaper()
@@ -305,6 +327,28 @@ export default function AdviserReview() {
         <span aria-hidden="true">›</span>
         <span className="min-w-0 truncate text-white/80">{paper.title}</span>
       </nav>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(`/adviser/reviews/${prevPaper.submission_id}`)}
+            disabled={!prevPaper}
+            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 enabled:hover:bg-white/10 disabled:opacity-40"
+          >
+            ‹ Previous paper
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(`/adviser/reviews/${nextPaper.submission_id}`)}
+            disabled={!nextPaper}
+            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 enabled:hover:bg-white/10 disabled:opacity-40"
+          >
+            Next paper ›
+          </button>
+        </div>
+        <p className="m-0 text-xs text-white/45">Navigation covers the 100 most recently updated submissions in the vault.</p>
+      </div>
 
       <header>
         <div className="flex flex-wrap items-center gap-3">
@@ -397,7 +441,24 @@ export default function AdviserReview() {
             <h2 className="mb-3 mt-0 text-lg font-bold">Status history</h2>
             {!backendSupport.statusHistory ? (
               <Note>{unsupportedNote.statusHistory}</Note>
-            ) : null}
+            ) : !Array.isArray(paper.statusHistory ?? paper.status_history) ? (
+              <Note>Status history is not returned by the review endpoint yet.</Note>
+            ) : (paper.statusHistory ?? paper.status_history).length === 0 ? (
+              <Note>No status changes have been recorded.</Note>
+            ) : (
+              <ul className="m-0 list-none space-y-3 p-0">
+                {(paper.statusHistory ?? paper.status_history).map((entry, index) => (
+                  <li key={`${entry.at ?? 'entry'}-${index}`} className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <StatusPill status={entry.status} />
+                      <span className="text-xs text-white/45">{entry.at ? fullDate(entry.at) : ''}</span>
+                    </div>
+                    {entry.note && <p className="mb-0 mt-2 text-sm text-white/70">{entry.note}</p>}
+                    {entry.by && <p className="mb-0 mt-1 text-xs text-white/45">By {entry.by}</p>}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
@@ -406,7 +467,7 @@ export default function AdviserReview() {
             <h2 className="m-0 text-lg font-bold">Review</h2>
             <label className="block">
               <span className="text-xs font-semibold text-white/70">Stage</span>
-              <Select value={newStage} onChange={(e) => setNewStage(e.target.value)} className="border-white/15">
+              <Select value={newStage} onChange={(e) => setNewStage(e.target.value)} disabled={isPublished} className="border-white/15 disabled:opacity-50">
                 <Option value="proposal">Proposal</Option>
                 <Option value="defense">Defense</Option>
                 <Option value="final_submission">Final Submission</Option>
@@ -425,7 +486,7 @@ export default function AdviserReview() {
                 ))}
               </Select>
             </label>
-            {isPublished && <Note>Unpublish this paper before changing its status.</Note>}
+            {isPublished && <Note>Unpublish this paper before changing its stage, status or file.</Note>}
             <label className="block">
               <span className="text-xs font-semibold text-white/70">Note for the group</span>
               <textarea
@@ -468,13 +529,14 @@ export default function AdviserReview() {
                 type="file"
                 accept=".pdf,.doc,.docx"
                 aria-label="Choose a paper file"
+                disabled={isPublished}
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="min-w-0 flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-white"
+                className="min-w-0 flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-white disabled:opacity-50"
               />
               <button
                 type="button"
                 onClick={handleUploadFile}
-                disabled={!file || uploading}
+                disabled={!file || uploading || isPublished}
                 className="shrink-0 rounded-lg bg-gold/20 px-3 py-2 text-xs font-semibold text-gold transition hover:bg-gold/30 disabled:opacity-60"
               >
                 {uploading ? '…' : 'Upload'}
@@ -499,21 +561,7 @@ export default function AdviserReview() {
               </span>
             </div>
 
-            {!consentAt && !backendSupport.studentConsent && (
-              <>
-                <label className="flex items-start gap-2 text-sm text-white/80">
-                  <input
-                    type="checkbox"
-                    checked={consentConfirmed}
-                    onChange={(e) => setConsentConfirmed(e.target.checked)}
-                    disabled={isPublished}
-                    className="mt-0.5 size-4 shrink-0 accent-gold"
-                  />
-                  <span>I confirm the authors agreed to public release of the title, abstract and citation.</span>
-                </label>
-                <Note>{unsupportedNote.studentConsent}</Note>
-              </>
-            )}
+            {!consentAt && <Note>Publishing requires student opt-in recorded by the server.</Note>}
             {!backendSupport.requestConsent && (
               <button
                 type="button"

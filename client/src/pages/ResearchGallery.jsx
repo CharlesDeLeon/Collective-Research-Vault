@@ -5,13 +5,12 @@ import GalleryCard from '../components/gallery/GalleryCard'
 import FeaturedRow from '../components/gallery/FeaturedRow'
 import FilterFields from '../components/gallery/FilterFields'
 import FilterSheet from '../components/gallery/FilterSheet'
-import SortSelect from '../components/gallery/SortSelect'
 import { SearchIcon, CloseIcon } from '../components/dashboard/icons'
 
 export default function ResearchGallery() {
   const g = useResearchGallery()
   const [sheet, setSheet] = useState(false)
-  const countText = `${g.total} ${g.total === 1 ? 'paper' : 'papers'}`
+  const countText = `Showing ${g.total} ${g.total === 1 ? 'paper' : 'papers'}`
 
   return (
     <div className="min-h-screen bg-page font-display text-fg">
@@ -60,8 +59,8 @@ export default function ResearchGallery() {
             <FilterFields
               groups={g.groups}
               onToggle={g.toggle}
-              keywords={g.keywordOptions}
-              onKeyword={g.toggleKeyword}
+              searches={g.popularSearches}
+              onSearch={g.applySearch}
             />
           </aside>
 
@@ -82,17 +81,19 @@ export default function ResearchGallery() {
                   </span>
                 )}
               </button>
-              <SortSelect value={g.sort} onChange={g.setSort} className="min-w-0 flex-1" />
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-4">
               <p aria-live="polite" className="m-0 text-base font-semibold text-fg">
                 {countText}
               </p>
+<<<<<<< HEAD
               <label className="hidden items-center gap-2.5 text-sm text-fg/80 lg:flex">
                 Sort by
                 <SortSelect value={g.sort} onChange={g.setSort} className="w-44" />
               </label>
+=======
+>>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
             </div>
 
             {g.chips.length > 0 && (

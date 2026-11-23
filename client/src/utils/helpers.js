@@ -18,6 +18,7 @@ export const getApiBaseUrl = () => {
  */
 export const getFileDownloadUrl = (filePath) => {
   if (!filePath) return null
+  if (/^https?:\/\//i.test(filePath)) return filePath
   const base = getApiBaseUrl().replace(/\/api$/, '') // Remove /api suffix for file URLs
   return `${base}/${filePath.replace(/^\//, '')}`
 }

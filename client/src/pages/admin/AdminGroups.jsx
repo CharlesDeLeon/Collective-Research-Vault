@@ -5,8 +5,8 @@ import { glass } from '../../components/dashboard/constants'
 import { SearchIcon, PlusIcon } from '../../components/dashboard/icons'
 import Select, { Option } from '../../components/ui/Select'
 import AdviserChip from '../../components/admin/AdviserChip'
+import CreateGroupModal from '../../components/admin/CreateGroupModal'
 import { STRANDS } from '../../utils/strands'
-import { backendSupport, unsupportedNote } from '../../services/backendSupport'
 
 const ghost =
   'rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/75 transition enabled:hover:bg-white/10 enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
@@ -19,6 +19,7 @@ export default function AdminGroups() {
   const [search, setSearch] = useState('')
   const [strand, setStrand] = useState('')
   const [adviser, setAdviser] = useState('')
+  const [creating, setCreating] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -71,13 +72,12 @@ export default function AdminGroups() {
         <div className="text-right">
           <button
             type="button"
-            disabled={!backendSupport.adminCreateGroup}
-            className="flex h-11 items-center gap-2 rounded-xl border border-white/20 px-5 text-sm font-semibold text-white/80 transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={() => setCreating(true)}
+            className="flex h-11 items-center gap-2 rounded-xl border border-white/20 px-5 text-sm font-semibold text-white/80 transition enabled:hover:bg-white/10"
           >
             <PlusIcon className="size-4" />
             Create group
           </button>
-          {!backendSupport.adminCreateGroup && <p className="mt-1 max-w-56 text-xs text-white/45">{unsupportedNote.adminCreateGroup}</p>}
         </div>
       </header>
 
@@ -207,6 +207,15 @@ export default function AdminGroups() {
             {visible.length} {visible.length === 1 ? 'group' : 'groups'}
           </p>
         </>
+      )}
+      {creating && (
+        <CreateGroupModal
+          onClose={() => setCreating(false)}
+          onCreated={() => {
+            setCreating(false)
+            load()
+          }}
+        />
       )}
     </div>
   )

@@ -6,13 +6,10 @@ const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || '/api',
 })
 
-// automatically attach JWT Token to every request
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token')
-    console.log('[API Interceptor] Token from localStorage:', token ? 'Present' : 'Missing')
     if (token) {
         config.headers.Authorization = `Bearer ${token}`
-        console.log('[API Interceptor] Authorization header added')
     }
     return config
 })

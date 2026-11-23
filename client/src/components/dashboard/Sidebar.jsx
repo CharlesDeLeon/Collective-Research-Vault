@@ -10,6 +10,7 @@ export const STUDENT_NAV = [
   { label: 'Home', to: ROUTES.home, icon: HomeIcon, end: true },
   { label: 'Feed', to: ROUTES.forum, icon: CommentIcon },
   { label: 'My Papers', to: ROUTES.myPapers, icon: DocIcon },
+  { label: 'My Access', to: '/student/access', icon: BookIcon },
   { label: 'Groups', to: ROUTES.groups, icon: UsersIcon },
   { label: 'Gallery', to: ROUTES.gallery, icon: BookIcon },
   { label: 'Notifications', to: ROUTES.history, icon: BellIcon },
@@ -33,6 +34,7 @@ export const ADVISER_NAV = [
   { label: 'Reviews', to: '/adviser/reviews', icon: DocIcon },
   { label: 'Access Inbox', to: '/adviser/inbox', icon: BellIcon },
   { label: 'Moderation', to: '/adviser/moderation', icon: CommentIcon },
+  { label: 'Panelists', to: '/adviser/panelists', icon: UsersIcon },
   { label: 'Reports', to: '/adviser/reports', icon: BookIcon },
   { label: 'Analytics', to: '/adviser/analytics', icon: FilterIcon },
   { label: 'Notifications', to: '/adviser/notifications', icon: BellIcon },
@@ -44,7 +46,26 @@ export const ADVISER_BOTTOM = [
   { label: 'Groups', to: '/adviser/groups', icon: UsersIcon },
   { label: 'Reviews', to: '/adviser/reviews', icon: DocIcon },
   { label: 'Inbox', to: '/adviser/inbox', icon: BellIcon },
+  { label: 'Panelists', to: '/adviser/panelists', icon: UsersIcon },
   { label: 'Profile', to: '/adviser/profile', icon: UserIcon },
+]
+
+export const PANELIST_NAV = [
+  { label: 'Dashboard', to: '/panelist/dashboard', icon: HomeIcon, end: true },
+  { label: 'Forum', to: '/panelist/forum', icon: CommentIcon },
+  { label: 'Groups', to: '/panelist/groups', icon: UsersIcon },
+  { label: 'Papers', to: '/panelist/papers', icon: DocIcon },
+  { label: 'Notifications', to: '/panelist/notifications', icon: BellIcon },
+  { label: 'Profile', to: '/panelist/profile', icon: UserIcon },
+]
+
+export const PANELIST_BOTTOM = [
+  { label: 'Dashboard', to: '/panelist/dashboard', icon: HomeIcon },
+  { label: 'Forum', to: '/panelist/forum', icon: CommentIcon },
+  { label: 'Groups', to: '/panelist/groups', icon: UsersIcon },
+  { label: 'Papers', to: '/panelist/papers', icon: DocIcon },
+  { label: 'Alerts', to: '/panelist/notifications', icon: BellIcon },
+  { label: 'Profile', to: '/panelist/profile', icon: UserIcon },
 ]
 
 const initials = (name = '') =>

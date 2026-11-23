@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useAuth from '../../context/useAuth'
-import { getDashboard } from '../../services/adviserService'
+import { getReports, listMyGroups } from '../../services/adviserService'
 import { glass } from '../../components/dashboard/constants'
 
 const KPI = [
@@ -29,7 +29,17 @@ export default function AdviserDashboard() {
     setLoading(true)
     setError(null)
     try {
-      setStats(await getDashboard())
+      const [groups, report] = await Promise.all([listMyGroups(), getReports()])
+      const byStatus = report?.byStatus ?? []
+      const countFor = (status) => Number(byStatus.find((s) => s.status === status)?.count ?? 0)
+      setStats({
+        total_groups: groups.length,
+        total_submissions: Number(report?.totalSubmissions ?? 0),
+        pending_review: countFor('submitted'),
+        published: Number(report?.totalPublished ?? (report?.published ?? []).length),
+        by_status: byStatus.map((s) => ({ status: s.status, count: Number(s.count) })),
+        published_papers: (report?.published ?? []).slice(0, 5),
+      })
     } catch (e) {
       console.error(e)
       setError('Failed to load dashboard stats')
@@ -45,8 +55,9 @@ export default function AdviserDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+        <h1 className="flex flex-wrap items-center gap-3 text-2xl font-bold tracking-tight sm:text-3xl">
           Welcome, {firstName}
+          <span className="rounded-full border border-gold/40 bg-gold/10 px-2.5 py-0.5 text-xs font-semibold text-gold">Adviser</span>
         </h1>
         <p className="text-sm text-white/60">
           Overview of your groups, submissions, and reviews.
@@ -132,31 +143,29 @@ export default function AdviserDashboard() {
       </section>
 
       <section className={`${glass} p-5 sm:p-6`}>
-        <h2 className="mb-4 text-lg font-bold">Recent activity</h2>
+        <h2 className="mb-4 text-lg font-bold">Recently published</h2>
         {loading ? (
           <div className="space-y-2">
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-12 animate-pulse rounded-lg bg-white/[0.07]" />
             ))}
           </div>
-        ) : stats?.recent_activity?.length ? (
+        ) : stats?.published_papers?.length ? (
           <ul className="divide-y divide-white/10">
-            {stats.recent_activity.map((r) => (
+            {stats.published_papers.map((r) => (
               <li key={r.submission_id} className="flex items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{r.title}</p>
-                  <p className="text-xs text-white/50">
-                    {r.group_name} · {r.stage} · {String(r.status).replace(/_/g, ' ')}
-                  </p>
+                  <p className="text-xs text-white/50">{r.group_name || '—'}</p>
                 </div>
                 <span className="shrink-0 text-xs text-white/40">
-                  {new Date(r.updated_at).toLocaleDateString()}
+                  {r.published_at ? new Date(r.published_at).toLocaleDateString() : '—'}
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-white/50">No recent activity.</p>
+          <p className="text-sm text-white/50">No published papers yet.</p>
         )}
       </section>
     </div>

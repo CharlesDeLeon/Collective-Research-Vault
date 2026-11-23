@@ -5,11 +5,19 @@ import { ForumContext } from './forumContext'
 import api from '../services/api'
 import AddPostModal from '../components/paper/AddPostModal'
 
+<<<<<<< HEAD
+=======
+const newId = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+
+const ROLE_DISPLAY = { student: 'Student', adviser: 'Adviser', external_panelist: 'Panelist', sysadmin: 'Admin', faculty: 'Adviser', coordinator: 'Adviser' }
+const displayRole = (r) => ROLE_DISPLAY[String(r || '').toLowerCase()] ?? r
+
+>>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
 const normalizePost = (row) => ({
   id: row.id ?? row.post_id,
   type: row.type ?? row.post_type ?? 'update',
   authorName: row.authorName ?? row.author_name,
-  authorRole: row.authorRole ?? row.author_role,
+  authorRole: displayRole(row.authorRole ?? row.author_role),
   text: row.text ?? row.body ?? '',
   mediaUrl: row.mediaUrl ?? row.media_url ?? '',
   createdAt: row.createdAt ?? row.created_at,
@@ -35,7 +43,7 @@ const normalizePost = (row) => ({
 const normalizeComment = (row) => ({
   id: row.id ?? row.comment_id,
   authorName: row.authorName ?? row.author_name,
-  authorRole: row.authorRole ?? row.author_role,
+  authorRole: displayRole(row.authorRole ?? row.author_role),
   text: row.text ?? row.body ?? '',
   createdAt: row.createdAt ?? row.created_at,
   editedAt: row.edited ? (row.updatedAt ?? row.updated_at) : (row.editedAt ?? null),

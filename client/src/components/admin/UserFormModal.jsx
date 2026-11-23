@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ModalShell from '../ui/ModalShell'
 import Select, { Option } from '../ui/Select'
 import Field, { inputCls } from '../upload/Field'
 import { UsersIcon } from '../dashboard/icons'
+import { listAdminGroups } from '../../services/adminService'
 import { ROLE_OPTIONS, ROLE_LABELS } from '../../utils/adminRoles'
 import { backendSupport, unsupportedNote } from '../../services/backendSupport'
 
@@ -22,13 +23,37 @@ export default function UserFormModal({ user, onSubmit, onClose }) {
     password: '',
     role: 'student',
     program: user?.program ?? '',
+    groupIds: (user?.groups ?? []).map((g) => Number(g.group_id ?? g.id)),
   })
   const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [groups, setGroups] = useState([])
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+  const toggleGroup = (id) => {
+    const gid = Number(id)
+    setForm((f) => ({
+      ...f,
+      groupIds: f.groupIds.includes(gid) ? f.groupIds.filter((g) => g !== gid) : [...f.groupIds, gid],
+    }))
+  }
   const showProgram = editing ? Boolean(user.program) || user.role === 'student' : form.role === 'student'
+
+  useEffect(() => {
+    if (!backendSupport.adminUserGroups) return undefined
+    let active = true
+    listAdminGroups()
+      .then((rows) => {
+        if (active) setGroups(rows)
+      })
+      .catch(() => {
+        if (active) setGroups([])
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
   const invalid = (key) => ({
     'aria-invalid': Boolean(errors[key]),
@@ -45,14 +70,16 @@ export default function UserFormModal({ user, onSubmit, onClose }) {
     if (Object.keys(next).length > 0) return
 
     setSaving(true)
+    const groupFields = backendSupport.adminUserGroups ? { groupIds: form.groupIds } : {}
     const payload = editing
-      ? { name: form.name.trim(), email: form.email.trim(), program: form.program.trim() }
+      ? { name: form.name.trim(), email: form.email.trim(), program: form.program.trim(), ...groupFields }
       : {
           name: form.name.trim(),
           email: form.email.trim(),
           password: form.password,
           role: form.role,
           program: form.role === 'student' ? form.program.trim() : '',
+          ...groupFields,
         }
     const fieldError = await onSubmit(payload)
     setSaving(false)
@@ -119,6 +146,29 @@ export default function UserFormModal({ user, onSubmit, onClose }) {
           <Field label="Program / strand">
             <input value={form.program} onChange={set('program')} maxLength={100} placeholder="e.g. STEM" className={`${inputCls} border-white/20`} />
           </Field>
+        )}
+
+        {backendSupport.adminUserGroups && (
+          <div>
+            <span className="block text-sm font-bold uppercase tracking-wide text-gold">Groups</span>
+            {groups.length === 0 ? (
+              <p className="mt-2 text-xs text-white/55">No groups are available yet.</p>
+            ) : (
+              <div className="mt-2 grid max-h-40 gap-2 overflow-y-auto rounded-xl border border-white/10 bg-white/5 p-3 sm:grid-cols-2">
+                {groups.map((g) => (
+                  <label key={g.group_id} className="flex items-center gap-2 text-sm text-white/80">
+                    <input
+                      type="checkbox"
+                      checked={form.groupIds.includes(Number(g.group_id))}
+                      onChange={() => toggleGroup(g.group_id)}
+                      className="size-4 accent-gold"
+                    />
+                    {g.group_name}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {editing && !backendSupport.adminResetPassword && (

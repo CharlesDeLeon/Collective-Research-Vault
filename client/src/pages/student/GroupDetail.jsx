@@ -12,11 +12,10 @@ export default function GroupDetail() {
   const { groupId } = useParams()
   const { openComposer } = useForum()
   const [group, setGroup] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loadedId, setLoadedId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     api.get(`/groups/${groupId}`)
       .then((res) => {
         if (cancelled) return
@@ -35,9 +34,11 @@ export default function GroupDetail() {
         })
       })
       .catch(() => { if (!cancelled) setGroup(null) })
-      .finally(() => { if (!cancelled) setLoading(false) })
+      .finally(() => { if (!cancelled) setLoadedId(groupId) })
     return () => { cancelled = true }
   }, [groupId])
+
+  const loading = loadedId !== groupId
 
   if (loading) {
     return <div className="p-8 text-center text-sm text-white/60">Loading group…</div>
@@ -46,17 +47,6 @@ export default function GroupDetail() {
     return (
       <StatePanel title="Group not found">
         <p>This group doesn't exist or you aren't a member.</p>
-        <Link to={ROUTES.groups} className="mt-4 inline-block font-semibold text-gold">
-          Back to Groups
-        </Link>
-      </StatePanel>
-    )
-  }
-
-  if (!group) {
-    return (
-      <StatePanel title="Group not found">
-        <p>This group doesn’t exist or you aren’t a member.</p>
         <Link to={ROUTES.groups} className="mt-4 inline-block font-semibold text-gold">
           Back to Groups
         </Link>

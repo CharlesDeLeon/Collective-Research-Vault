@@ -8,6 +8,8 @@ server/.env
 server/uploads/*
 !server/uploads/.gitkeep
 
+server/outbox/
+
 client/dist/
 
 .DS_Store

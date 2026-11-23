@@ -12,25 +12,25 @@ const dt = 'text-xs font-semibold uppercase tracking-[0.06em] text-link'
 
 export default function GalleryPaper() {
   const { slug } = useParams()
-  const [paper, setPaper] = useState(null)
-  const [related, setRelated] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [result, setResult] = useState({ slug: '', paper: null, related: [] })
   const [copied, setCopied] = useState(false)
   const [requesting, setRequesting] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
     Promise.all([getGalleryPaper(slug), fetchGalleryPapers()])
       .then(([p, all]) => {
-        if (cancelled) return
-        setPaper(p)
-        if (p) setRelated(getRelatedPapers(all, p))
+        if (!cancelled) setResult({ slug, paper: p, related: p ? getRelatedPapers(all, p) : [] })
       })
-      .catch(() => { if (!cancelled) setPaper(null) })
-      .finally(() => { if (!cancelled) setLoading(false) })
+      .catch(() => {
+        if (!cancelled) setResult({ slug, paper: null, related: [] })
+      })
     return () => { cancelled = true }
   }, [slug])
+
+  const loading = result.slug !== slug
+  const paper = result.slug === slug ? result.paper : null
+  const related = result.slug === slug ? result.related : []
 
   const shareLink = async () => {
     if (await copyText(window.location.href)) {
@@ -85,8 +85,13 @@ export default function GalleryPaper() {
                     {paper.keywords.map((k) => (
                       <Link
                         key={k}
+<<<<<<< HEAD
                         to={`/gallery?kw=${encodeURIComponent(k)}`}
                         className="inline-flex min-h-9 items-center rounded-full border border-keyword-line bg-keyword-bg px-3.5 text-sm text-keyword-fg hover:bg-link/10"
+=======
+                        to={`/gallery?q=${encodeURIComponent(k)}`}
+                        className="inline-flex min-h-9 items-center rounded-full border border-gold/60 px-3.5 text-sm text-[#FFD27F] hover:bg-gold/10"
+>>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
                       >
                         {k}
                       </Link>

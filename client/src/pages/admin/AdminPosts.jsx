@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { listAdminPosts, listAdminGroups, apiMessage } from '../../services/adminService'
+import { listAdminPosts, listAdminGroups, getUserNames, apiMessage } from '../../services/adminService'
 import usePostActions from '../../hooks/usePostActions'
 import useDebouncedValue from '../../hooks/useDebouncedValue'
 import { glass, STATUS_STYLES } from '../../components/dashboard/constants'
@@ -19,6 +19,10 @@ import { backendSupport, unsupportedNote } from '../../services/backendSupport'
 const PAGE_SIZE = 25
 const FLAIRS = ['proposal', 'submitted', 'needs_revision', 'approved', 'published', 'rejected']
 const TYPE_LABEL = { update: 'Update', video: 'Video', paper: 'Paper' }
+const TYPES = ['update', 'video', 'paper']
+
+const dateInputCls =
+  'mt-1 h-11 w-full rounded-lg border border-white/20 bg-navy-900/60 px-3 text-sm text-white outline-none transition scheme-dark focus:border-gold/60 focus:ring-2 focus:ring-gold/20'
 
 const ghost =
   'rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/75 transition enabled:hover:bg-white/10 enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-40'
@@ -32,16 +36,33 @@ export default function AdminPosts() {
   const [search, setSearch] = useState('')
   const [groupId, setGroupId] = useState('')
   const [flair, setFlair] = useState('')
+  const [type, setType] = useState('')
+  const [author, setAuthor] = useState('')
+  const [visibility, setVisibility] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [includeRemoved, setIncludeRemoved] = useState(false)
+  const [authors, setAuthors] = useState([])
   const [open, setOpen] = useState(null)
   const requestId = useRef(0)
 
   const debouncedSearch = useDebouncedValue(search.trim())
-  const hasFilters = Boolean(search || groupId || flair)
+  const hasFilters = Boolean(search || groupId || flair || type || author || visibility || dateFrom || dateTo || includeRemoved)
 
   const load = useCallback(async () => {
     const id = ++requestId.current
     setLoading(true)
     setError('')
+    const extra = backendSupport.adminPostFilters
+      ? {
+          type: type || undefined,
+          authorId: author || undefined,
+          visibility: visibility || undefined,
+          dateFrom: dateFrom || undefined,
+          dateTo: dateTo || undefined,
+        }
+      : {}
+    const removed = backendSupport.adminRestoreRemoved && includeRemoved ? { includeRemoved: true } : {}
     try {
       const data = await listAdminPosts({
         page,
@@ -49,6 +70,8 @@ export default function AdminPosts() {
         search: debouncedSearch || undefined,
         groupId: groupId || undefined,
         status: flair || undefined,
+        ...extra,
+        ...removed,
       })
       if (id !== requestId.current) return
       setPosts(data)
@@ -58,11 +81,26 @@ export default function AdminPosts() {
     } finally {
       if (id === requestId.current) setLoading(false)
     }
-  }, [page, debouncedSearch, groupId, flair])
+  }, [page, debouncedSearch, groupId, flair, type, author, visibility, dateFrom, dateTo, includeRemoved])
 
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    if (!backendSupport.adminPostFilters) return undefined
+    let live = true
+    getUserNames()
+      .then((names) => {
+        if (live) setAuthors(Object.entries(names).map(([id, name]) => ({ id, name })))
+      })
+      .catch(() => {
+        if (live) setAuthors([])
+      })
+    return () => {
+      live = false
+    }
+  }, [])
 
   useEffect(() => {
     listAdminGroups()
@@ -81,6 +119,12 @@ export default function AdminPosts() {
     setSearch('')
     setGroupId('')
     setFlair('')
+    setType('')
+    setAuthor('')
+    setVisibility('')
+    setDateFrom('')
+    setDateTo('')
+    setIncludeRemoved(false)
     setPage(1)
   }
 
@@ -130,6 +174,76 @@ export default function AdminPosts() {
             Clear filters
           </button>
         </div>
+        <div className="mt-3 grid gap-3 border-t border-white/10 pt-4 sm:grid-cols-2 xl:grid-cols-[10rem_14rem_12rem_11rem_11rem_auto] xl:justify-start">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/55">Type</span>
+            <Select
+              value={type}
+              onChange={change(setType)}
+              aria-label="Filter by type"
+              disabled={!backendSupport.adminPostFilters}
+              className="border-white/20"
+            >
+              <Option value="">All types</Option>
+              {TYPES.map((value) => (
+                <Option key={value} value={value}>{TYPE_LABEL[value]}</Option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/55">Author</span>
+            <Select
+              value={author}
+              onChange={change(setAuthor)}
+              aria-label="Filter by author"
+              disabled={!backendSupport.adminPostFilters || authors.length === 0}
+              className="border-white/20"
+            >
+              <Option value="">All authors</Option>
+              {authors.map((a) => (
+                <Option key={a.id} value={String(a.id)}>{a.name}</Option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/55">Visibility</span>
+            <Select
+              value={visibility}
+              onChange={change(setVisibility)}
+              aria-label="Filter by visibility"
+              disabled={!backendSupport.adminPostFilters}
+              className="border-white/20"
+            >
+              <Option value="">Any visibility</Option>
+              <Option value="visible">Visible</Option>
+              <Option value="hidden">Hidden</Option>
+              <Option value="reported">Reported</Option>
+            </Select>
+          </div>
+          <label className="block">
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/55">From</span>
+            <input type="date" value={dateFrom} max={dateTo || undefined} disabled={!backendSupport.adminPostFilters} onChange={change(setDateFrom)} className={dateInputCls} />
+          </label>
+          <label className="block">
+            <span className="text-xs font-semibold uppercase tracking-wide text-white/55">To</span>
+            <input type="date" value={dateTo} min={dateFrom || undefined} disabled={!backendSupport.adminPostFilters} onChange={change(setDateTo)} className={dateInputCls} />
+          </label>
+          <label className="flex items-end gap-2 pb-3 text-xs text-white/75">
+            <input
+              type="checkbox"
+              checked={includeRemoved}
+              disabled={!backendSupport.adminRestoreRemoved}
+              onChange={(e) => {
+                setIncludeRemoved(e.target.checked)
+                setPage(1)
+              }}
+              className="size-4 accent-gold"
+            />
+            Include removed
+          </label>
+        </div>
+        {!backendSupport.adminPostFilters && <p className="mt-3 text-xs text-white/50">{unsupportedNote.adminPostFilters}</p>}
+        {!backendSupport.adminRestoreRemoved && <p className="mt-1 text-xs text-white/50">{unsupportedNote.adminRestoreRemoved}</p>}
       </section>
 
       {error && (
@@ -196,9 +310,16 @@ export default function AdminPosts() {
                     <td className="px-5 py-3 text-white/75">{p.commentCount ?? 0}</td>
                     <td className="whitespace-nowrap px-5 py-3 text-white/75">{timeAgo(p.createdAt)}</td>
                     <td className="px-5 py-3 text-right">
-                      <button type="button" onClick={() => setOpen(p)} className={ghost}>
-                        View
-                      </button>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {backendSupport.adminRestoreRemoved && p.removed && (
+                          <button type="button" onClick={() => request(p, 'restore')} className={ghost}>
+                            Restore
+                          </button>
+                        )}
+                        <button type="button" onClick={() => setOpen(p)} className={ghost}>
+                          View
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -210,9 +331,16 @@ export default function AdminPosts() {
             {posts.map((p) => (
               <li key={p.id} className={`${glass} p-4`}>
                 <PostSummary post={p} lines={2} />
-                <button type="button" onClick={() => setOpen(p)} className={`${ghost} mt-4`}>
-                  View
-                </button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {backendSupport.adminRestoreRemoved && p.removed && (
+                    <button type="button" onClick={() => request(p, 'restore')} className={ghost}>
+                      Restore
+                    </button>
+                  )}
+                  <button type="button" onClick={() => setOpen(p)} className={ghost}>
+                    View
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

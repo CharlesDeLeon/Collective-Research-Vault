@@ -50,8 +50,8 @@ export default function FilterSheet({ open, onClose, g }) {
           <FilterFields
             groups={g.groups}
             onToggle={g.toggle}
-            keywords={g.keywordOptions}
-            onKeyword={g.toggleKeyword}
+            searches={g.popularSearches}
+            onSearch={g.applySearch}
             rowClass="min-h-12 text-base"
             boxClass="size-5.5"
           />
@@ -69,7 +69,7 @@ export default function FilterSheet({ open, onClose, g }) {
             onClick={onClose}
             className="min-h-13 flex-1 rounded-xl bg-cta text-base font-semibold text-cta-fg"
           >
-            Show {g.total} {g.total === 1 ? 'paper' : 'papers'}
+            Show results
           </button>
         </div>
       </section>

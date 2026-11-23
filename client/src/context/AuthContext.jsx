@@ -30,6 +30,18 @@ export const AuthProvider = ({ children }) => {
     else navigate('/login')
   }
 
+  const setSession = (token, user) => {
+    localStorage.setItem('token', token)
+    localStorage.setItem('user', JSON.stringify(user))
+    setUser(user)
+    const role = user?.role?.toLowerCase()
+    if (role === 'student') navigate('/student')
+    else if (role === 'adviser') navigate('/adviser/dashboard')
+    else if (role === 'external_panelist') navigate('/panelist/dashboard')
+    else if (role === 'sysadmin' || role === 'admin') navigate('/admin')
+    else navigate('/login')
+  }
+
   const updateUser = (patch) => {
     setUser((current) => {
       const next = { ...current, ...patch }
@@ -46,7 +58,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser, setSession }}>
       {children}
     </AuthContext.Provider>
   )

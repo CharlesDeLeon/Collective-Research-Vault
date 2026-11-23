@@ -6,6 +6,7 @@ import AccessBlocked, { AccessLoading } from '../../components/public/AccessBloc
 import { useAccessGate } from '../../hooks/useAccessGate'
 import { consumeAccessLink } from '../../services/accessLinkService'
 import { getGalleryPaper } from '../../services/galleryService'
+import { writeAccessGrant } from '../../utils/accessGrant'
 
 export default function AccessLink() {
   const { token } = useParams()
@@ -13,19 +14,26 @@ export default function AccessLink() {
   const gate = useAccessGate(token)
   const [busy, setBusy] = useState('')
   const [failed, setFailed] = useState('')
-  const [paper, setPaper] = useState(null)
+  const [paperResult, setPaperResult] = useState({ slug: '', paper: null })
 
   useEffect(() => {
-    if (!gate.paperSlug) { setPaper(null); return }
+    if (!gate.paperSlug) return undefined
     let cancelled = false
-    getGalleryPaper(gate.paperSlug).then((p) => { if (!cancelled) setPaper(p) }).catch(() => {})
-    return () => { cancelled = true }
+    getGalleryPaper(gate.paperSlug).then((p) => {
+      if (!cancelled) setPaperResult({ slug: gate.paperSlug, paper: p })
+    }).catch(() => {})
+    return () => {
+      cancelled = true
+    }
   }, [gate.paperSlug])
+
+  const paper = paperResult.slug === gate.paperSlug ? paperResult.paper : null
 
   const open = async (mode) => {
     setBusy(mode)
     const res = await consumeAccessLink(token)
     if (res.state === 'success') {
+      writeAccessGrant(token, { paperSlug: res.paperSlug, fileUrl: res.fileUrl })
       navigate(`/access/${token}/${mode}`, { replace: true, state: { paperSlug: res.paperSlug, fileUrl: res.fileUrl } })
       return
     }

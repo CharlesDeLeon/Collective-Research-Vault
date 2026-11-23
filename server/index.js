@@ -48,15 +48,17 @@ app.use('/api/coordinator/submissions', require('./routes/coordinatorSubmission.
 app.use('/api/coordinator/panel',       require('./routes/coordinatorSubmission.routes'))
 
 app.use('/api/auth', require('./routes/auth.routes'))
+app.use('/api/student', require('./routes/student.routes'))
 app.use('/api/faculty', require('./routes/faculty.routes'))
 app.use('/api/groups', require('./routes/group.routes'))
 app.use('/api/forum', require('./routes/forum.routes'))
 app.use('/api/papers', require('./routes/paper.routes'))
 app.use('/api/public', require('./routes/public.routes'))
 app.use('/api/adviser', require('./routes/access.routes'))
-app.use('/api/reviews', require('./routes/review.routes'))
 app.use('/api/admin', require('./routes/admin.routes'))
 app.use('/api/notifications', require('./routes/notification.routes'))
+app.use('/api/panelist', require('./routes/panelist.routes'))
+app.use('/api/invites', require('./routes/invite.routes'))
 
 app.get('/api', (req, res ) => {
     res.json({ message: 'CORE V API is running' })

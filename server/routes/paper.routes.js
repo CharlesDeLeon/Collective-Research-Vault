@@ -3,7 +3,7 @@ const router = express.Router()
 const path = require('path')
 const fs = require('fs')
 const multer = require('multer')
-const { uploadPaper, uploadPaperVersion, getMyGroups, getMyPapers, getPaperDetail, updatePaper, resubmitPaper } = require('../controllers/paperController')
+const { uploadPaper, uploadPaperVersion, getMyGroups, getMyPapers, getPaperDetail, updatePaper, resubmitPaper, setPaperConsent, replacePaperFile, resolveFeedbackNote, dismissFeedbackNote } = require('../controllers/paperController')
 const authMiddleware = require('../middleware/authMiddleware')
 const roleMiddleware = require('../middleware/roleMiddleware')
 
@@ -40,16 +40,15 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024 }
 })
 
-router.get('/', (req, res) => res.json({ message: 'paper routes ready' }))
-router.get('/my-groups', authMiddleware, roleMiddleware('Student'), getMyGroups)
-router.get('/my', authMiddleware, roleMiddleware('Student'), getMyPapers)
-router.get('/:paperId', authMiddleware, roleMiddleware('Student'), getPaperDetail)
-router.patch('/:paperId', authMiddleware, roleMiddleware('Student'), updatePaper)
-router.post('/:paperId/resubmit', authMiddleware, roleMiddleware('Student'), resubmitPaper)
+router.get('/my-groups', authMiddleware, roleMiddleware('student'), getMyGroups)
+router.get('/my', authMiddleware, roleMiddleware('student'), getMyPapers)
+router.get('/:paperId', authMiddleware, roleMiddleware('student'), getPaperDetail)
+router.patch('/:paperId', authMiddleware, roleMiddleware('student'), updatePaper)
+router.post('/:paperId/resubmit', authMiddleware, roleMiddleware('student'), resubmitPaper)
 router.post(
   '/upload',
   authMiddleware,
-  roleMiddleware('Student'),
+  roleMiddleware('student'),
   upload.single('file'),
   uploadPaper
 )
@@ -57,9 +56,22 @@ router.post(
 router.post(
   '/:paperId/versions',
   authMiddleware,
-  roleMiddleware('Student'),
+  roleMiddleware('student'),
   upload.single('file'),
   uploadPaperVersion
 )
+
+router.post('/:paperId/consent', authMiddleware, roleMiddleware('student'), setPaperConsent)
+
+router.post(
+  '/:paperId/file',
+  authMiddleware,
+  roleMiddleware('student'),
+  upload.single('file'),
+  replacePaperFile
+)
+
+router.post('/:paperId/feedback/:noteId/resolve', authMiddleware, roleMiddleware('student'), resolveFeedbackNote)
+router.post('/:paperId/feedback/:noteId/dismiss', authMiddleware, roleMiddleware('student'), dismissFeedbackNote)
 
 module.exports = router

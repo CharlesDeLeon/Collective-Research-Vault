@@ -4,18 +4,21 @@ import useForum from '../../context/useForum'
 import useToast from '../../context/useToast'
 import {
   getGroup,
+  listMyGroups,
   listSubmissions,
   searchStudents,
   addGroupMember,
   removeGroupMember,
   revokePanelAssignment,
+  createPanelistInvite,
 } from '../../services/adviserService'
-import { backendSupport, unsupportedNote } from '../../services/backendSupport'
 import ConfirmModal from '../../components/ui/ConfirmModal'
 import { glass } from '../../components/dashboard/constants'
 import { PlusIcon } from '../../components/dashboard/icons'
 import ForumPostCard from '../../components/forum/ForumPostCard'
 import StatusPill from '../../components/dashboard/StatusPill'
+import GroupSwitcher from '../../components/group/GroupSwitcher'
+import { timeAgo } from '../../utils/formatDate'
 
 const TABS = ['Feed', 'Members', 'Panelists', 'Papers', 'Analytics']
 
@@ -26,6 +29,7 @@ export default function AdviserGroupDetail() {
   const { toast } = useToast()
 
   const [group, setGroup] = useState(null)
+  const [allGroups, setAllGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [tab, setTab] = useState('Feed')
@@ -38,6 +42,13 @@ export default function AdviserGroupDetail() {
   const [memberSearch, setMemberSearch] = useState('')
   const [memberResults, setMemberResults] = useState([])
   const [pendingRemoval, setPendingRemoval] = useState(null)
+
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteName, setInviteName] = useState('')
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [inviteError, setInviteError] = useState('')
+  const [inviteResult, setInviteResult] = useState(null)
+  const [copied, setCopied] = useState('')
 
   const fetchGroup = useCallback(async () => {
     setLoading(true)
@@ -70,6 +81,7 @@ export default function AdviserGroupDetail() {
   }, [groupId])
 
   useEffect(() => { fetchGroup() }, [fetchGroup])
+  useEffect(() => { listMyGroups().then(setAllGroups).catch(() => setAllGroups([])) }, [])
   useEffect(() => { if (group) fetchDetail() }, [group, fetchDetail])
 
   const searchMembers = async (q) => {
@@ -93,6 +105,39 @@ export default function AdviserGroupDetail() {
     } catch (e) {
       console.error(e)
       toast('Could not add the student.', 'error')
+    }
+  }
+
+  const handleInvite = async (e) => {
+    e.preventDefault()
+    setInviteError('')
+    setInviteResult(null)
+    if (!inviteEmail.trim()) {
+      setInviteError('Email is required.')
+      return
+    }
+    setInviteLoading(true)
+    try {
+      const result = await createPanelistInvite({ email: inviteEmail.trim(), name: inviteName.trim() })
+      setInviteResult(result)
+      setInviteEmail('')
+      setInviteName('')
+      toast('Invitation created. Share the link and temporary password.')
+    } catch (e) {
+      console.error(e)
+      setInviteError(e?.response?.data?.message || 'Could not create invitation.')
+    } finally {
+      setInviteLoading(false)
+    }
+  }
+
+  const copyText = async (value, key) => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopied(key)
+      setTimeout(() => setCopied(''), 1500)
+    } catch {
+      setCopied('')
     }
   }
 
@@ -132,12 +177,36 @@ export default function AdviserGroupDetail() {
   }
 
   const groupPosts = (posts || []).filter((p) => String(p.groupId) === String(groupId))
+  const groupIndex = allGroups.findIndex((g) => String(g.group_id) === String(groupId))
+  const prevGroup = groupIndex > 0 ? allGroups[groupIndex - 1] : null
+  const nextGroup = groupIndex >= 0 && groupIndex < allGroups.length - 1 ? allGroups[groupIndex + 1] : null
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <Link to="/adviser/groups" className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white">
-        ‹ Groups
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link to="/adviser/groups" className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white">
+          ‹ Groups
+        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(`/adviser/groups/${prevGroup.group_id}`)}
+            disabled={!prevGroup}
+            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 enabled:hover:bg-white/10 disabled:opacity-40"
+          >
+            ‹ Previous
+          </button>
+          <GroupSwitcher groups={allGroups} currentId={groupId} basePath="/adviser/groups" />
+          <button
+            type="button"
+            onClick={() => navigate(`/adviser/groups/${nextGroup.group_id}`)}
+            disabled={!nextGroup}
+            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/70 enabled:hover:bg-white/10 disabled:opacity-40"
+          >
+            Next ›
+          </button>
+        </div>
+      </div>
 
       <header className={`${glass} flex flex-col gap-4 p-5 sm:p-6 md:flex-row md:items-center md:justify-between`}>
         <div className="min-w-0 space-y-3">
@@ -166,10 +235,19 @@ export default function AdviserGroupDetail() {
           </div>
           <p className="text-sm text-white/60">Adviser: {group.adviser_name || '—'}</p>
         </div>
-        <div className="text-sm text-white/60">
-          <div>{members.length} members</div>
-          <div>{submissions.length} papers</div>
-          <div>{groupPosts.length} posts</div>
+        <div className="flex flex-col items-start gap-3 md:items-end">
+          <button
+            type="button"
+            onClick={() => navigate(`/adviser/groups?edit=${groupId}`)}
+            className="rounded-xl border border-gold/50 bg-gold/10 px-4 py-2 text-xs font-semibold text-gold hover:bg-gold/20"
+          >
+            Edit group
+          </button>
+          <div className="text-sm text-white/60">
+            <div>{members.length} members</div>
+            <div>{submissions.length} papers</div>
+            <div>{groupPosts.length} posts</div>
+          </div>
         </div>
       </header>
 
@@ -268,32 +346,100 @@ export default function AdviserGroupDetail() {
 
       {tab === 'Panelists' && (
         <div className={`${glass} p-5 sm:p-6 space-y-4`}>
-          <h2 className="text-lg font-bold">External Panelists ({panel.length})</h2>
-          {!backendSupport.panelistInvite && (
-            <p className="m-0 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs text-white/60">
-              {unsupportedNote.panelistInvite}
-            </p>
-          )}
-          {panel.length === 0 ? (
-            <p className="text-sm text-white/50">No panelists assigned.</p>
-          ) : (
-            <ul className="space-y-2">
-              {panel.map((p) => (
-                <li key={p.assignment_id} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3">
-                  <div>
-                    <p className="m-0 text-sm font-medium">{p.name}</p>
-                    <p className="m-0 text-xs text-white/50">{p.email} · {p.role_in_panel}</p>
-                  </div>
+          <h2 className="text-lg font-bold">Invite external panelist</h2>
+          <p className="m-0 text-xs text-white/60">
+            Panelists receive platform-wide access to the forum and student paper metadata. They do not need to be assigned to this group.
+          </p>
+
+          <form onSubmit={handleInvite} className="space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block space-y-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-white/60">Email</span>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="panelist@example.com"
+                  className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none focus:border-gold"
+                  required
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-white/60">Name (optional)</span>
+                <input
+                  type="text"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                  placeholder="Full name"
+                  className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none focus:border-gold"
+                />
+              </label>
+            </div>
+            {inviteError && <p className="text-xs text-rose-300">{inviteError}</p>}
+            <button
+              type="submit"
+              disabled={inviteLoading}
+              className="rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-black transition hover:opacity-90 disabled:opacity-50"
+            >
+              {inviteLoading ? 'Creating…' : 'Create invitation'}
+            </button>
+          </form>
+
+          {inviteResult && (
+            <div className="space-y-3 rounded-xl border border-gold/30 bg-gold/5 p-4">
+              <p className="m-0 text-sm font-semibold text-gold">Invitation created</p>
+              <p className="m-0 text-xs text-white/60">
+                Share the link and temporary password with the panelist yourself. Email delivery is not confirmed automatically.
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 truncate rounded-lg bg-black/30 px-3 py-2 text-xs text-white/80">{inviteResult.inviteUrl}</code>
                   <button
                     type="button"
-                    onClick={() => setPendingRemoval({ kind: 'panel', id: p.assignment_id, name: p.name })}
-                    className="text-xs font-semibold text-rose-300 hover:underline"
+                    onClick={() => copyText(inviteResult.inviteUrl, 'link')}
+                    className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/5"
                   >
-                    Revoke
+                    {copied === 'link' ? 'Copied' : 'Copy link'}
                   </button>
-                </li>
-              ))}
-            </ul>
+                </div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 truncate rounded-lg bg-black/30 px-3 py-2 text-xs text-white/80">{inviteResult.tempPassword}</code>
+                  <button
+                    type="button"
+                    onClick={() => copyText(inviteResult.tempPassword, 'pw')}
+                    className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-white/80 hover:bg-white/5"
+                  >
+                    {copied === 'pw' ? 'Copied' : 'Copy password'}
+                  </button>
+                </div>
+              </div>
+              <p className="m-0 text-xs text-white/50">
+                Expires {new Date(inviteResult.expiresAt).toLocaleString()}. Single use.
+              </p>
+            </div>
+          )}
+
+          {panel.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold uppercase tracking-wide text-white/60">Previously assigned panelists</h3>
+              <ul className="space-y-2">
+                {panel.map((p) => (
+                  <li key={p.assignment_id} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3">
+                    <div>
+                      <p className="m-0 text-sm font-medium">{p.name}</p>
+                      <p className="m-0 text-xs text-white/50">{p.email} · {p.role_in_panel}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPendingRemoval({ kind: 'panel', id: p.assignment_id, name: p.name })}
+                      className="text-xs font-semibold text-rose-300 hover:underline"
+                    >
+                      Revoke
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       )}
@@ -301,6 +447,9 @@ export default function AdviserGroupDetail() {
       {tab === 'Papers' && (
         <div className={`${glass} p-5 sm:p-6 space-y-4`}>
           <h2 className="text-lg font-bold">Papers ({submissions.length})</h2>
+          <p className="m-0 text-xs text-white/50">
+            Showing matches within the 100 most recently updated submissions in the vault. Older papers for this group may not appear.
+          </p>
           {loadingDetail ? (
             <p className="text-sm text-white/50">Loading…</p>
           ) : submissions.length === 0 ? (
@@ -315,6 +464,8 @@ export default function AdviserGroupDetail() {
                       <p className="m-0 mt-1 flex flex-wrap items-center gap-2 text-xs text-white/50">
                         <StatusPill status={s.status} />
                         <span>{s.stage}</span>
+                        {s.submitted_by_name && <span>by {s.submitted_by_name}</span>}
+                        {s.updated_at && <span>Updated {timeAgo(s.updated_at)}</span>}
                       </p>
                     </div>
                     <button

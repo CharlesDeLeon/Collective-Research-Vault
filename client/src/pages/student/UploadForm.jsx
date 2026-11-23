@@ -4,9 +4,14 @@ import useAuth from '../../context/useAuth'
 import { glass, ROUTES } from '../../components/dashboard/constants'
 import { ChevronDownIcon } from '../../components/dashboard/icons'
 import Field, { inputCls } from '../../components/upload/Field'
-import { getMyGroups as fetchMyGroups, uploadPaper, uploadPaperVersion } from '../../services/uploadService'
+import FileDropzone, { validateFile } from '../../components/upload/FileDropzone'
+import { getMyGroups as fetchMyGroups, uploadPaper, replacePaperFile } from '../../services/uploadService'
 import { getPaperDetail, updatePaper } from '../../services/paperService'
+<<<<<<< HEAD
 import { splitList, canEdit } from '../../utils/paperRules'
+=======
+import { canEdit, splitList } from '../../utils/paperRules'
+>>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
 
 const TITLE_MAX = 300
 const ABSTRACT_MIN = 50
@@ -21,13 +26,13 @@ function GroupSummary({ group }) {
     <div className="rounded-xl border border-white/15 bg-white/5 p-4">
       <p className="m-0 text-base font-semibold">{group.name}</p>
       <div className="mt-2 flex flex-wrap gap-2">
-        {[group.strand, group.section, group.schoolYear].map((v) => (
+        {[group.strand, group.section, group.schoolYear].filter(Boolean).map((v) => (
           <span key={v} className="rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold">
             {v}
           </span>
         ))}
       </div>
-      <p className="mb-0 mt-2 text-xs text-white/60">Adviser: {group.adviser}</p>
+      {group.adviser && <p className="mb-0 mt-2 text-xs text-white/60">Adviser: {group.adviser}</p>}
     </div>
   )
 }
@@ -48,8 +53,10 @@ function PaperFormBody({ groups, paper }) {
   const [authors, setAuthors] = useState(paper ? paper.authors.join(', ') : (user?.name ?? ''))
   const [abstract, setAbstract] = useState(paper?.abstract ?? '')
   const [keywords, setKeywords] = useState(paper ? paper.keywords.join(', ') : '')
+  const [videoUrl, setVideoUrl] = useState(paper?.videoUrl ?? '')
 
   const [file, setFile] = useState(null)
+  const [fileError, setFileError] = useState('')
   const [showErrors, setShowErrors] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -69,10 +76,19 @@ function PaperFormBody({ groups, paper }) {
         : keywordList.length > KEYWORDS_MAX
           ? `Use up to ${KEYWORDS_MAX} keywords.`
           : '',
-    file: !editing && !file ? 'A file is required for new submissions.' : '',
+    file: !editing && !file ? 'A file is required for new submissions.' : fileError,
+    videoUrl:
+      videoUrl.trim() && !URL_PATTERN.test(videoUrl.trim())
+        ? 'Enter a full URL starting with http:// or https://.'
+        : '',
   }
   const hasErrors = Object.values(errors).some(Boolean)
   const show = (key) => (showErrors ? errors[key] : '')
+
+  const handleFileChange = (next) => {
+    setFile(next)
+    setFileError(next ? validateFile(next) : (editing ? '' : 'A file is required for new submissions.'))
+  }
 
   const submit = async (e) => {
     e.preventDefault()
@@ -91,9 +107,6 @@ function PaperFormBody({ groups, paper }) {
     const year = group?.schoolYear ? group.schoolYear.split('-')[0] : ''
     try {
       if (editing) {
-        if (file) {
-          await uploadPaperVersion({ paperId: paper.id, file })
-        }
         await updatePaper(paper.id, {
           title: title.trim(),
           authors: authorList,
@@ -101,7 +114,9 @@ function PaperFormBody({ groups, paper }) {
           keywords: keywordList,
           program: group?.strand || group?.program,
           schoolYear: group?.schoolYear,
+          videoUrl: videoUrl.trim(),
         })
+        if (file) await replacePaperFile(paper.id, file)
       } else {
         await uploadPaper({
           title: title.trim(),
@@ -111,6 +126,7 @@ function PaperFormBody({ groups, paper }) {
           schoolYear: group?.schoolYear || '',
           abstract: abstract.trim(),
           keywords: keywordList.join(', '),
+          videoUrl: videoUrl.trim(),
           groupId,
           file,
         })
@@ -138,7 +154,7 @@ function PaperFormBody({ groups, paper }) {
                 <select
                   value={groupId}
                   onChange={(e) => setGroupId(e.target.value)}
-                  disabled={editing}
+                  disabled={editing && Boolean(group)}
                   className={`${inputCls} appearance-none bg-navy-900/60 pr-11 ${border(show('group'))}`}
                 >
                   <option value="" className="bg-navy-900">
@@ -212,21 +228,27 @@ function PaperFormBody({ groups, paper }) {
           <p className="mb-0 mt-2 text-xs text-white/50">Separate keywords with commas. Up to {KEYWORDS_MAX}.</p>
         </div>
 
+        <Field label="Video URL (optional)" error={show('videoUrl')}>
+          <input
+            type="url"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            placeholder="https://example.com/presentation-video"
+            className={`${inputCls} ${border(show('videoUrl'))}`}
+          />
+        </Field>
+
         <div>
-          <Field label={editing ? 'Replace file (optional)' : 'Paper file (PDF/DOC/DOCX)'} error={show('file')}>
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className={`${inputCls} ${border(show('file'))}`}
+          <Field label={editing ? 'Replace file (optional)' : 'Paper file (PDF/DOC/DOCX)'}>
+            <FileDropzone
+              file={file}
+              error={showErrors ? errors.file : ''}
+              onChange={handleFileChange}
             />
           </Field>
           <p className="mb-0 mt-2 text-xs text-white/50">
             {editing ? 'Leave empty to keep the existing file.' : 'Required for new submissions (max 20 MB).'}
           </p>
-          {file && (
-            <p className="mb-0 mt-1 text-xs text-white/70">Selected: {file.name}</p>
-          )}
         </div>
 
       </div>
@@ -259,6 +281,7 @@ function PaperFormBody({ groups, paper }) {
 export default function UploadForm() {
   const { paperId } = useParams()
   const [state, setState] = useState({ key: '', groups: [], paper: null, error: false })
+  const [reloadKey, setReloadKey] = useState(0)
   const key = paperId ?? 'new'
 
   useEffect(() => {
@@ -270,7 +293,7 @@ export default function UploadForm() {
         strand: g.program || g.strand || '',
         section: g.section || '',
         schoolYear: g.school_year || '',
-        adviser: '',
+        adviser: g.adviser_name ?? g.adviser ?? '',
       }))
     )
     const paperPromise = paperId
@@ -280,12 +303,13 @@ export default function UploadForm() {
           authors: p.authors || [],
           abstract: p.abstract || '',
           keywords: p.keywords || [],
-          groupId: null,
+          groupId: p.groupId,
           _groupName: p.groupName,
           status: p.status,
           groupName: p.groupName,
           program: p.program,
           schoolYear: p.schoolYear,
+          videoUrl: p.videoUrl,
         }))
       : Promise.resolve(null)
     Promise.all([groupsPromise, paperPromise])
@@ -298,7 +322,7 @@ export default function UploadForm() {
     return () => {
       live = false
     }
-  }, [key, paperId])
+  }, [key, paperId, reloadKey])
 
   const ready = state.key === key
   const blocked = ready && paperId && (!state.paper || !canEdit(state.paper.status))
@@ -316,7 +340,16 @@ export default function UploadForm() {
       {!ready ? (
         <div className="mt-6 h-96 max-w-3xl animate-pulse rounded-2xl bg-white/[0.07]" />
       ) : state.error ? (
-        <p role="alert" className="mt-6 text-sm text-danger-ink">Could not load the form. Refresh the page to try again.</p>
+        <div role="alert" className="mt-6 max-w-3xl rounded-2xl border border-danger/40 bg-danger/10 p-6">
+          <p className="m-0 text-sm text-danger-ink">Could not load the form.</p>
+          <button
+            type="button"
+            onClick={() => setReloadKey((n) => n + 1)}
+            className="mt-4 inline-flex min-h-10 items-center rounded-lg border border-danger/50 px-4 text-sm font-semibold text-danger-ink hover:bg-danger/10"
+          >
+            Retry
+          </button>
+        </div>
       ) : blocked ? (
         <div className={`${glass} mt-6 max-w-3xl p-6`}>
           <p className="m-0 text-lg font-semibold">
