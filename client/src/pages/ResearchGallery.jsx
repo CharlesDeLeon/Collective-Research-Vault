@@ -84,9 +84,14 @@ export default function ResearchGallery() {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <p aria-live="polite" className="m-0 text-base font-semibold text-fg">
-                {countText}
-              </p>
+              <div>
+                <p aria-live="polite" className="m-0 text-base font-semibold text-fg">
+                  {countText}
+                </p>
+                <p className="m-0 mt-1 text-xs text-fg/60">
+                  This count reflects the papers loaded here, not a full vault total.
+                </p>
+              </div>
             </div>
 
             {g.chips.length > 0 && (

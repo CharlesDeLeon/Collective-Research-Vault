@@ -6,7 +6,7 @@ const STEPS = [
   ['Browse', 'Search the vault by strand, section, school year, adviser or keyword.'],
   ['Request', 'Open a paper and ask for access. Tell us who you are and why you need it.'],
   ['Review', 'The paper’s adviser reviews your request and checks with the authors.'],
-  ['Read', 'If approved, you get a one-time link by email that works for 72 hours.'],
+  ['Read', 'If approved, a one-time access link is issued. It works for 72 hours. If you do not receive it by email, contact the office with your reference code.'],
 ]
 
 export default function About() {

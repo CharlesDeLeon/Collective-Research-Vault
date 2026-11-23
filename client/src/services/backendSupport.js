@@ -41,12 +41,10 @@ export const backendSupport = {
 
 export const unsupportedNote = {
   studentConsent: 'Student opt-in is not available yet. Confirm that the authors agreed to public release before publishing.',
-  requestConsent: 'Requesting consent from the author is not available yet.',
   statusNote: 'Notes on status changes are not saved yet.',
   statusHistory: 'The status history will appear here once the server records it.',
   adviserAbstractEdit: 'Abstract edits by advisers are not available yet.',
   finalAndDefendedFiles: 'Final and defended papers are not stored separately yet.',
-  panelistInvite: 'Panelists are assigned by a System Admin for now. Email invitations arrive later.',
   changePassword: 'Password changes are not available yet.',
   profileSync: 'Name and email changes are stored on this device only until profile sync is available.',
   adminResetPassword: 'Password reset is not available yet. A new password can only be set when the account is created.',

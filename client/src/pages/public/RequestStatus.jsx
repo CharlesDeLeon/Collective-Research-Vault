@@ -8,11 +8,11 @@ import { getGalleryPaper } from '../../services/galleryService'
 import { longDate } from '../../utils/formatDate'
 
 const STATUS_COPY = {
-  pending: ['Under review', 'neutral', 'The adviser is reviewing your request. We will email you once there is a decision.'],
-  approved: ['Approved', 'success', 'Your request was approved. Check your email for your one-time access link. It works for 72 hours.'],
+  pending: ['Under review', 'neutral', 'The adviser is reviewing your request. Check this page for updates.'],
+  approved: ['Approved', 'success', 'Your request was approved. Your one-time access link is valid for 72 hours.'],
   declined: ['Declined', 'error', 'Your request was not approved.'],
   accessed: ['Paper accessed', 'success', 'This access link has already been used. Submit a new request if you need the paper again.'],
-  verified: ['Verified', 'success', 'Your request was verified. Check your email for your one-time access link.'],
+  verified: ['Verified', 'success', 'Your request was verified.'],
   expired: ['Expired', 'warn', 'The access link for this request has expired. You can submit a new request.'],
   revoked: ['Cancelled', 'warn', 'This access request was cancelled. You can submit a new request.'],
 }
