@@ -4,6 +4,8 @@
 
 **Source of truth:** `docs/handoff.md`. If anything here conflicts with the handoff, `docs/handoff.md` wins and is not edited here. Admin-relevant hard rules still apply:
 
+**Backend status:** substantial implementation landed. See `docs/backend-status-report.md` for the current state, required migrations, and Phase R flag guidance.
+
 1. **Advisers alone publish papers and approve/decline access requests.** Admins have oversight only.
 2. **Admins cannot publish papers or approve access requests** (`docs/handoff.md:39`, `:354`).
 3. **Every group must have an adviser before its papers can be published** (`docs/handoff.md:40`).

@@ -4,6 +4,8 @@
 
 **Source of truth:** `docs/handoff.md`. If anything here conflicts with the handoff, `docs/handoff.md` wins and is not edited here. Panelist-relevant hard rules still apply:
 
+**Backend status:** substantial implementation landed. See `docs/backend-status-report.md` for the current state, required migrations, and Phase R flag guidance.
+
 1. Panelist primary nav is **Dashboard · Groups · Notifications · Profile** (`docs/handoff.md:55`). The frontend now matches this; Forum and Papers tabs were removed in P2.
 2. Panelist screens are Dashboard, Group feed, Paper detail, Notifications, Profile and Invite acceptance (`docs/handoff.md:267-278`).
 3. **"Panelists can read and comment, but cannot set status, upload files, publish, or approve access"** (`docs/handoff.md:278`). Do not add any of those capabilities.

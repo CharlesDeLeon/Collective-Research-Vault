@@ -4,6 +4,8 @@
 
 **Source of truth:** `docs/handoff.md`. If anything here conflicts with the handoff, `docs/handoff.md` wins and is not edited here. Public-Reader-relevant hard rules still apply:
 
+**Backend status:** substantial implementation landed. See `docs/backend-status-report.md` for the current state, required migrations, and Phase R flag guidance.
+
 1. The public can browse **title, abstract, metadata and APA citation anonymously** (`docs/handoff.md:18`).
 2. Full papers are gated behind a **72-hour, single-use access link approved by the group adviser** (`docs/handoff.md:19`).
 3. **Advisers alone** publish papers and approve/decline access requests; there is no admin override (`docs/handoff.md:38-39`, `:459`).

@@ -4,6 +4,8 @@
 
 **Source of truth:** `docs/handoff.md`. If anything here conflicts with the handoff, `docs/handoff.md` wins and is not edited here. Adviser-relevant hard rules still apply:
 
+**Backend status:** substantial implementation landed. See `docs/backend-status-report.md` for the current state, required migrations, and Phase R flag guidance.
+
 1. **Advisers create their own groups; admins can create for recovery** (`docs/handoff.md:35`).
 2. **Advisers see only their own groups for group management** (`docs/handoff.md:36`, `:458`).
 3. **Any adviser can view and approve/decline access requests for any paper** (`docs/handoff.md:37`, `:195`). Do not add group scoping to the access inbox.

@@ -4,6 +4,8 @@
 
 **Source of truth:** `docs/handoff.md`. Its hard rules still apply:
 
+**Backend status:** substantial implementation landed. See `docs/backend-status-report.md` for the current state, required migrations, and Phase R flag guidance.
+
 1. **Student opt-in is required before an adviser can publish.** No self-attestation-only path.
 2. **No edits after publish** (server must enforce, not just the UI).
 3. **No versioning.** Replacing a file overwrites the current file; it must not create a new version row or a new "version" in the UI.
