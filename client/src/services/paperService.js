@@ -28,8 +28,7 @@ function normalizeConsent(value, row = {}) {
 }
 
 function normalizeCurrentFile(d) {
-  // `versions[0]` is a transitional fallback until the API returns a single current file.
-  const f = d.file ?? d.currentFile ?? d.current_file ?? d.versions?.[0]
+  const f = d.file ?? d.currentFile ?? d.current_file
   const filePath = f?.filePath ?? f?.file_path ?? f?.path ?? ''
   if (!filePath) return null
   return { fileName: f.fileName ?? f.file_name ?? 'Paper file', filePath }
