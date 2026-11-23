@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const {
-  listPapers, getPaper, submitAccessRequest, getRequestStatus, confirmLink, consumeLink,
+  listPapers, getPaper, submitAccessRequest, getRequestStatus, confirmLink, consumeLink, serveFile,
 } = require('../controllers/publicController')
 
 // Public gallery
@@ -13,5 +13,6 @@ router.post('/access-requests', submitAccessRequest)
 router.get('/access/status/:ref', getRequestStatus)
 router.get('/access/:token', confirmLink)
 router.get('/access/:token/view', consumeLink)
+router.get('/access/:token/file', serveFile)
 
 module.exports = router

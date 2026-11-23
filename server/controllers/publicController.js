@@ -1,4 +1,5 @@
 const crypto = require('crypto')
+const path = require('path')
 const { query } = require('../config/db')
 
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
@@ -77,9 +78,13 @@ const getPaper = async (req, res) => {
 // POST /api/public/access-requests
 const submitAccessRequest = async (req, res) => {
   try {
-    const { paperSlug, name, email, institution, purpose } = req.body
+    const { paperSlug, name, email, institution, purpose, consent, consentGiven } = req.body
     if (!paperSlug || !name || !email) {
       return res.status(400).json({ message: 'paperSlug, name, and email are required' })
+    }
+    const consentValue = consent === true || consent === 'true' || consentGiven === true || consentGiven === 'true'
+    if (!consentValue) {
+      return res.status(400).json({ message: 'Consent is required to submit an access request' })
     }
     const [papers] = await query(
       `SELECT submission_id FROM submissions WHERE slug = ? AND (is_published = TRUE OR status = 'published')`,
@@ -98,9 +103,9 @@ const submitAccessRequest = async (req, res) => {
     }
 
     const [result] = await query(
-      `INSERT INTO paper_access_requests (submission_id, name, email, institution, purpose, reference_code, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'pending') RETURNING request_id`,
-      [submissionId, name, email, institution || null, purpose || null, ref]
+      `INSERT INTO paper_access_requests (submission_id, name, email, institution, purpose, reference_code, status, consent_given)
+       VALUES (?, ?, ?, ?, ?, ?, 'pending', ?) RETURNING request_id`,
+      [submissionId, name, email, institution || null, purpose || null, ref, consentValue]
     )
     const requestId = result[0]?.request_id || result.insertId
 
@@ -172,7 +177,7 @@ const confirmLink = async (req, res) => {
     const hash = sha256(token)
     const [rows] = await query(
       `SELECT l.link_id, l.expires_at, l.used_at, l.revoked_at, l.submission_id,
-              s.slug AS paper_slug
+              s.slug AS paper_slug, s.is_published, s.status
        FROM paper_access_links l
        JOIN submissions s ON s.submission_id = l.submission_id
        WHERE l.token_hash = ?`,
@@ -181,8 +186,9 @@ const confirmLink = async (req, res) => {
     if (!rows.length) return res.json({ data: { state: 'invalid', paperSlug: null } })
 
     const l = rows[0]
+    const paperAvailable = !!(l.is_published || l.status === 'published')
     let state = 'valid'
-    if (l.revoked_at) state = 'revoked'
+    if (l.revoked_at || !paperAvailable) state = 'revoked'
     else if (l.used_at) state = 'used'
     else if (new Date(l.expires_at) < new Date()) state = 'expired'
 
@@ -200,7 +206,7 @@ const consumeLink = async (req, res) => {
     const hash = sha256(token)
     const [rows] = await query(
       `SELECT l.link_id, l.request_id, l.submission_id, l.expires_at, l.used_at, l.revoked_at,
-              s.slug AS paper_slug
+              s.slug AS paper_slug, s.is_published, s.status
        FROM paper_access_links l
        JOIN submissions s ON s.submission_id = l.submission_id
        WHERE l.token_hash = ?`,
@@ -209,7 +215,8 @@ const consumeLink = async (req, res) => {
     if (!rows.length) return res.json({ data: { state: 'invalid', paperSlug: null, fileUrl: '' } })
 
     const l = rows[0]
-    if (l.revoked_at) {
+    const paperAvailable = !!(l.is_published || l.status === 'published')
+    if (l.revoked_at || !paperAvailable) {
       await logAccess(l, 'download_denied_revoked', req)
       return res.json({ data: { state: 'revoked', paperSlug: l.paper_slug, fileUrl: '' } })
     }
@@ -233,13 +240,8 @@ const consumeLink = async (req, res) => {
       return res.json({ data: { state: 'used', paperSlug: l.paper_slug, fileUrl: '' } })
     }
 
-    // Get the file path
-    const [versions] = await query(
-      `SELECT file_path FROM document_versions WHERE submission_id = ? ORDER BY uploaded_at DESC LIMIT 1`,
-      [l.submission_id]
-    )
-    const filePath = versions.length ? versions[0].file_path : null
-    const fileUrl = filePath || ''
+    // Issue a short-lived proxy URL instead of exposing the raw storage path
+    const fileUrl = `/api/public/access/${token}/file`
 
     await logAccess(l, 'download_success', req)
 
@@ -268,6 +270,58 @@ async function logAccess(link, action, req) {
   }
 }
 
+// GET /api/public/access/:token/file  (proxy download; does not expose raw storage path)
+const serveFile = async (req, res) => {
+  try {
+    const { token } = req.params
+    const hash = sha256(token)
+    const [rows] = await query(
+      `SELECT l.link_id, l.submission_id, l.expires_at, l.used_at, l.revoked_at,
+              s.is_published, s.status
+       FROM paper_access_links l
+       JOIN submissions s ON s.submission_id = l.submission_id
+       WHERE l.token_hash = ?`,
+      [hash]
+    )
+    if (!rows.length) return res.status(404).json({ message: 'Invalid link' })
+    const l = rows[0]
+    if (l.revoked_at) return res.status(410).json({ message: 'Link revoked' })
+    if (new Date(l.expires_at) < new Date()) return res.status(410).json({ message: 'Link expired' })
+    const paperAvailable = !!(l.is_published || l.status === 'published')
+    if (!paperAvailable) return res.status(410).json({ message: 'Paper no longer available' })
+
+    // Resolve file path
+    const [versions] = await query(
+      `SELECT file_path, file_name, file_type FROM document_versions WHERE submission_id = ? ORDER BY uploaded_at DESC LIMIT 1`,
+      [l.submission_id]
+    )
+    let filePath = versions.length ? versions[0].file_path : null
+    let fileName = (versions.length && versions[0].file_name) ? versions[0].file_name : 'paper.pdf'
+    let fileType = versions.length ? versions[0].file_type : null
+    if (!filePath) {
+      const [subs] = await query(`SELECT file_path, file_name FROM submissions WHERE submission_id = ?`, [l.submission_id])
+      if (subs.length) {
+        filePath = subs[0].file_path
+        fileName = subs[0].file_name || fileName
+      }
+    }
+    if (!filePath) return res.status(404).json({ message: 'No file available' })
+
+    const abs = path.isAbsolute(filePath) ? filePath : path.join(__dirname, '..', filePath)
+    if (fileType) res.setHeader('Content-Type', fileType)
+    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`)
+    res.sendFile(abs, (err) => {
+      if (err) {
+        console.error('serveFile send error:', err)
+        if (!res.headersSent) res.status(404).json({ message: 'File not found' })
+      }
+    })
+  } catch (err) {
+    console.error('serveFile error:', err)
+    res.status(500).json({ message: 'Failed to serve file' })
+  }
+}
+
 module.exports = {
-  listPapers, getPaper, submitAccessRequest, getRequestStatus, confirmLink, consumeLink,
+  listPapers, getPaper, submitAccessRequest, getRequestStatus, confirmLink, consumeLink, serveFile,
 }

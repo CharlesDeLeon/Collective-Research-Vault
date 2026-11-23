@@ -792,6 +792,13 @@ const unpublishSubmission = async (req, res) => {
       [id]
     )
 
+    // Revoke all active access links for this submission
+    await db.query(
+      `UPDATE paper_access_links SET revoked_at = NOW()
+       WHERE submission_id = ? AND revoked_at IS NULL`,
+      [id]
+    )
+
     await db.query(
       `INSERT INTO submission_status_history (submission_id, status, note, changed_by)
        VALUES (?, 'approved', ?, ?)`,

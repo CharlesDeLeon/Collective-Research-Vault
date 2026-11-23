@@ -296,6 +296,7 @@ CREATE TABLE paper_access_requests (
   email            VARCHAR(150) NOT NULL,
   institution      VARCHAR(200) DEFAULT NULL,
   purpose          TEXT         DEFAULT NULL,
+  consent_given    BOOLEAN      NOT NULL DEFAULT FALSE,
   status           VARCHAR(20)  NOT NULL DEFAULT 'pending',
   reference_code   VARCHAR(20)  NOT NULL UNIQUE,
   verify_token     VARCHAR(100) DEFAULT NULL,
