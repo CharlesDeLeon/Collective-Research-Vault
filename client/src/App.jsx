@@ -152,8 +152,6 @@ function App() {
             <Route path="groups" element={<PanelistGroups />} />
             <Route path="groups/:groupId" element={<PanelistGroupDetail />} />
             <Route path="posts/:postId" element={<PanelistPostDetail />} />
-            <Route path="papers" element={<PanelistPapers />} />
-            <Route path="forum" element={<PanelistFeed />} />
             <Route path="notifications" element={<ActivityHistory />} />
             <Route path="profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/panelist/dashboard" replace />} />
