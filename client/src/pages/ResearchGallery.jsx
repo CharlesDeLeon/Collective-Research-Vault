@@ -87,13 +87,6 @@ export default function ResearchGallery() {
               <p aria-live="polite" className="m-0 text-base font-semibold text-fg">
                 {countText}
               </p>
-<<<<<<< HEAD
-              <label className="hidden items-center gap-2.5 text-sm text-fg/80 lg:flex">
-                Sort by
-                <SortSelect value={g.sort} onChange={g.setSort} className="w-44" />
-              </label>
-=======
->>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
             </div>
 
             {g.chips.length > 0 && (

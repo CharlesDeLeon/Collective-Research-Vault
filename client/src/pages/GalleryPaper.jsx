@@ -85,13 +85,8 @@ export default function GalleryPaper() {
                     {paper.keywords.map((k) => (
                       <Link
                         key={k}
-<<<<<<< HEAD
-                        to={`/gallery?kw=${encodeURIComponent(k)}`}
-                        className="inline-flex min-h-9 items-center rounded-full border border-keyword-line bg-keyword-bg px-3.5 text-sm text-keyword-fg hover:bg-link/10"
-=======
                         to={`/gallery?q=${encodeURIComponent(k)}`}
                         className="inline-flex min-h-9 items-center rounded-full border border-gold/60 px-3.5 text-sm text-[#FFD27F] hover:bg-gold/10"
->>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
                       >
                         {k}
                       </Link>

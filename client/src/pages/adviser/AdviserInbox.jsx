@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-import React, { useEffect, useState, useCallback } from 'react'
-import { listAccessRequests, getAccessRequest, approveAccessRequest, declineAccessRequest, revokeAccessLink } from '../../services/accessService'
-=======
 import { useCallback, useEffect, useRef, useState } from 'react'
 import useToast from '../../context/useToast'
 import {
@@ -12,7 +8,6 @@ import {
   revokeAccessLink,
 } from '../../services/accessService'
 import { backendSupport, unsupportedNote } from '../../services/backendSupport'
->>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
 import { glass } from '../../components/dashboard/constants'
 import { SearchIcon, BellIcon } from '../../components/dashboard/icons'
 import Select, { Option } from '../../components/ui/Select'
@@ -307,7 +302,6 @@ export default function AdviserInbox() {
     load()
   }, [load])
 
-<<<<<<< HEAD
   const openDetail = async (id) => {
     setDetailLoading(true)
     setActionError(null)
@@ -321,19 +315,18 @@ export default function AdviserInbox() {
     } finally {
       setDetailLoading(false)
     }
-=======
+  }
+
   const filtered = Boolean(status || search)
   const clear = () => {
     setStatus('')
     setSearch('')
     setPage(1)
->>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
   }
   const pick = (s) => {
     setStatus((cur) => (cur === s ? '' : s))
     setPage(1)
   }
-<<<<<<< HEAD
 
   const handleApprove = async () => {
     if (!detail) return
@@ -388,10 +381,8 @@ export default function AdviserInbox() {
       // fallback
     }
   }
-=======
   const from = requests.length === 0 ? 0 : (page - 1) * LIMIT + 1
   const to = (page - 1) * LIMIT + requests.length
->>>>>>> a54d3d019bb812bfc4cbca39ff2c5a8d70ddfd4c
 
   return (
     <div className="space-y-6 font-display sm:space-y-8">
