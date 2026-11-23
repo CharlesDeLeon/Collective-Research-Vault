@@ -155,6 +155,8 @@ CREATE TABLE panelist_invitations (
 CREATE INDEX idx_panelist_invitations_email ON panelist_invitations(email);
 CREATE INDEX idx_panelist_invitations_expires ON panelist_invitations(expires_at);
 
+ALTER TABLE panelist_invitations ENABLE ROW LEVEL SECURITY;
+
 -- ============================================================
 -- reviews
 -- ============================================================
@@ -171,6 +173,8 @@ CREATE TABLE submission_status_history (
 );
 
 CREATE INDEX idx_status_history_submission ON submission_status_history(submission_id);
+
+ALTER TABLE submission_status_history ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE reviews (
   review_id       SERIAL PRIMARY KEY,
@@ -245,11 +249,14 @@ CREATE TABLE forum_posts (
   paper_title VARCHAR(300) DEFAULT NULL,
   status      VARCHAR(30)  DEFAULT NULL,
   likes_count INT          NOT NULL DEFAULT 0,
-  reported    BOOLEAN      NOT NULL DEFAULT FALSE,
-  hidden      BOOLEAN      NOT NULL DEFAULT FALSE,
-  removed     BOOLEAN      NOT NULL DEFAULT FALSE,
-  created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-  updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+  reported     BOOLEAN      NOT NULL DEFAULT FALSE,
+  reported_by  INT          REFERENCES users(user_id),
+  report_reason TEXT,
+  reported_at  TIMESTAMPTZ,
+  hidden       BOOLEAN      NOT NULL DEFAULT FALSE,
+  removed      BOOLEAN      NOT NULL DEFAULT FALSE,
+  created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================
@@ -289,6 +296,7 @@ CREATE TABLE paper_access_requests (
   email            VARCHAR(150) NOT NULL,
   institution      VARCHAR(200) DEFAULT NULL,
   purpose          TEXT         DEFAULT NULL,
+  consent_given    BOOLEAN      NOT NULL DEFAULT FALSE,
   status           VARCHAR(20)  NOT NULL DEFAULT 'pending',
   reference_code   VARCHAR(20)  NOT NULL UNIQUE,
   verify_token     VARCHAR(100) DEFAULT NULL,

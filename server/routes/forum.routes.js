@@ -4,7 +4,7 @@ const authMiddleware = require('../middleware/authMiddleware')
 const roleMiddleware = require('../middleware/roleMiddleware')
 const {
   listPosts, createPost, getPost, updatePost, deletePost,
-  toggleLike, reportPost, hidePost, removePost,
+  toggleLike, reportPost, hidePost, removePost, restorePost, dismissReport,
   listComments, addComment, updateComment, deleteComment, reportComment,
 } = require('../controllers/forumController')
 
@@ -20,6 +20,8 @@ router.post('/posts/:id/like', toggleLike)
 router.post('/posts/:id/report', reportPost)
 router.post('/posts/:id/hide', roleMiddleware('adviser', 'sysadmin'), hidePost)
 router.post('/posts/:id/remove', roleMiddleware('adviser', 'sysadmin'), removePost)
+router.post('/posts/:id/restore', roleMiddleware('adviser', 'sysadmin'), restorePost)
+router.post('/posts/:id/dismiss-report', roleMiddleware('adviser', 'sysadmin'), dismissReport)
 
 // Comments
 router.get('/posts/:id/comments', listComments)

@@ -2,6 +2,7 @@
 @import "tailwindcss";
 
 @theme {
+  /* Brand palette (unchanged) */
   --color-gold: #FFBD42;
   --color-gold-light: #FFCA5C;
   --color-gold-edge: #FBBF24;
@@ -25,8 +26,326 @@
   --color-warn: #F59E0B;
   --color-warn-ink: #FBBF24;
 
+  /*
+   * Semantic theme tokens. Defaults are the LIGHT theme.
+   * Dark values are overridden in :root[data-theme="dark"] below.
+   * These defaults intentionally do not use prefers-color-scheme.
+   */
+  --color-page-from: #F2F5FE;
+  --color-page-to: #C9D6F6;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F7FAFF;
+  --color-surface-strong: #FFFFFF;
+  --color-sidebar: rgb(255 255 255 / 0.75);
+  --color-line: #D2DCF6;
+  --color-line-strong: #C5D2F3;
+  --color-line-soft: #E3E8F6;
+  --color-panel-line: #C5D2F3;
+  --color-control-line: #C9D3F0;
+  --color-control-line-soft: #D1D5DB;
+  --color-fg: #213062;
+  --color-fg-soft: #5F6A8F;
+  --color-fg-muted: #5F6A8F;
+  --color-fg-subtle: #5F6A8F;
+  --color-fg-faint: #5F6A8F;
+  --color-fg-ghost: #5F6A8F;
+  --color-fg-on-page-subtle: #45527E;
+  --color-heading: #2F4BAA;
+  --color-primary: #4362C8;
+  --color-primary-fg: #FFFFFF;
+  --color-link: #2F4BAA;
+  --color-link-hover: #213062;
+  --color-accent: #4362C8;
+  --color-avatar-bg: #4362C8;
+  --color-avatar-fg: #FFFFFF;
+  --color-cta-from: #FFD36B;
+  --color-cta-to: #FFB938;
+  --color-cta-fg: #213062;
+  --color-chip-bg: #FFF3D1;
+  --color-chip-line: #F0C560;
+  --color-chip-fg: #2F4BAA;
+  --color-chip-off-bg: #F3F4F6;
+  --color-chip-off-line: #D1D5DB;
+  --color-chip-off-fg: #5B6270;
+  --color-filter-chip-bg: #FFF3D1;
+  --color-filter-chip-line: #F0C560;
+  --color-filter-chip-fg: #2F4BAA;
+  --color-tag-bg: #FFF3D1;
+  --color-tag-line: #E0A92E;
+  --color-tag-fg: #2F4BAA;
+  --color-tag-strong-fg: #2F4BAA;
+  --color-keyword-bg: #FFF3D1;
+  --color-keyword-line: #E0A92E;
+  --color-keyword-fg: #2F4BAA;
+  --color-star: #F5A623;
+  --color-input-bg: #FFFFFF;
+  --color-input-line: #C9D3F0;
+  --color-input-fg: #213062;
+  --color-placeholder: #5F6A8F;
+  --color-focus: #4362C8;
+  --color-pill-bg: #4362C8;
+  --color-pill-fg: #FFFFFF;
+  --color-overlay: rgb(33 48 98 / 0.35);
+  --color-sheet-overlay: rgb(33 48 98 / 0.35);
+  --color-danger-fg: #B42318;
+  --color-danger-bg: #FEE4E2;
+  --color-danger-bg-hover: #FDD8D4;
+  --color-danger-border: #B42318;
+  --color-form-bg: #FFFFFF;
+  --color-form-line: #C9D3F0;
+  --color-form-line-soft: #C9D3F0;
+  --color-form-fg: #213062;
+  --color-form-placeholder: #5F6A8F;
+  --color-select-bg: #FFFFFF;
+  --color-select-line: #C9D3F0;
+  --color-option-bg: #FFFFFF;
+  --color-modal-surface: #FFFFFF;
+  --color-modal-line: #D2DCF6;
+  --color-modal-fg: #5F6A8F;
+  --color-sheet-bg: #FFFFFF;
+  --color-sheet-line: #C5D2F3;
+  --color-starred-line: #E0A92E;
+
+  /*
+   * Legacy color bridge (light mode).
+   *
+   * The gallery/paper screens use the semantic tokens above directly. The older
+   * dashboard, admin and public screens still use the hard-coded dark-only
+   * utilities (text-white/*, border-white/*, bg-panel, from-navy-900, ...).
+   * Remapping those underlying color variables lets every screen resolve to
+   * the same light palette without changing a single class name. Dark mode
+   * restores the original values below, so it remains pixel-identical.
+   */
+  --color-white: #213062;
+  --color-black: #213063;
+
+  --color-navy-900: #F2F5FE;
+  --color-navy-500: #C9D6F6;
+
+  --color-panel: rgb(255 255 255 / 0.72);
+  --color-modal: #FFFFFF;
+  --color-field: #FFFFFF;
+  --color-field-line: #C9D3F0;
+  --color-field-ink: #5F6A8F;
+
+  --color-danger-ink: #B42318;
+  --color-success-ink: #047857;
+  --color-warn-ink: #B45309;
+  --color-info-ink: #1D4ED8;
+
+  --color-blue-300: #1D4ED8;
+  --color-sky-300: #0369A1;
+  --color-rose-200: #BE123C;
+  --color-rose-300: #E11D48;
+  --color-emerald-200: #047857;
+  --color-emerald-300: #059669;
+  --color-violet-300: #6D28D9;
+  --color-amber-300: #B45309;
+
+  --radius-card: 1rem;
+  --shadow-card: 0 4px 14px rgba(67, 98, 200, 0.14);
+  --shadow-panel: 0 4px 14px rgba(67, 98, 200, 0.14);
+  --shadow-popover: 0 12px 32px rgba(33, 48, 98, 0.18);
+  --shadow-sheet: 0 -12px 32px rgba(33, 48, 98, 0.18);
+  --shadow-modal: 0 24px 48px rgba(33, 48, 98, 0.22);
+
+  --page-gradient: linear-gradient(
+    137deg in oklab,
+    var(--color-page-from) 0%,
+    var(--color-page-to) 100%
+  );
+  --cta-gradient: linear-gradient(
+    180deg in oklab,
+    var(--color-cta-from) 0%,
+    var(--color-cta-to) 100%
+  );
+  --body-bg: var(--page-gradient);
+  --text-tag: 0.625rem;
+  --tag-transform: uppercase;
+  --tag-tracking: 0.08em;
+
   --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
   --font-display: "Poppins", "Inter", system-ui, sans-serif;
+}
+
+/*
+ * Dark theme. Values mirror the previous dark-only UI exactly:
+ * navy gradient (to bottom right in oklab), field/35 surfaces,
+ * white/gold text and gold CTAs.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --page-gradient: linear-gradient(
+    to bottom right in oklab,
+    var(--color-page-from) 0%,
+    var(--color-page-to) 100%
+  );
+  --cta-gradient: linear-gradient(
+    to bottom right in oklab,
+    var(--color-cta-from) 0%,
+    var(--color-cta-to) 100%
+  );
+  --body-bg: var(--color-navy-900);
+  --text-tag: 0.75rem;
+  --tag-transform: none;
+  --tag-tracking: normal;
+
+  --color-page-from: #213063;
+  --color-page-to: #4362C8;
+  --color-surface: rgb(22 32 65 / 0.35);
+  --color-surface-hover: rgb(22 32 65 / 0.55);
+  --color-surface-strong: rgb(22 32 65 / 0.40);
+  --color-sidebar: rgb(22 32 65 / 0.35);
+  --color-line: rgb(255 255 255 / 0.12);
+  --color-line-strong: rgb(255 255 255 / 0.15);
+  --color-line-soft: rgb(255 255 255 / 0.10);
+  --color-panel-line: rgb(255 255 255 / 0.12);
+  --color-control-line: rgb(255 255 255 / 0.35);
+  --color-control-line-soft: rgb(255 255 255 / 0.30);
+  --color-fg: #FFFFFF;
+  --color-fg-soft: rgb(255 255 255 / 0.80);
+  --color-fg-muted: rgb(255 255 255 / 0.75);
+  --color-fg-subtle: rgb(255 255 255 / 0.70);
+  --color-fg-faint: rgb(255 255 255 / 0.60);
+  --color-fg-ghost: rgb(255 255 255 / 0.50);
+  --color-fg-on-page-subtle: rgb(255 255 255 / 0.60);
+  --color-heading: #FFFFFF;
+  --color-primary: #FFBD42;
+  --color-primary-fg: #1F2A5C;
+  --color-link: #FFBD42;
+  --color-link-hover: #FFCA5C;
+  --color-accent: #FFBD42;
+  --color-avatar-bg: #FBBF24;
+  --color-avatar-fg: #324996;
+  --color-cta-from: #FFBD42;
+  --color-cta-to: #FFE29C;
+  --color-cta-fg: #1F2A5C;
+  --color-chip-bg: rgb(255 189 66 / 0.20);
+  --color-chip-line: #FFBD42;
+  --color-chip-fg: #FFD27F;
+  --color-chip-off-bg: transparent;
+  --color-chip-off-line: rgb(255 255 255 / 0.40);
+  --color-chip-off-fg: rgb(255 255 255 / 0.90);
+  --color-filter-chip-bg: rgb(255 189 66 / 0.15);
+  --color-filter-chip-line: transparent;
+  --color-filter-chip-fg: #FFBD42;
+  --color-tag-bg: rgb(255 189 66 / 0.15);
+  --color-tag-line: rgb(255 189 66 / 0.60);
+  --color-tag-fg: #FFBD42;
+  --color-tag-strong-fg: #FFD27F;
+  --color-keyword-bg: transparent;
+  --color-keyword-line: rgb(255 189 66 / 0.60);
+  --color-keyword-fg: #FFD27F;
+  --color-star: #FFBD42;
+  --color-input-bg: rgb(22 32 65 / 0.35);
+  --color-input-line: rgb(255 255 255 / 0.40);
+  --color-input-fg: #FFFFFF;
+  --color-placeholder: rgb(255 255 255 / 0.65);
+  --color-focus: #FFBD42;
+  --color-pill-bg: rgb(255 189 66 / 0.15);
+  --color-pill-fg: #FFBD42;
+  --color-overlay: transparent;
+  --color-sheet-overlay: rgb(10 16 48 / 0.55);
+  --color-danger-fg: #F2D0D0;
+  --color-danger-bg: rgb(239 68 68 / 0.15);
+  --color-danger-bg-hover: rgb(239 68 68 / 0.25);
+  --color-danger-border: #EF4444;
+  --color-form-bg: rgb(255 255 255 / 0.05);
+  --color-form-line: #FFFFFF;
+  --color-form-line-soft: rgb(255 255 255 / 0.15);
+  --color-form-fg: #FFFFFF;
+  --color-form-placeholder: rgb(255 255 255 / 0.30);
+  --color-select-bg: rgb(33 48 99 / 0.60);
+  --color-select-line: #FFFFFF;
+  --color-option-bg: #213063;
+  --color-modal-surface: #233265;
+  --color-modal-line: rgb(255 255 255 / 0.10);
+  --color-modal-fg: rgb(255 255 255 / 0.75);
+  --color-sheet-bg: #1B2653;
+  --color-sheet-line: rgb(255 255 255 / 0.15);
+  --color-starred-line: rgb(255 189 66 / 0.70);
+
+  /* Legacy color bridge: restore the original dark-only values. */
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+  --color-navy-900: #213063;
+  --color-navy-500: #4362C8;
+  --color-panel: rgb(42 44 20 / 0.2);
+  --color-modal: #233265;
+  --color-field: #162041;
+  --color-field-line: #374151;
+  --color-field-ink: #6B7280;
+  --color-danger-ink: #F2D0D0;
+  --color-success-ink: #34D399;
+  --color-warn-ink: #FBBF24;
+  --color-info-ink: #60A5FA;
+  --color-blue-300: #93C5FD;
+  --color-sky-300: #7DD3FC;
+  --color-rose-200: #FECDD3;
+  --color-rose-300: #FDA4AF;
+  --color-emerald-200: #A7F3D0;
+  --color-emerald-300: #6EE7B7;
+  --color-violet-300: #C4B5FD;
+  --color-amber-300: #FCD34D;
+
+  --radius-card: 1.25rem;
+  --shadow-card: none;
+  --shadow-panel: none;
+  --shadow-popover: 0 0.75rem 2rem rgba(0, 0, 0, 0.35);
+  --shadow-sheet: 0 -0.75rem 2.5rem rgba(0, 0, 0, 0.40);
+  --shadow-modal: 0 25px 50px -12px rgb(0 0 0 / 0.30);
+}
+
+:root {
+  color-scheme: light;
+}
+
+@utility bg-page {
+  background-image: var(--page-gradient);
+}
+
+@utility bg-cta {
+  background-image: var(--cta-gradient);
+}
+
+@utility tag-label {
+  font-size: var(--text-tag);
+  text-transform: var(--tag-transform);
+  letter-spacing: var(--tag-tracking);
+}
+
+@utility card-shadow {
+  box-shadow: var(--shadow-card);
+}
+
+@utility panel-shadow {
+  box-shadow: var(--shadow-panel);
+}
+
+@utility popover-shadow {
+  box-shadow: var(--shadow-popover);
+}
+
+@utility sheet-shadow {
+  box-shadow: var(--shadow-sheet);
+}
+
+@utility modal-shadow {
+  box-shadow: var(--shadow-modal);
+}
+
+/*
+ * In light mode, gold is an accent (chips, CTAs, the logo) but not a text
+ * color on light surfaces. Legacy gold text therefore adopts the gallery
+ * link/heading blue. The logo SVG is excluded so it keeps the brand gold.
+ */
+:root[data-theme='light'] [class*='text-gold']:not(svg):not(svg *) {
+  color: var(--color-link);
+}
+
+:root[data-theme='light'] [class*='FFD27F'] {
+  color: var(--color-link);
 }
 
 @layer base {
@@ -41,8 +360,19 @@
   }
   body {
     font-family: var(--font-sans);
-    background: var(--color-navy-900);
+    background: var(--body-bg);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  :root[data-theme="light"] :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  /* Interactive controls should advertise that they are clickable. */
+  button:not(:disabled),
+  select:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="combobox"]:not([aria-disabled="true"]) {
+    cursor: pointer;
   }
 }

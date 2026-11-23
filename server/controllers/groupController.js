@@ -31,9 +31,31 @@ const listGroups = async (req, res) => {
   }
 }
 
+const isGroupOwner = async (groupId, userId, role) => {
+  if (role === 'sysadmin' || role === 'admin') return true
+  if (role === 'student') {
+    const [rows] = await query(
+      `SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?`,
+      [groupId, userId]
+    )
+    return rows.length > 0
+  }
+  const [rows] = await query(
+    `SELECT 1 FROM research_groups WHERE group_id = ? AND (adviser_id = ? OR created_by = ?)`,
+    [groupId, userId, userId]
+  )
+  return rows.length > 0
+}
+
 const getGroup = async (req, res) => {
   try {
     const { id } = req.params
+    const role = String(req.user?.role || '').toLowerCase()
+    const userId = req.user.user_id
+    if (!(await isGroupOwner(id, userId, role))) {
+      return res.status(404).json({ message: 'Group not found' })
+    }
+
     const [groups] = await query(
       `SELECT rg.group_id, rg.group_name, rg.program, rg.strand, rg.section,
               rg.year_level, rg.school_year, rg.created_by, rg.adviser_id,
@@ -72,6 +94,16 @@ const createGroup = async (req, res) => {
     const { group_name, strand, section, year_level, school_year, program } = req.body
     if (!group_name) return res.status(400).json({ message: 'group_name is required' })
     const userId = req.user.user_id
+
+    const [existing] = await query(
+      `SELECT group_id FROM research_groups
+       WHERE group_name = ? AND (section IS NOT DISTINCT FROM ?) AND (school_year IS NOT DISTINCT FROM ?)`,
+      [group_name, section || null, school_year || null]
+    )
+    if (existing.length) {
+      return res.status(409).json({ message: 'A group with this name already exists in the same section and school year' })
+    }
+
     const [result] = await query(
       `INSERT INTO research_groups (group_name, program, strand, section, year_level, school_year, created_by, adviser_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -87,7 +119,26 @@ const createGroup = async (req, res) => {
 const updateGroup = async (req, res) => {
   try {
     const { id } = req.params
+    const role = String(req.user?.role || '').toLowerCase()
+    const userId = req.user.user_id
+    if (!(await isGroupOwner(id, userId, role))) {
+      return res.status(404).json({ message: 'Group not found' })
+    }
+
     const { group_name, strand, section, year_level, school_year, program } = req.body
+
+    // Duplicate name check within same section/school_year
+    if (group_name) {
+      const [existing] = await query(
+        `SELECT group_id FROM research_groups
+         WHERE group_name = ? AND (section IS NOT DISTINCT FROM ?) AND (school_year IS NOT DISTINCT FROM ?) AND group_id <> ?`,
+        [group_name, section || null, school_year || null, id]
+      )
+      if (existing.length) {
+        return res.status(409).json({ message: 'A group with this name already exists in the same section and school year' })
+      }
+    }
+
     await query(
       `UPDATE research_groups
        SET group_name = COALESCE(?, group_name),
@@ -120,6 +171,11 @@ const deleteGroup = async (req, res) => {
 const addMember = async (req, res) => {
   try {
     const { id } = req.params
+    const role = String(req.user?.role || '').toLowerCase()
+    const userId = req.user.user_id
+    if (!(await isGroupOwner(id, userId, role))) {
+      return res.status(404).json({ message: 'Group not found' })
+    }
     const { user_id } = req.body
     if (!user_id) return res.status(400).json({ message: 'user_id is required' })
     await query('INSERT INTO group_members (group_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING', [id, user_id])
@@ -133,6 +189,11 @@ const addMember = async (req, res) => {
 const removeMember = async (req, res) => {
   try {
     const { id, userId } = req.params
+    const role = String(req.user?.role || '').toLowerCase()
+    const uid = req.user.user_id
+    if (!(await isGroupOwner(id, uid, role))) {
+      return res.status(404).json({ message: 'Group not found' })
+    }
     await query('DELETE FROM group_members WHERE group_id = ? AND user_id = ?', [id, userId])
     res.json({ message: 'Member removed' })
   } catch (err) {

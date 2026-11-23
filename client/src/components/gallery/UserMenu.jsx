@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import useAuth from '../../context/useAuth'
+import useTheme from '../../context/useTheme'
 import { getRoleHome } from '../../utils/roleHome'
 import { initials } from '../../utils/avatarColors'
-import { ChevronDownIcon, HomeIcon } from '../dashboard/icons'
+import { ChevronDownIcon, HomeIcon, MoonIcon, SunIcon } from '../dashboard/icons'
 
 const itemClass =
-  'flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[0.9375rem] hover:bg-white/10 focus-visible:bg-white/10'
+  'flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[0.9375rem] hover:bg-fg/10 focus-visible:bg-fg/10'
 
 export default function UserMenu({ user }) {
   const { logout } = useAuth()
+  const { theme, isMigratedRoute, toggleTheme } = useTheme()
   const [open, setOpen] = useState(false)
   const box = useRef(null)
 
@@ -36,9 +38,9 @@ export default function UserMenu({ user }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="inline-flex min-h-12 items-center gap-2.5 rounded-full border-[0.094rem] border-white/30 bg-field/35 py-0 pl-1.5 pr-3 text-[0.9375rem] text-white sm:pr-3.5"
+        className="inline-flex min-h-12 items-center gap-2.5 rounded-full border-[0.094rem] border-control-line-soft bg-surface py-0 pl-1.5 pr-3 text-[0.9375rem] text-fg sm:pr-3.5"
       >
-        <span className="grid size-9 place-items-center rounded-full bg-gold-edge text-sm font-bold text-navy-700">
+        <span className="grid size-9 place-items-center rounded-full bg-avatar-bg text-sm font-bold text-avatar-fg">
           {initials(user.name)}
         </span>
         <span className="hidden max-w-40 truncate sm:inline">{user.name}</span>
@@ -47,13 +49,23 @@ export default function UserMenu({ user }) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-14 z-20 w-56 rounded-2xl border border-white/15 bg-[#1b2653] p-2 shadow-[0_0.75rem_2rem_rgba(0,0,0,0.35)]"
+          className="absolute right-0 top-14 z-20 w-56 rounded-2xl border border-line-strong bg-sheet-bg p-2 popover-shadow"
         >
           <Link to={getRoleHome(user.role)} role="menuitem" onClick={() => setOpen(false)} className={itemClass}>
-            <HomeIcon className="size-4.5 text-gold" />
+            <HomeIcon className="size-4.5 text-link" />
             Back to dashboard
           </Link>
-          <button type="button" role="menuitem" onClick={logout} className={`${itemClass} text-[#F2D0D0]`}>
+          {isMigratedRoute && (
+            <button type="button" role="menuitem" onClick={toggleTheme} className={itemClass}>
+              {theme === 'light' ? (
+                <MoonIcon className="size-4.5 text-link" />
+              ) : (
+                <SunIcon className="size-4.5 text-link" />
+              )}
+              {theme === 'light' ? 'Dark mode' : 'Light mode'}
+            </button>
+          )}
+          <button type="button" role="menuitem" onClick={logout} className={`${itemClass} text-danger-fg`}>
             <svg
               viewBox="0 0 24 24"
               fill="none"

@@ -46,19 +46,19 @@ export default function ModalShell({ title, icon: Icon, onClose, children }) {
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
-      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4 font-display text-white backdrop-blur-xl"
+      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-overlay p-4 font-display text-fg backdrop-blur-xl"
     >
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="w-full max-w-[34rem] rounded-2xl border border-white/10 bg-modal p-4 shadow-2xl shadow-black/30"
+        className="w-full max-w-[34rem] rounded-2xl border border-modal-line bg-modal-surface p-4 modal-shadow"
       >
         <div className="flex items-center justify-between gap-3">
           <h2
             id={titleId}
-            className="flex min-w-0 items-center gap-3 px-1 text-base font-medium text-white/75"
+            className="flex min-w-0 items-center gap-3 px-1 text-base font-medium text-modal-fg"
           >
             <Icon className="size-5 shrink-0" />
             <span className="truncate">{title}</span>
@@ -66,7 +66,7 @@ export default function ModalShell({ title, icon: Icon, onClose, children }) {
           <button
             type="button"
             onClick={onClose}
-            className="flex shrink-0 items-center gap-2 rounded-full border border-danger bg-danger/15 px-4 py-1.5 text-sm text-danger-ink transition hover:bg-danger/25"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-danger-border bg-danger-bg px-4 py-1.5 text-sm text-danger-fg transition hover:bg-danger-bg-hover"
           >
             <CloseIcon className="size-3.5 text-danger" strokeWidth={2.4} />
             Close

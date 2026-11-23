@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
@@ -70,75 +70,74 @@ import PanelistPostDetail from './pages/panelist/PanelistPostDetail'
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/gallery" element={<ResearchGallery />} />
-          <Route path="/paper/:slug" element={<GalleryPaper />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/request/submitted" element={<RequestSubmitted />} />
-          <Route path="/access/status" element={<RequestStatus />} />
-          <Route path="/access/status/:ref" element={<RequestStatus />} />
-          <Route path="/access/:token" element={<AccessLink />} />
-          <Route path="/access/:token/view" element={<AccessView />} />
-          <Route path="/access/:token/download" element={<AccessDownload />} />
-          <Route path="/invite/:token" element={<InviteAccept />} />
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/gallery" element={<ResearchGallery />} />
+        <Route path="/paper/:slug" element={<GalleryPaper />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/request/submitted" element={<RequestSubmitted />} />
+        <Route path="/access/status" element={<RequestStatus />} />
+        <Route path="/access/status/:ref" element={<RequestStatus />} />
+        <Route path="/access/:token" element={<AccessLink />} />
+        <Route path="/access/:token/view" element={<AccessView />} />
+        <Route path="/access/:token/download" element={<AccessDownload />} />
+        <Route path="/invite/:token" element={<InviteAccept />} />
 
-          <Route
-            path="/student"
-            element={
-              <ProtectedRoute allowedRole="student">
-                <StudentLayout /> 
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<StudentDashboard />} />
-            <Route path="upload" element={<UploadForm />} />
-            <Route path="my-papers" element={<MyPapers />} />
-            <Route path="my-papers/:paperId/edit" element={<UploadForm />} />
-            <Route path="access" element={<MyAccess />} />
-            <Route path="paper/:paperId" element={<PaperDetail />} />
-            <Route path="feed" element={<Feed />} />
-            <Route path="groups" element={<Groups />} />
-            <Route path="groups/:groupId" element={<GroupDetail />} />
-            <Route path="notifications" element={<ActivityHistory />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="forum" element={<Navigate to="/student/feed" replace />} />
-            <Route path="history" element={<Navigate to="/student/notifications" replace />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
+        <Route
+          path="/student"
+          element={
+            <ProtectedRoute allowedRole="student">
+              <StudentLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<StudentDashboard />} />
+          <Route path="upload" element={<UploadForm />} />
+          <Route path="my-papers" element={<MyPapers />} />
+          <Route path="my-papers/:paperId/edit" element={<UploadForm />} />
+          <Route path="access" element={<MyAccess />} />
+          <Route path="paper/:paperId" element={<PaperDetail />} />
+          <Route path="feed" element={<Feed />} />
+          <Route path="groups" element={<Groups />} />
+          <Route path="groups/:groupId" element={<GroupDetail />} />
+          <Route path="notifications" element={<ActivityHistory />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="forum" element={<Navigate to="/student/feed" replace />} />
+          <Route path="history" element={<Navigate to="/student/notifications" replace />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
 
-          <Route path="/faculty/*" element={<Navigate to="/adviser/dashboard" replace />} />
-          <Route path="/coordinator/*" element={<Navigate to="/adviser/dashboard" replace />} />
+        <Route path="/faculty/*" element={<Navigate to="/adviser/dashboard" replace />} />
+        <Route path="/coordinator/*" element={<Navigate to="/adviser/dashboard" replace />} />
 
-          <Route
-            path="/adviser"
-            element={
-              <ProtectedRoute allowedRole="adviser">
-                <AdviserLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/adviser/dashboard" replace />} />
-            <Route path="dashboard" element={<AdviserDashboard />} />
-            <Route path="groups" element={<AdviserGroups />} />
-            <Route path="groups/:groupId" element={<AdviserGroupDetail />} />
-            <Route path="reviews" element={<AdviserSubmissions />} />
-            <Route path="reviews/:id" element={<AdviserReview />} />
-            <Route path="inbox" element={<AdviserInbox />} />
-            <Route path="moderation" element={<AdviserModeration />} />
-            <Route path="panelists" element={<AdviserPanelists />} />
-            <Route path="analytics" element={<AdviserAnalytics />} />
-            <Route path="reports" element={<AdviserReports />} />
-            <Route path="notifications" element={<ActivityHistory />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="submissions" element={<Navigate to="/adviser/reviews" replace />} />
-            <Route path="assignments/*" element={<Navigate to="/adviser/groups" replace />} />
-            <Route path="faculty-assignment" element={<Navigate to="/adviser/groups" replace />} />
-            <Route path="*" element={<Navigate to="/adviser/dashboard" replace />} />
-          </Route>
+        <Route
+          path="/adviser"
+          element={
+            <ProtectedRoute allowedRole="adviser">
+              <AdviserLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/adviser/dashboard" replace />} />
+          <Route path="dashboard" element={<AdviserDashboard />} />
+          <Route path="groups" element={<AdviserGroups />} />
+          <Route path="groups/:groupId" element={<AdviserGroupDetail />} />
+          <Route path="reviews" element={<AdviserSubmissions />} />
+          <Route path="reviews/:id" element={<AdviserReview />} />
+          <Route path="inbox" element={<AdviserInbox />} />
+          <Route path="moderation" element={<AdviserModeration />} />
+          <Route path="panelists" element={<AdviserPanelists />} />
+          <Route path="analytics" element={<AdviserAnalytics />} />
+          <Route path="reports" element={<AdviserReports />} />
+          <Route path="notifications" element={<ActivityHistory />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="submissions" element={<Navigate to="/adviser/reviews" replace />} />
+          <Route path="assignments/*" element={<Navigate to="/adviser/groups" replace />} />
+          <Route path="faculty-assignment" element={<Navigate to="/adviser/groups" replace />} />
+          <Route path="*" element={<Navigate to="/adviser/dashboard" replace />} />
+        </Route>
 
           <Route
             path="/panelist"
@@ -153,46 +152,47 @@ function App() {
             <Route path="groups" element={<PanelistGroups />} />
             <Route path="groups/:groupId" element={<PanelistGroupDetail />} />
             <Route path="posts/:postId" element={<PanelistPostDetail />} />
+            <Route path="papers" element={<PanelistPapers />} />
+            <Route path="forum" element={<PanelistFeed />} />
             <Route path="notifications" element={<ActivityHistory />} />
             <Route path="profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/panelist/dashboard" replace />} />
           </Route>
 
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRole={['sysadmin']}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="users" element={<ManageUsers />} />
-            <Route path="users/:userId" element={<AdminUserDetail />} />
-            <Route path="roles" element={<AdminRoles />} />
-            <Route path="groups" element={<AdminGroups />} />
-            <Route path="groups/:groupId" element={<AdminGroupDetail />} />
-            <Route path="posts" element={<AdminPosts />} />
-            <Route path="moderation" element={<AdminModeration />} />
-            <Route path="access-requests" element={<AdminAccessRequests />} />
-            <Route path="audit" element={<AuditTrail />} />
-            <Route path="storage" element={<ManageStorage />} />
-            <Route path="reports" element={<AdminReports />} />
-            <Route path="analytics" element={<AdminAnalytics />} />
-            <Route path="notifications" element={<AdminAnnouncements />} />
-            <Route path="settings" element={<AdminSettings />} />
-            <Route path="profile" element={<AdminProfile />} />
-            <Route path="manageUsers" element={<Navigate to="/admin/users" replace />} />
-            <Route path="auditTrail" element={<Navigate to="/admin/audit" replace />} />
-            <Route path="manageStorage" element={<Navigate to="/admin/storage" replace />} />
-            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
-          </Route>
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-        <SessionExpiredModal />
-      </AuthProvider>
-    </BrowserRouter>
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRole={['sysadmin']}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="users" element={<ManageUsers />} />
+          <Route path="users/:userId" element={<AdminUserDetail />} />
+          <Route path="roles" element={<AdminRoles />} />
+          <Route path="groups" element={<AdminGroups />} />
+          <Route path="groups/:groupId" element={<AdminGroupDetail />} />
+          <Route path="posts" element={<AdminPosts />} />
+          <Route path="moderation" element={<AdminModeration />} />
+          <Route path="access-requests" element={<AdminAccessRequests />} />
+          <Route path="audit" element={<AuditTrail />} />
+          <Route path="storage" element={<ManageStorage />} />
+          <Route path="reports" element={<AdminReports />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
+          <Route path="notifications" element={<AdminAnnouncements />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route path="profile" element={<AdminProfile />} />
+          <Route path="manageUsers" element={<Navigate to="/admin/users" replace />} />
+          <Route path="auditTrail" element={<Navigate to="/admin/audit" replace />} />
+          <Route path="manageStorage" element={<Navigate to="/admin/storage" replace />} />
+          <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+        </Route>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+      <SessionExpiredModal />
+    </AuthProvider>
   )
 }
 

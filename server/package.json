@@ -7,7 +7,9 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "db:check": "node scripts/db-check.js",
-    "db:setup": "node scripts/db-setup.js"
+    "db:setup": "node scripts/db-setup.js",
+    "db:migrate": "node scripts/migrate_student_backend.js",
+    "db:migrate:adviser": "node scripts/migrate_adviser_backend.js"
   },
   "keywords": [],
   "author": "",

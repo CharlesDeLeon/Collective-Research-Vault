@@ -21,6 +21,11 @@ const normalizePost = (row, liked = false) => ({
   likes: row.likes_count,
   liked,
   reported: row.reported,
+  reportedBy: row.reported_by,
+  reporterName: row.reporter_name,
+  reporterEmail: row.reporter_email,
+  reportReason: row.report_reason,
+  reportedAt: row.reported_at,
   hidden: row.hidden,
   removed: row.removed,
   comments: [],
@@ -48,10 +53,12 @@ const listPosts = async (req, res) => {
 
     let sql = `
       SELECT fp.*, u.name AS author_name, u.role AS author_role,
-             rg.group_name, rg.adviser_id, rg.created_by AS group_created_by
+             rg.group_name, rg.adviser_id, rg.created_by AS group_created_by,
+             ru.name AS reporter_name, ru.email AS reporter_email
       FROM forum_posts fp
       JOIN users u ON u.user_id = fp.author_id
       LEFT JOIN research_groups rg ON rg.group_id = fp.group_id
+      LEFT JOIN users ru ON ru.user_id = fp.reported_by
       WHERE fp.removed = FALSE
     `
     const params = []
@@ -99,7 +106,21 @@ const listPosts = async (req, res) => {
 
     const posts = rows.map(r => ({ ...normalizePost(r, likedSet.has(r.post_id)), commentCount: countMap[r.post_id] || 0 }))
 
-    res.json({ data: posts })
+    // Total count (same filters, without pagination)
+    let countSql = `SELECT COUNT(*)::int AS total FROM forum_posts fp LEFT JOIN research_groups rg ON rg.group_id = fp.group_id WHERE fp.removed = FALSE`
+    const countParams = []
+    if (role === 'adviser') { countSql += ` AND (rg.adviser_id = ? OR rg.created_by = ? OR rg.group_id IS NULL)`; countParams.push(userId, userId) }
+    if (groupId) { countSql += ` AND fp.group_id = ?`; countParams.push(groupId) }
+    if (reported === 'true') { countSql += ` AND fp.reported = TRUE` }
+    if (strand) { countSql += ` AND fp.strand = ?`; countParams.push(strand) }
+    if (section) { countSql += ` AND fp.section = ?`; countParams.push(section) }
+    if (yearLevel) { countSql += ` AND fp.year_level = ?`; countParams.push(yearLevel) }
+    if (schoolYear) { countSql += ` AND fp.school_year = ?`; countParams.push(schoolYear) }
+    if (status) { countSql += ` AND fp.status = ?`; countParams.push(status) }
+    if (search) { countSql += ` AND (fp.body ILIKE ? OR fp.title ILIKE ? OR fp.paper_title ILIKE ?)`; const t = `%${search}%`; countParams.push(t, t, t) }
+    const [[{ total }]] = await query(countSql, countParams)
+
+    res.json({ data: posts, total, pagination: { total, page: Number(page), limit: Number(limit) } })
   } catch (err) {
     console.error('listPosts error:', err)
     res.status(500).json({ message: 'Failed to fetch posts' })
@@ -263,11 +284,45 @@ const toggleLike = async (req, res) => {
 const reportPost = async (req, res) => {
   try {
     const { id } = req.params
-    await query('UPDATE forum_posts SET reported = TRUE WHERE post_id = ?', [id])
+    const { reason } = req.body || {}
+    const userId = req.user.user_id
+    await query(
+      `UPDATE forum_posts SET reported = TRUE, reported_by = ?, report_reason = ?, reported_at = NOW() WHERE post_id = ?`,
+      [userId, reason || null, id]
+    )
     res.json({ message: 'Reported' })
   } catch (err) {
     console.error('reportPost error:', err)
     res.status(500).json({ message: 'Failed to report post' })
+  }
+}
+
+// POST /api/forum/posts/:id/restore (adviser/admin)
+const restorePost = async (req, res) => {
+  try {
+    const { id } = req.params
+    await query('UPDATE forum_posts SET removed = FALSE WHERE post_id = ?', [id])
+    try { if (req.audit) await req.audit.log({ action: 'RESTORE_POST', target_type: 'forum_post', target_id: Number(id) }) } catch (e) { console.error(e) }
+    res.json({ message: 'Post restored' })
+  } catch (err) {
+    console.error('restorePost error:', err)
+    res.status(500).json({ message: 'Failed to restore post' })
+  }
+}
+
+// POST /api/forum/posts/:id/dismiss-report (adviser/admin)
+const dismissReport = async (req, res) => {
+  try {
+    const { id } = req.params
+    await query(
+      `UPDATE forum_posts SET reported = FALSE, reported_by = NULL, report_reason = NULL, reported_at = NULL WHERE post_id = ?`,
+      [id]
+    )
+    try { if (req.audit) await req.audit.log({ action: 'DISMISS_REPORT', target_type: 'forum_post', target_id: Number(id) }) } catch (e) { console.error(e) }
+    res.json({ message: 'Report dismissed' })
+  } catch (err) {
+    console.error('dismissReport error:', err)
+    res.status(500).json({ message: 'Failed to dismiss report' })
   }
 }
 
@@ -277,6 +332,7 @@ const hidePost = async (req, res) => {
     const { id } = req.params
     const { hidden } = req.body
     await query('UPDATE forum_posts SET hidden = ? WHERE post_id = ?', [hidden !== false, id])
+    try { if (req.audit) await req.audit.log({ action: 'HIDE_POST', target_type: 'forum_post', target_id: Number(id), changes: { hidden: hidden !== false } }) } catch (e) { console.error(e) }
     res.json({ message: 'Updated' })
   } catch (err) {
     console.error('hidePost error:', err)
@@ -289,6 +345,7 @@ const removePost = async (req, res) => {
   try {
     const { id } = req.params
     await query('UPDATE forum_posts SET removed = TRUE WHERE post_id = ?', [id])
+    try { if (req.audit) await req.audit.log({ action: 'REMOVE_POST', target_type: 'forum_post', target_id: Number(id) }) } catch (e) { console.error(e) }
     res.json({ message: 'Removed' })
   } catch (err) {
     console.error('removePost error:', err)
@@ -397,6 +454,6 @@ const reportComment = async (req, res) => {
 
 module.exports = {
   listPosts, createPost, getPost, updatePost, deletePost,
-  toggleLike, reportPost, hidePost, removePost,
+  toggleLike, reportPost, hidePost, removePost, restorePost, dismissReport,
   listComments, addComment, updateComment, deleteComment, reportComment,
 }
