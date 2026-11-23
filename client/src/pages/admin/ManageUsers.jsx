@@ -19,8 +19,10 @@ import Select, { Option } from '../../components/ui/Select'
 import ConfirmModal from '../../components/ui/ConfirmModal'
 import UserFormModal from '../../components/admin/UserFormModal'
 import ChangeRoleModal from '../../components/admin/ChangeRoleModal'
+import ResetPasswordModal from '../../components/admin/ResetPasswordModal'
 import { Avatar, RoleBadge, StatusBadge } from '../../components/admin/UserBits'
 import { ROLE_OPTIONS, ROLE_LABELS, canonicalRole } from '../../utils/adminRoles'
+import { backendSupport, unsupportedNote } from '../../services/backendSupport'
 
 const PAGE_SIZE = 20
 
@@ -31,14 +33,22 @@ const shortDate = (value) => {
 
 const isActive = (u) => (u.status ? u.status === 'active' : Boolean(u.is_active))
 
+const groupLabel = (u) => {
+  const groups = u.groups ?? []
+  if (groups.length === 0) return '—'
+  const names = groups.map((g) => g.group_name ?? g.name).filter(Boolean)
+  return names.length > 0 ? names.join(', ') : `${groups.length} group${groups.length === 1 ? '' : 's'}`
+}
+
 const smallBtn =
   'rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40'
 const ghostBtn = `${smallBtn} border-white/15 text-white/75 enabled:hover:bg-white/10 enabled:hover:text-white`
 const dangerBtn = `${smallBtn} border-danger/50 text-danger-ink enabled:hover:bg-danger/15`
 
-function RowActions({ user, isSelf, onEdit, onRole, onToggle }) {
+function RowActions({ user, isSelf, onEdit, onRole, onToggle, onReset }) {
   const active = isActive(user)
   const selfHint = isSelf ? 'You cannot change your own access.' : undefined
+  const resetHint = !backendSupport.adminResetPassword ? unsupportedNote.adminResetPassword : selfHint
   return (
     <div className="flex flex-wrap gap-2 md:flex-nowrap">
       <Link to={`/admin/users/${user.user_id}`} className={ghostBtn}>
@@ -49,6 +59,15 @@ function RowActions({ user, isSelf, onEdit, onRole, onToggle }) {
       </button>
       <button type="button" onClick={() => onRole(user)} disabled={isSelf} title={selfHint} className={ghostBtn}>
         Change role
+      </button>
+      <button
+        type="button"
+        onClick={() => onReset(user)}
+        disabled={!backendSupport.adminResetPassword || isSelf}
+        title={resetHint}
+        className={ghostBtn}
+      >
+        Reset password
       </button>
       {active ? (
         <button type="button" onClick={() => onToggle(user)} disabled={isSelf} title={selfHint} className={dangerBtn}>
@@ -77,14 +96,16 @@ export default function ManageUsers() {
   const [search, setSearch] = useState('')
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
+  const [group, setGroup] = useState('')
   const [form, setForm] = useState(null)
   const [roleTarget, setRoleTarget] = useState(null)
   const [toggleTarget, setToggleTarget] = useState(null)
+  const [resetTarget, setResetTarget] = useState(null)
   const requestId = useRef(0)
 
   const debouncedSearch = useDebouncedValue(search.trim())
   const myId = me?.user_id ?? me?.id
-  const hasFilters = Boolean(search || role || status)
+  const hasFilters = Boolean(search || role || status || group)
 
   const loadStats = useCallback(async () => {
     try {
@@ -105,6 +126,7 @@ export default function ManageUsers() {
         search: debouncedSearch || undefined,
         role: role || undefined,
         status: status || undefined,
+        groupId: group || undefined,
       })
       if (id !== requestId.current) return
       setUsers(result.data)
@@ -115,7 +137,7 @@ export default function ManageUsers() {
     } finally {
       if (id === requestId.current) setLoading(false)
     }
-  }, [page, debouncedSearch, role, status])
+  }, [page, debouncedSearch, role, status, group])
 
   useEffect(() => {
     load()
@@ -141,6 +163,7 @@ export default function ManageUsers() {
     setSearch('')
     setRole('')
     setStatus('')
+    setGroup('')
     setPage(1)
   }
 
@@ -203,7 +226,12 @@ export default function ManageUsers() {
 
   const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
   const to = Math.min(page * PAGE_SIZE, total)
-  const actions = { onEdit: (u) => setForm({ user: u }), onRole: setRoleTarget, onToggle: setToggleTarget }
+  const actions = {
+    onEdit: (u) => setForm({ user: u }),
+    onRole: setRoleTarget,
+    onToggle: setToggleTarget,
+    onReset: setResetTarget,
+  }
 
   return (
     <div className="space-y-6 font-display">
@@ -234,7 +262,7 @@ export default function ManageUsers() {
       )}
 
       <section className={`${glass} p-4 sm:p-5`}>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_14rem_12rem_auto]">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_14rem_12rem_12rem_auto]">
           <label className="relative block sm:col-span-2 xl:col-span-1">
             <span className="sr-only">Search users</span>
             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/50" />
@@ -282,6 +310,21 @@ export default function ManageUsers() {
               <Option value="inactive">Inactive</Option>
             </Select>
           </div>
+          <div className="-mt-1">
+            <Select
+              value={group}
+              onChange={(e) => {
+                setGroup(e.target.value)
+                setPage(1)
+              }}
+              aria-label="Filter by group"
+              disabled={!backendSupport.adminUserGroups}
+              className="border-white/20"
+            >
+              <Option value="">All groups</Option>
+            </Select>
+            {!backendSupport.adminUserGroups && <p className="mt-1 text-xs text-white/45">{unsupportedNote.adminUserGroups}</p>}
+          </div>
           <button type="button" onClick={clearFilters} disabled={!hasFilters} className={`${ghostBtn} h-11 px-4 text-sm`}>
             Clear filters
           </button>
@@ -318,14 +361,16 @@ export default function ManageUsers() {
       ) : (users.length === 0 ? null : (
         <>
           <div className={`${glass} hidden overflow-x-auto md:block ${loading ? 'opacity-60' : ''}`}>
-            <table className="w-full min-w-[44rem] text-left text-sm">
+            <table className="w-full min-w-[60rem] text-left text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-white/55">
                   <th scope="col" className="px-5 py-3 font-semibold">User</th>
                   <th scope="col" className="px-5 py-3 font-semibold">Role</th>
                   <th scope="col" className="px-5 py-3 font-semibold">Status</th>
+                  {backendSupport.adminUserGroups && <th scope="col" className="px-5 py-3 font-semibold">Groups</th>}
                   <th scope="col" className="px-5 py-3 font-semibold">Program</th>
                   <th scope="col" className="px-5 py-3 font-semibold">Joined</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">Last sign-in</th>
                   <th scope="col" className="px-5 py-3 font-semibold">Actions</th>
                 </tr>
               </thead>
@@ -343,8 +388,16 @@ export default function ManageUsers() {
                     </td>
                     <td className="px-5 py-3"><RoleBadge role={u.role} /></td>
                     <td className="px-5 py-3"><StatusBadge active={isActive(u)} /></td>
+                    {backendSupport.adminUserGroups && (
+                      <td className="px-5 py-3 text-white/75">
+                        <span className="block max-w-[12rem] truncate" title={groupLabel(u)}>{groupLabel(u)}</span>
+                      </td>
+                    )}
                     <td className="px-5 py-3 text-white/75">{u.program || '—'}</td>
                     <td className="whitespace-nowrap px-5 py-3 text-white/75">{shortDate(u.created_at) || '—'}</td>
+                    <td className="whitespace-nowrap px-5 py-3 text-white/75">
+                      {backendSupport.adminLastLogin ? shortDate(u.last_login_at ?? u.last_login) || '—' : '—'}
+                    </td>
                     <td className="px-5 py-3">
                       <RowActions user={u} isSelf={u.user_id === myId} {...actions} />
                     </td>
@@ -367,8 +420,12 @@ export default function ManageUsers() {
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-white/60">
                   <RoleBadge role={u.role} />
+                  {backendSupport.adminUserGroups && <span>{groupLabel(u)}</span>}
                   {u.program && <span>{u.program}</span>}
                   {u.created_at && <span>Joined {shortDate(u.created_at)}</span>}
+                  {backendSupport.adminLastLogin && (u.last_login_at ?? u.last_login) && (
+                    <span>Last sign-in {shortDate(u.last_login_at ?? u.last_login)}</span>
+                  )}
                 </div>
                 <div className="mt-4">
                   <RowActions user={u} isSelf={u.user_id === myId} {...actions} />
@@ -396,6 +453,7 @@ export default function ManageUsers() {
 
       {form && <UserFormModal user={form.user} onSubmit={submitForm} onClose={() => setForm(null)} />}
       {roleTarget && <ChangeRoleModal user={roleTarget} onSubmit={submitRole} onClose={() => setRoleTarget(null)} />}
+      {resetTarget && <ResetPasswordModal user={resetTarget} onClose={() => setResetTarget(null)} onDone={refresh} />}
       {toggleTarget && (
         <ConfirmModal
           title={isActive(toggleTarget) ? 'Deactivate user' : 'Reactivate user'}

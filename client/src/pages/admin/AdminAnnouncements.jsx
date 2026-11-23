@@ -29,9 +29,9 @@ export default function AdminAnnouncements() {
   const [confirming, setConfirming] = useState(false)
 
   const load = useCallback(async () => {
-    setLoading(true)
+    const next = await loadInsights()
     setError('')
-    setInsights(await loadInsights())
+    setInsights(next)
     if (backendSupport.adminAnnouncements) {
       try {
         setHistory(await listAnnouncements())
@@ -43,7 +43,7 @@ export default function AdminAnnouncements() {
   }, [])
 
   useEffect(() => {
-    load()
+    Promise.resolve().then(() => load())
   }, [load])
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))

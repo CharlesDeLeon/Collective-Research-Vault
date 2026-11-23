@@ -3,7 +3,7 @@ import { glass } from '../../components/dashboard/constants'
 import Select, { Option } from '../../components/ui/Select'
 import StatTile from '../../components/ui/StatTile'
 import ErrorBanner from '../../components/ui/ErrorBanner'
-import { BarList, ColumnChart } from '../../components/admin/Charts'
+import { BarList, ColumnChart } from '../../components/admin/charts'
 import { loadInsights, POST_LIMIT } from '../../services/adminInsights'
 import { backendSupport, unsupportedNote } from '../../services/backendSupport'
 import { downloadCsv } from '../../utils/downloadCsv'
@@ -87,21 +87,23 @@ export default function AdminAnalytics() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [range, setRange] = useState('30')
+  const [loadedAt, setLoadedAt] = useState(0)
 
   const load = useCallback(async () => {
-    setLoading(true)
-    setData(await loadInsights())
+    const next = await loadInsights()
+    setLoadedAt(Date.now())
+    setData(next)
     setLoading(false)
   }, [])
 
   useEffect(() => {
-    load()
+    Promise.resolve().then(() => load())
   }, [load])
 
   const view = useMemo(() => {
     if (!data) return null
     const allPosts = data.posts ?? []
-    const cutoff = range === 'all' ? 0 : Date.now() - Number(range) * DAY
+    const cutoff = range === 'all' ? 0 : loadedAt - Number(range) * DAY
     const posts = allPosts.filter((p) => new Date(p.createdAt).getTime() >= cutoff)
     const roles = (data.roles ?? []).map((r) => ({ label: roleLabel(r.role), value: Number(r.count) }))
     const access = Object.entries(data.access ?? {}).map(([label, value]) => ({ label, value: Number(value) }))
@@ -118,7 +120,7 @@ export default function AdminAnalytics() {
       byStrand: tally(data.groups ?? [], (g) => g.strand || g.program),
       capped: allPosts.length >= POST_LIMIT,
     }
-  }, [data, range])
+  }, [data, range, loadedAt])
 
   const rangeLabel = RANGES.find((r) => r.value === range)?.label ?? ''
 

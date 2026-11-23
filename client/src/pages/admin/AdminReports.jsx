@@ -61,13 +61,12 @@ export default function AdminReports() {
   const [filters, setFilters] = useState(EMPTY)
 
   const load = useCallback(async () => {
-    setLoading(true)
     setData(await loadInsights())
     setLoading(false)
   }, [])
 
   useEffect(() => {
-    load()
+    Promise.resolve().then(() => load())
   }, [load])
 
   const groups = useMemo(() => data?.groups ?? [], [data])

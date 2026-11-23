@@ -20,6 +20,11 @@ export function PostFlags({ post }) {
           Hidden
         </span>
       )}
+      {post.removed && (
+        <span className="rounded-full border border-danger/40 bg-danger/10 px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide text-danger-ink">
+          Removed
+        </span>
+      )}
     </>
   )
 }
