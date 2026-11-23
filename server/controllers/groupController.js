@@ -20,6 +20,9 @@ const listGroups = async (req, res) => {
     } else if (role === 'adviser') {
       sql += ` WHERE rg.adviser_id = ? OR rg.created_by = ?`
       params.push(userId, userId)
+    } else if (role === 'external_panelist') {
+      sql += ` WHERE rg.group_id IN (SELECT group_id FROM panel_assignments WHERE faculty_id = ?)`
+      params.push(userId)
     }
 
     sql += ` ORDER BY rg.group_name ASC`
@@ -36,6 +39,13 @@ const isGroupOwner = async (groupId, userId, role) => {
   if (role === 'student') {
     const [rows] = await query(
       `SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?`,
+      [groupId, userId]
+    )
+    return rows.length > 0
+  }
+  if (role === 'external_panelist') {
+    const [rows] = await query(
+      `SELECT 1 FROM panel_assignments WHERE group_id = ? AND faculty_id = ?`,
       [groupId, userId]
     )
     return rows.length > 0
