@@ -60,6 +60,14 @@ app.use('/api/notifications', require('./routes/notification.routes'))
 app.use('/api/panelist', require('./routes/panelist.routes'))
 app.use('/api/invites', require('./routes/invite.routes'))
 
+// Central error handler (multer errors, thrown errors) -> JSON
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err)
+  console.error(err)
+  const status = err.status || (err.name === 'MulterError' ? 400 : 500)
+  res.status(status).json({ message: err.message || 'Server error' })
+})
+
 app.get('/api', (req, res ) => {
     res.json({ message: 'CORE V API is running' })
 })

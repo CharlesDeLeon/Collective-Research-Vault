@@ -451,6 +451,13 @@ const updateStage = async (req, res) => {
       [stage, id]
     )
 
+    // Write status history
+    await db.query(
+      `INSERT INTO submission_status_history (submission_id, status, note, changed_by)
+       VALUES (?, 'submitted', ?, ?)`,
+      [id, `Advanced to ${stage.replace('_', ' ')} stage`, req.user.user_id]
+    )
+
     const [members] = await db.query(
       `SELECT user_id FROM group_members WHERE group_id = ?`, [submission.group_id]
     )
@@ -583,8 +590,11 @@ const uploadSubmissionFile = async (req, res) => {
   }
 
   try {
-    const [subs] = await db.query('SELECT submission_id FROM submissions WHERE submission_id = ?', [id])
+    const [subs] = await db.query('SELECT submission_id, status FROM submissions WHERE submission_id = ?', [id])
     if (!subs.length) return res.status(404).json({ message: 'Submission not found' })
+    if (subs[0].status === 'published') {
+      return res.status(409).json({ message: 'You cannot upload files to a published paper.' })
+    }
 
     const [versionRows] = await db.query(
       'SELECT COALESCE(MAX(version_number), 0) AS latest_version FROM document_versions WHERE submission_id = ?',
@@ -627,7 +637,7 @@ const publishSubmission = async (req, res) => {
       return res.status(400).json({ message: 'Upload at least one file before publishing' })
     }
 
-    if (sub.consent_status !== 'granted' && !sub.author_consent_at) {
+    if (sub.consent_status !== 'granted') {
       return res.status(409).json({ message: 'Author consent is required before publishing' })
     }
 
@@ -864,6 +874,6 @@ module.exports = {
   getSubmissions, getSubmissionById,
   updateStage, updateStatus,
   getDashboardStats,
-  uploadSubmissionFile, publishSubmission, unpublishSubmission, setConsent, setFeatured,
+  uploadSubmissionFile, publishSubmission, unpublishSubmission, setFeatured,
   getReports, getAnalytics,
 }

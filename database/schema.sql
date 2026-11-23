@@ -155,6 +155,8 @@ CREATE TABLE panelist_invitations (
 CREATE INDEX idx_panelist_invitations_email ON panelist_invitations(email);
 CREATE INDEX idx_panelist_invitations_expires ON panelist_invitations(expires_at);
 
+ALTER TABLE panelist_invitations ENABLE ROW LEVEL SECURITY;
+
 -- ============================================================
 -- reviews
 -- ============================================================
@@ -171,6 +173,8 @@ CREATE TABLE submission_status_history (
 );
 
 CREATE INDEX idx_status_history_submission ON submission_status_history(submission_id);
+
+ALTER TABLE submission_status_history ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE reviews (
   review_id       SERIAL PRIMARY KEY,

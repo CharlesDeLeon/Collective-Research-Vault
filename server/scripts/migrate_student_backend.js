@@ -31,6 +31,7 @@ async function run() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`)
   await query(`CREATE INDEX IF NOT EXISTS idx_status_history_submission ON submission_status_history(submission_id)`)
+  await query(`ALTER TABLE submission_status_history ENABLE ROW LEVEL SECURITY`)
 
   // Backfill consent
   await query(`UPDATE submissions

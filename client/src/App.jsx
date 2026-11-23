@@ -91,7 +91,7 @@ function App() {
           path="/student"
           element={
             <ProtectedRoute allowedRole="student">
-              <StudentLayout /> 
+              <StudentLayout />
             </ProtectedRoute>
           }
         >
