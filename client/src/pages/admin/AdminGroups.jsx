@@ -189,8 +189,8 @@ export default function AdminGroups() {
             {visible.map((g) => (
               <li key={g.group_id}>
                 <Link to={`/admin/groups/${g.group_id}`} className={`${glass} block p-4 transition hover:bg-white/5`}>
-                  <p className="font-semibold">{g.group_name}</p>
-                  <p className="mt-0.5 text-xs text-white/55">
+                  <p className="truncate font-semibold">{g.group_name}</p>
+                  <p className="mt-0.5 truncate text-xs text-white/55">
                     {[g.strand, g.section, g.year_level && `Grade ${g.year_level}`, g.school_year].filter(Boolean).join(' · ') || '—'}
                   </p>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-white/60">

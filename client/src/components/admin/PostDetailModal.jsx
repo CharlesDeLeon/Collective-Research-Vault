@@ -68,7 +68,7 @@ export default function PostDetailModal({ post, onAction, onClose }) {
       <div className="mt-4 space-y-5 px-1 pb-1">
         <PostSummary post={current} lines={12} />
 
-        {meta.length > 0 && <p className="text-xs text-white/55">{meta.join(' · ')}</p>}
+        {meta.length > 0 && <p className="truncate text-xs text-white/55">{meta.join(' · ')}</p>}
 
         {current.mediaUrl && (
           <a
@@ -92,9 +92,9 @@ export default function PostDetailModal({ post, onAction, onClose }) {
             <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-gold">Report</h3>
             {backendSupport.adminModerationReason ? (
               <div className="space-y-1 rounded-xl border border-warn/30 bg-warn/5 px-3 py-2 text-xs text-white/80">
-                <p><span className="text-white/55">Reason:</span> {reason || '—'}</p>
-                <p><span className="text-white/55">Reporter:</span> {reporter || '—'}</p>
-                {reporterEmail && <p><span className="text-white/55">Email:</span> {reporterEmail}</p>}
+                <p className="truncate"><span className="text-white/55">Reason:</span> {reason || '—'}</p>
+                <p className="truncate"><span className="text-white/55">Reporter:</span> {reporter || '—'}</p>
+                {reporterEmail && <p className="truncate"><span className="text-white/55">Email:</span> {reporterEmail}</p>}
               </div>
             ) : (
               <p className="text-xs text-white/45">{unsupportedNote.adminModerationReason}</p>
@@ -115,7 +115,7 @@ export default function PostDetailModal({ post, onAction, onClose }) {
               {comments.map((c) => (
                 <li key={c.id} className="rounded-xl border border-white/10 bg-white/5 p-3">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="font-semibold">{c.authorName}</span>
+                    <span className="truncate font-semibold">{c.authorName}</span>
                     <RoleBadge role={badgeRole(c.authorRole)} />
                     <span className="text-white/45">{timeAgo(c.createdAt)}</span>
                     {c.reported && <span className="text-warn-ink">Reported</span>}

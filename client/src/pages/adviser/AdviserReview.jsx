@@ -55,7 +55,7 @@ const goldBtn =
   'h-11 w-full rounded-xl bg-linear-to-br/srgb from-gold to-gold-soft text-sm font-semibold text-ink transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60'
 
 function Note({ children }) {
-  return <p className="m-0 text-xs text-white/60">{children}</p>
+  return <p className="m-0 wrap-break-word text-xs text-white/60">{children}</p>
 }
 
 function UnpublishModal({ title, busy, error, onConfirm, onClose }) {
@@ -65,7 +65,7 @@ function UnpublishModal({ title, busy, error, onConfirm, onClose }) {
   return (
     <ModalShell title="Unpublish paper" icon={AlertIcon} onClose={onClose}>
       <p className="mt-4 px-1 text-sm leading-relaxed text-white/75">
-        <span className="font-medium text-white">{title}</span> will be removed from the public gallery.
+        <span className="wrap-break-word font-medium text-white">{title}</span> will be removed from the public gallery.
       </p>
       <label className="mt-4 block px-1">
         <span className="text-xs font-semibold text-white/70">Reason</span>
@@ -115,16 +115,16 @@ function PublishModal({ paper, citation, consentAt, busy, error, onConfirm, onCl
         This is what the public will see. The full paper stays behind the access-request flow.
       </p>
       <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-white/[0.04] p-4">
-        <p className="m-0 text-base font-semibold leading-snug">{paper.title}</p>
-        <p className="m-0 line-clamp-4 text-sm text-white/70">{paper.abstract || 'No abstract provided.'}</p>
-        <p className="m-0 text-xs text-white/60">
+        <p className="m-0 wrap-break-word text-base font-semibold leading-snug">{paper.title}</p>
+        <p className="m-0 line-clamp-4 wrap-break-word text-sm text-white/70">{paper.abstract || 'No abstract provided.'}</p>
+        <p className="m-0 wrap-break-word text-xs text-white/60">
           {[paper.authors, paper.strand || paper.program, paper.school_year].filter(Boolean).join(' · ')}
         </p>
         <div>
           <p className="m-0 text-xs font-semibold uppercase tracking-wide text-white/50">Citation (APA 7)</p>
-          <p className="m-0 mt-1 text-sm text-white/80">{citation}</p>
+          <p className="m-0 mt-1 wrap-break-word text-sm text-white/80">{citation}</p>
         </div>
-        <p className="m-0 text-xs text-white/60">
+        <p className="m-0 wrap-break-word text-xs text-white/60">
           {consentAt ? `Author consent recorded ${fullDate(consentAt)}.` : 'Author consent is required before publishing.'}
         </p>
       </div>
@@ -415,7 +415,7 @@ export default function AdviserReview() {
           <h1 className="m-0 min-w-0 wrap-break-word text-2xl font-bold tracking-tight sm:text-3xl">{paper.title}</h1>
           <StatusPill status={paper.status} />
         </div>
-        <p className="mb-0 mt-1 text-sm text-white/60">
+        <p className="mb-0 mt-1 wrap-break-word text-sm text-white/60">
           {[paper.submitted_by_name, paper.group_name, paper.program, paper.school_year].filter(Boolean).join(' · ')}
           {paper.updated_at && ` · Updated ${timeAgo(paper.updated_at)}`}
         </p>
@@ -431,14 +431,14 @@ export default function AdviserReview() {
         <div className="min-w-0 space-y-6">
           <div className={`${glass} p-5 sm:p-6`}>
             <h2 className="mb-3 mt-0 text-lg font-bold">Abstract</h2>
-            <p className="m-0 whitespace-pre-line text-sm leading-relaxed text-white/90">
+            <p className="m-0 wrap-break-word whitespace-pre-line text-sm leading-relaxed text-white/90">
               {paper.abstract || 'No abstract provided.'}
             </p>
             {!backendSupport.adviserAbstractEdit && <p className="mb-0 mt-3 text-xs text-white/50">{unsupportedNote.adviserAbstractEdit}</p>}
             {paper.keywords && (
               <div className="mt-4 flex flex-wrap gap-2 border-t border-white/10 pt-4">
                 {(Array.isArray(paper.keywords) ? paper.keywords : String(paper.keywords).split(/[,;]/)).map((k, i) => (
-                  <span key={i} className="rounded-full border border-gold/60 px-3 py-1 text-xs text-gold-light">
+                  <span key={i} className="max-w-full min-w-0 rounded-full border border-gold/60 px-3 py-1 text-xs text-gold-light wrap-break-word">
                     {k.trim()}
                   </span>
                 ))}
@@ -471,10 +471,10 @@ export default function AdviserReview() {
               {(paper.comments || []).map((c) => (
                 <li key={c.comment_id || c.id} className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold">{c.author_name || c.authorName}</span>
+                    <span className="min-w-0 truncate text-xs font-semibold">{c.author_name || c.authorName}</span>
                     <span className="text-[0.6875rem] text-white/50">{c.created_at ? timeAgo(c.created_at) : ''}</span>
                   </div>
-                  <p className="mb-0 mt-1 text-sm text-white/80">{c.comment_text || c.text}</p>
+                  <p className="mb-0 mt-1 wrap-break-word text-sm text-white/80">{c.comment_text || c.text}</p>
                 </li>
               ))}
               {!paper.comments?.length && <li className="text-sm text-white/50">No comments yet.</li>}
@@ -513,8 +513,8 @@ export default function AdviserReview() {
                       <StatusPill status={entry.status} />
                       <span className="text-xs text-white/45">{entry.at ? fullDate(entry.at) : ''}</span>
                     </div>
-                    {entry.note && <p className="mb-0 mt-2 text-sm text-white/70">{entry.note}</p>}
-                    {entry.by && <p className="mb-0 mt-1 text-xs text-white/45">By {entry.by}</p>}
+                    {entry.note && <p className="mb-0 mt-2 wrap-break-word text-sm text-white/70">{entry.note}</p>}
+                    {entry.by && <p className="mb-0 mt-1 wrap-break-word text-xs text-white/45">By {entry.by}</p>}
                   </li>
                 ))}
               </ul>

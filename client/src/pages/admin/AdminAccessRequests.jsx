@@ -229,7 +229,7 @@ export default function AdminAccessRequests() {
                   </span>
                   <span className="mt-2 block wrap-break-word text-sm text-white/80">{r.paper_title}</span>
                   <span className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-white/55">
-                    <span>{r.group_name || '—'}</span>
+                    <span className="truncate">{r.group_name || '—'}</span>
                     <span>{timeAgo(r.created_at)}</span>
                   </span>
                 </button>

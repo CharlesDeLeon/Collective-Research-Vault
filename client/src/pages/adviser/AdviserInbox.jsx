@@ -149,7 +149,7 @@ function RequestModal({ id, onChanged, onClose }) {
 
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wide text-gold">Purpose</h3>
-                <p className="mt-2 whitespace-pre-line text-sm text-white/80">{detail.purpose || '—'}</p>
+                <p className="mt-2 wrap-break-word whitespace-pre-line text-sm text-white/80">{detail.purpose || '—'}</p>
               </div>
 
               {actionError && <ErrorBanner message={actionError} />}
@@ -190,7 +190,7 @@ function RequestModal({ id, onChanged, onClose }) {
                 detail.decision_note && (
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-wide text-gold">Your note</h3>
-                    <p className="mt-2 text-sm text-white/80">{detail.decision_note}</p>
+                    <p className="mt-2 wrap-break-word text-sm text-white/80">{detail.decision_note}</p>
                   </div>
                 )
               )}
@@ -437,7 +437,7 @@ export default function AdviserInbox() {
                   <StatusChip status={r.status} />
                 </div>
                 <p className="mt-3 line-clamp-2 wrap-break-word text-sm">{r.paper_title}</p>
-                <p className="mt-1 text-xs text-white/55">{[r.group_name, when(r.created_at)].filter(Boolean).join(' · ')}</p>
+                <p className="mt-1 truncate text-xs text-white/55">{[r.group_name, when(r.created_at)].filter(Boolean).join(' · ')}</p>
                 <button type="button" onClick={() => setOpenId(r.request_id)} className={`${ghost} mt-3`}>
                   {r.status === 'pending' ? 'Review' : 'View'}
                 </button>

@@ -32,7 +32,7 @@ export default function RequestSubmitted() {
       <StatePanel title="Request sent" tone="success">
         <p className="m-0">Your request was sent to the paper’s adviser. Save this reference code to check its status.</p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <span className="rounded-xl border border-gold/50 bg-field/60 px-5 py-3 text-xl font-bold tracking-[0.08em] text-gold">
+          <span className="max-w-full min-w-0 rounded-xl border border-gold/50 bg-field/60 px-5 py-3 text-xl font-bold tracking-[0.08em] text-gold">
             {ref}
           </span>
           <button type="button" onClick={copy} className={outlineBtn}>

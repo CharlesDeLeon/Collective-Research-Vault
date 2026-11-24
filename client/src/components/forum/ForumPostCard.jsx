@@ -65,7 +65,7 @@ export default function ForumPostCard({ post, showGroup = true, paperHref, defau
             <span className="truncate text-sm font-semibold">{post.authorName}</span>
             <RoleBadge role={post.authorRole} />
           </div>
-          <p className="mt-0.5 text-xs text-white/45">
+          <p className="mt-0.5 truncate text-xs text-white/45">
             {timeAgo(post.createdAt)}
             {post.editedAt ? ' · edited' : ''}
             {showGroup && ` · ${post.groupName}`}
@@ -79,10 +79,10 @@ export default function ForumPostCard({ post, showGroup = true, paperHref, defau
           {TYPE_LABEL[post.type]}
         </span>
         {post.status && <StatusPill status={normalizeStatus(post.status)} />}
-        <span className="rounded-full bg-gold/10 px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide text-gold">
+        <span className="max-w-full min-w-0 rounded-full bg-gold/10 px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide text-gold">
           {post.strand}
         </span>
-        <span className="text-[0.6875rem] text-white/40">
+        <span className="truncate text-[0.6875rem] text-white/40">
           {post.section} · {post.schoolYear}
         </span>
       </div>

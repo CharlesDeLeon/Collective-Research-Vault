@@ -4,7 +4,7 @@ import ModalShell from './ModalShell'
 export default function ConfirmModal({ title, message, confirmLabel = 'Confirm', danger = false, onConfirm, onClose }) {
   return (
     <ModalShell title={title} icon={AlertIcon} onClose={onClose}>
-      <p className="mt-4 px-1 text-sm leading-relaxed text-white/75">{message}</p>
+      <p className="mt-4 wrap-break-word px-1 text-sm leading-relaxed text-white/75">{message}</p>
       <div className="mt-6 grid grid-cols-2 gap-3">
         <button
           type="button"

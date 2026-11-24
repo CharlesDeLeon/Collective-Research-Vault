@@ -22,16 +22,16 @@ export function GalleryCardBody({ paper, featured = false }) {
           <span aria-hidden="true">★</span> Featured
         </div>
       )}
-      <span className="self-start rounded-full bg-tag-bg px-3 py-1 font-semibold text-tag-fg tag-label">
+      <span className="self-start max-w-full min-w-0 rounded-full bg-tag-bg px-3 py-1 font-semibold text-tag-fg tag-label">
         {paper.strand} · {paper.schoolYear}
       </span>
-      <h3 className={`m-0 font-semibold leading-snug text-heading ${featured ? 'text-xl' : 'text-lg'}`}>{paper.title}</h3>
-      {!featured && <p className="m-0 text-[0.8125rem] text-fg-muted">{shortAuthors(paper.authors)}</p>}
+      <h3 className={`m-0 min-w-0 font-semibold leading-snug text-heading ${featured ? 'text-xl' : 'text-lg'}`}>{paper.title}</h3>
+      {!featured && <p className="m-0 truncate text-[0.8125rem] text-fg-muted">{shortAuthors(paper.authors)}</p>}
       <p className="m-0 line-clamp-3 text-sm leading-relaxed text-fg-soft">{paper.abstract}</p>
       {!featured && (
         <div className="flex flex-wrap gap-1.5">
           {paper.keywords.slice(0, 2).map((k) => (
-            <span key={k} className="rounded-full border border-keyword-line bg-keyword-bg px-2.5 py-0.5 text-xs text-keyword-fg">
+            <span key={k} className="max-w-full min-w-0 rounded-full border border-keyword-line bg-keyword-bg px-2.5 py-0.5 text-xs text-keyword-fg">
               {k}
             </span>
           ))}
@@ -39,7 +39,7 @@ export function GalleryCardBody({ paper, featured = false }) {
         </div>
       )}
       <p
-        className={`m-0 mt-auto text-[0.8125rem] text-fg-subtle ${featured ? '' : 'border-t border-line-soft pt-3'}`}
+        className={`m-0 mt-auto truncate text-[0.8125rem] text-fg-subtle ${featured ? '' : 'border-t border-line-soft pt-3'}`}
       >
         {featured ? `${shortAuthors(paper.authors)} · Published ${monthYear(paper.publishedAt)}` : `Published ${monthYear(paper.publishedAt)}`}
       </p>

@@ -333,7 +333,7 @@ export default function ManageUsers() {
 
       {error && (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger-ink">
-          <span>{error}</span>
+          <span className="min-w-0">{error}</span>
           <button type="button" onClick={load} className={dangerBtn}>
             Try again
           </button>
@@ -420,8 +420,8 @@ export default function ManageUsers() {
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-white/60">
                   <RoleBadge role={u.role} />
-                  {backendSupport.adminUserGroups && <span>{groupLabel(u)}</span>}
-                  {u.program && <span>{u.program}</span>}
+                  {backendSupport.adminUserGroups && <span className="truncate">{groupLabel(u)}</span>}
+                  {u.program && <span className="truncate">{u.program}</span>}
                   {u.created_at && <span>Joined {shortDate(u.created_at)}</span>}
                   {backendSupport.adminLastLogin && (u.last_login_at ?? u.last_login) && (
                     <span>Last sign-in {shortDate(u.last_login_at ?? u.last_login)}</span>

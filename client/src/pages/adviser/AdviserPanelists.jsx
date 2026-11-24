@@ -111,7 +111,7 @@ export default function AdviserPanelists() {
 
         {result && (
           <div className="space-y-3 rounded-xl border border-gold/30 bg-gold/5 p-4">
-            <p className="m-0 text-sm font-semibold text-gold">Invitation created for {result.email}</p>
+            <p className="m-0 wrap-break-word text-sm font-semibold text-gold">Invitation created for {result.email}</p>
             <p className="m-0 text-xs text-white/60">
               Share the link and temporary password with the panelist yourself. Email delivery is not confirmed automatically.
             </p>
@@ -145,8 +145,8 @@ export default function AdviserPanelists() {
             {invites.map((inv) => (
               <li key={inv.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold">{inv.name || inv.email}</p>
-                  <p className="text-xs text-white/55">{inv.email} · {inv.status}</p>
+                  <p className="truncate text-sm font-semibold">{inv.name || inv.email}</p>
+                  <p className="truncate text-xs text-white/55">{inv.email} · {inv.status}</p>
                 </div>
                 <div className="text-xs text-white/40">
                   {inv.acceptedAt ? `Accepted ${timeAgo(inv.acceptedAt)}` : `Expires ${new Date(inv.expiresAt).toLocaleDateString()}`}

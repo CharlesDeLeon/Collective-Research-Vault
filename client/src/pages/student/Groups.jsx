@@ -33,11 +33,11 @@ export default function Groups() {
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{g.strand}</span>
-                  <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{g.section}</span>
-                  <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{g.schoolYear}</span>
+                  <span className="max-w-full min-w-0 truncate rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{g.strand}</span>
+                  <span className="max-w-full min-w-0 truncate rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{g.section}</span>
+                  <span className="max-w-full min-w-0 truncate rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{g.schoolYear}</span>
                 </div>
-                <p className="text-sm text-white/60">Adviser: {g.adviser}</p>
+                <p className="truncate text-sm text-white/60">Adviser: {g.adviser}</p>
                 <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/10 pt-4">
                   <span className="flex -space-x-2">
                     {g.members.slice(0, 4).map((m) => (

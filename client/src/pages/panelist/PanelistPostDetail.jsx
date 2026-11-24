@@ -8,15 +8,14 @@ import ErrorBanner from '../../components/ui/ErrorBanner'
 export default function PanelistPostDetail() {
   const { postId } = useParams()
   const { posts, loading } = useForum()
-  const { groups: assigned, loading: assignedLoading, error: assignedError, reload: reloadAssigned } = useAssignedGroups()
+  const { loading: assignedLoading, error: assignedError, reload: reloadAssigned } = useAssignedGroups()
   const post = (posts ?? []).find((p) => String(p.id) === String(postId))
-  const allowed = true
   const backTo = post?.groupId ? `/panelist/groups/${post.groupId}` : '/panelist/groups'
 
   return (
     <div className="space-y-6 font-display">
-      <Link to={backTo} className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/70 transition hover:text-white">
-        <span aria-hidden="true">←</span> {post?.groupName || 'Groups'}
+      <Link to={backTo} className="inline-flex max-w-full min-w-0 items-center gap-1.5 text-sm font-semibold text-white/70 transition hover:text-white">
+        <span aria-hidden="true" className="shrink-0">←</span> <span className="min-w-0 truncate">{post?.groupName || 'Groups'}</span>
       </Link>
 
       {assignedLoading || (loading && !post) ? (

@@ -156,14 +156,14 @@ export default function UserFormModal({ user, onSubmit, onClose }) {
             ) : (
               <div className="mt-2 grid max-h-40 gap-2 overflow-y-auto rounded-xl border border-white/10 bg-white/5 p-3 sm:grid-cols-2">
                 {groups.map((g) => (
-                  <label key={g.group_id} className="flex items-center gap-2 text-sm text-white/80">
+                  <label key={g.group_id} className="flex min-w-0 items-center gap-2 text-sm text-white/80">
                     <input
                       type="checkbox"
                       checked={form.groupIds.includes(Number(g.group_id))}
                       onChange={() => toggleGroup(g.group_id)}
-                      className="size-4 accent-gold"
+                      className="size-4 shrink-0 accent-gold"
                     />
-                    {g.group_name}
+                    <span className="min-w-0 truncate">{g.group_name}</span>
                   </label>
                 ))}
               </div>

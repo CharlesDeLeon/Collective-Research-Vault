@@ -22,7 +22,7 @@ export default function ChangeRoleModal({ user, onSubmit, onClose }) {
     <ModalShell title="Change role" icon={AlertIcon} onClose={onClose}>
       <form onSubmit={submit} className="mt-4 space-y-5 px-1 pb-1">
         <p className="text-sm text-white/75">
-          <span className="font-semibold text-white">{user.name}</span> is currently {roleLabel(user.role)}.
+          <span className="max-w-full wrap-break-word font-semibold text-white">{user.name}</span> is currently {roleLabel(user.role)}.
         </p>
         <div>
           <span className="block text-sm font-bold uppercase tracking-wide text-gold">New role</span>

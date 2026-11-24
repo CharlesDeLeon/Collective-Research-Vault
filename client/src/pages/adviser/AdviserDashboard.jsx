@@ -156,7 +156,7 @@ export default function AdviserDashboard() {
               <li key={r.submission_id} className="flex items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{r.title}</p>
-                  <p className="text-xs text-white/50">{r.group_name || '—'}</p>
+                  <p className="truncate text-xs text-white/50">{r.group_name || '—'}</p>
                 </div>
                 <span className="shrink-0 text-xs text-white/40">
                   {r.published_at ? new Date(r.published_at).toLocaleDateString() : '—'}

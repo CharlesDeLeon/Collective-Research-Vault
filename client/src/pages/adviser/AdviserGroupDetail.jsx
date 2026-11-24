@@ -213,27 +213,27 @@ export default function AdviserGroupDetail() {
           <h1 className="wrap-break-word text-2xl font-bold sm:text-3xl">{group.group_name}</h1>
           <div className="flex flex-wrap gap-2">
             {(group.strand || group.program) && (
-              <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">
+              <span className="max-w-full min-w-0 truncate rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">
                 {group.strand || group.program}
               </span>
             )}
             {group.section && (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+              <span className="max-w-full min-w-0 truncate rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
                 {group.section}
               </span>
             )}
             {group.year_level && (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+              <span className="max-w-full min-w-0 truncate rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
                 Grade {group.year_level}
               </span>
             )}
             {group.school_year && (
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+              <span className="max-w-full min-w-0 truncate rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
                 {group.school_year}
               </span>
             )}
           </div>
-          <p className="text-sm text-white/60">Adviser: {group.adviser_name || '—'}</p>
+          <p className="truncate text-sm text-white/60">Adviser: {group.adviser_name || '—'}</p>
         </div>
         <div className="flex flex-col items-start gap-3 md:items-end">
           <button
@@ -310,7 +310,7 @@ export default function AdviserGroupDetail() {
                       <button
                         type="button"
                         onClick={() => addMember(s)}
-                        className="block w-full px-3 py-2 text-left text-sm hover:bg-white/10"
+                        className="block w-full truncate px-3 py-2 text-left text-sm hover:bg-white/10"
                       >
                         {s.name} <span className="text-white/50">({s.email})</span>
                       </button>
@@ -326,9 +326,9 @@ export default function AdviserGroupDetail() {
             <ul className="space-y-2">
               {members.map((m) => (
                 <li key={m.user_id} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3">
-                  <div>
-                    <p className="m-0 text-sm font-medium">{m.name}</p>
-                    <p className="m-0 text-xs text-white/50">{m.email} · {m.role}</p>
+                  <div className="min-w-0">
+                    <p className="m-0 truncate text-sm font-medium">{m.name}</p>
+                    <p className="m-0 truncate text-xs text-white/50">{m.email} · {m.role}</p>
                   </div>
                   <button
                     type="button"
@@ -425,9 +425,9 @@ export default function AdviserGroupDetail() {
               <ul className="space-y-2">
                 {panel.map((p) => (
                   <li key={p.assignment_id} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3">
-                    <div>
-                      <p className="m-0 text-sm font-medium">{p.name}</p>
-                      <p className="m-0 text-xs text-white/50">{p.email} · {p.role_in_panel}</p>
+                    <div className="min-w-0">
+                      <p className="m-0 truncate text-sm font-medium">{p.name}</p>
+                      <p className="m-0 truncate text-xs text-white/50">{p.email} · {p.role_in_panel}</p>
                     </div>
                     <button
                       type="button"
@@ -464,7 +464,7 @@ export default function AdviserGroupDetail() {
                       <p className="m-0 mt-1 flex flex-wrap items-center gap-2 text-xs text-white/50">
                         <StatusPill status={s.status} />
                         <span>{s.stage}</span>
-                        {s.submitted_by_name && <span>by {s.submitted_by_name}</span>}
+                        {s.submitted_by_name && <span className="min-w-0 truncate">by {s.submitted_by_name}</span>}
                         {s.updated_at && <span>Updated {timeAgo(s.updated_at)}</span>}
                       </p>
                     </div>

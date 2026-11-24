@@ -225,7 +225,7 @@ export default function PaperDetail() {
               {paper.keywords?.length > 0 && (
                 <ul className="m-0 mt-4 flex list-none flex-wrap gap-2 border-t border-white/10 p-0 pt-4">
                   {paper.keywords.map((k) => (
-                    <li key={k} className="rounded-full border border-gold/60 px-3 py-1 text-xs text-[#FFD27F]">
+                    <li key={k} className="max-w-full min-w-0 truncate rounded-full border border-gold/60 px-3 py-1 text-xs text-[#FFD27F]">
                       {k}
                     </li>
                   ))}
@@ -300,18 +300,18 @@ export default function PaperDetail() {
               {locked && <span className="ml-2 text-xs font-normal text-white/50">Read-only</span>}
             </h3>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between gap-2"><dt className="text-white/50">Group</dt><dd className="text-right">{paper.groupName || '—'}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-white/50">Strand</dt><dd className="text-right">{paper.strand || paper.program || '—'}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-white/50">Section</dt><dd className="text-right">{paper.section || '—'}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-white/50">School year</dt><dd className="text-right">{paper.schoolYear || '—'}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-white/50">Status</dt><dd className="text-right capitalize">{String(paper.status || '').replace(/_/g, ' ')}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-white/50">Group</dt><dd className="min-w-0 text-right">{paper.groupName || '—'}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-white/50">Strand</dt><dd className="min-w-0 text-right">{paper.strand || paper.program || '—'}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-white/50">Section</dt><dd className="min-w-0 text-right">{paper.section || '—'}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-white/50">School year</dt><dd className="min-w-0 text-right">{paper.schoolYear || '—'}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-white/50">Status</dt><dd className="min-w-0 text-right capitalize">{String(paper.status || '').replace(/_/g, ' ')}</dd></div>
             </dl>
           </div>
           <div className={`${glass} p-4 sm:p-6`}>
             <h3 className="mb-3 text-sm font-bold">Authors</h3>
-            <ul className="space-y-1 text-sm">
+            <ul className="min-w-0 space-y-1 text-sm">
               {(paper.authors || []).map((a, i) => (
-                <li key={i}>{a}</li>
+                <li key={i} className="wrap-break-word">{a}</li>
               ))}
               {!paper.authors?.length && <li className="text-white/50">—</li>}
             </ul>

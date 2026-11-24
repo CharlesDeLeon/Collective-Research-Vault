@@ -154,7 +154,7 @@ export default function FeedFilters({ posts, groups, value, onChange, lockGroup 
               type="button"
               onClick={() => onChange({ ...value, [key]: '' })}
               aria-label={`Remove filter ${label}`}
-              className="flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold transition hover:bg-gold/20"
+              className="flex max-w-full min-w-0 wrap-break-word items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 text-xs font-semibold text-gold transition hover:bg-gold/20"
             >
               {label}
               <CloseIcon className="size-3" strokeWidth={2.4} />

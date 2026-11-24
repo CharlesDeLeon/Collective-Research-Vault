@@ -149,20 +149,20 @@ export default function RequestStatus() {
                 )}
 
                 {data.status === 'declined' && data.reason && (
-                  <p className="mb-0 mt-2 text-white/75">Reason: {data.reason}</p>
+                  <p className="mb-0 mt-2 max-w-full min-w-0 text-white/75">Reason: {data.reason}</p>
                 )}
 
                 <dl className="mb-0 mt-5 grid gap-3 text-sm">
                   <div>
                     <dt className="text-xs font-semibold uppercase tracking-[0.06em] text-gold">Reference</dt>
-                    <dd className="m-0 mt-1">{data.ref}</dd>
+                    <dd className="m-0 mt-1 truncate">{data.ref}</dd>
                   </div>
                   {(paperTitle || paperSlug) && (
                     <div>
                       <dt className="text-xs font-semibold uppercase tracking-[0.06em] text-gold">Paper</dt>
-                      <dd className="m-0 mt-1">
+                      <dd className="m-0 mt-1 min-w-0">
                         {paperSlug ? (
-                          <Link to={`/paper/${paperSlug}`} className="underline decoration-gold/60 underline-offset-2">
+                          <Link to={`/paper/${paperSlug}`} className="max-w-full min-w-0 underline decoration-gold/60 underline-offset-2">
                             {paperTitle || paperSlug}
                           </Link>
                         ) : (

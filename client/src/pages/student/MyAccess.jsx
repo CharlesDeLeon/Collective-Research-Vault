@@ -122,12 +122,12 @@ export default function MyAccess() {
             <div key={r.request_id} className={`${glass} p-4 sm:p-5`}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className="m-0 font-medium">{r.paper_title}</p>
-                  <p className="m-0 mt-1 text-xs text-white/50">
+                  <p className="m-0 wrap-break-word font-medium">{r.paper_title}</p>
+                  <p className="m-0 mt-1 wrap-break-word text-xs text-white/50">
                     {r.group_name || '—'} · Requested {r.created_at ? longDate(r.created_at) : ''}
                   </p>
                   {r.decision_note && (
-                    <p className="m-0 mt-1 text-xs text-white/60">Note: {r.decision_note}</p>
+                    <p className="m-0 mt-1 wrap-break-word text-xs text-white/60">Note: {r.decision_note}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
@@ -165,7 +165,7 @@ export default function MyAccess() {
       {viewing && (
         <div className={`${glass} p-5 sm:p-6`}>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold">{viewing.title}</h2>
+            <h2 className="min-w-0 wrap-break-word text-lg font-bold">{viewing.title}</h2>
             <button type="button" onClick={() => setViewing(null)} className="text-sm text-white/60 hover:text-white">
               Close
             </button>

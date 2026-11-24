@@ -64,20 +64,20 @@ export default function GroupDetail() {
         <div className="min-w-0 space-y-3">
           <h1 className="wrap-break-word text-2xl font-bold sm:text-3xl">{group.name}</h1>
           <div className="flex flex-wrap gap-2">
-            <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{group.strand}</span>
-            <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{group.section}</span>
-            <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{group.schoolYear}</span>
+            <span className="max-w-full min-w-0 truncate rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{group.strand}</span>
+            <span className="max-w-full min-w-0 truncate rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{group.section}</span>
+            <span className="max-w-full min-w-0 truncate rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{group.schoolYear}</span>
           </div>
-          <p className="text-sm text-white/60">Adviser: {group.adviser}</p>
+          <p className="truncate text-sm text-white/60">Adviser: {group.adviser}</p>
         </div>
 
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-white/50">Members</p>
           <ul className="flex flex-wrap gap-3">
             {group.members.map((m) => (
-              <li key={m} className="flex items-center gap-2 text-sm">
+              <li key={m} className="flex min-w-0 items-center gap-2 text-sm">
                 <Avatar name={m} size="sm" />
-                {m}
+                <span className="min-w-0 truncate">{m}</span>
               </li>
             ))}
           </ul>

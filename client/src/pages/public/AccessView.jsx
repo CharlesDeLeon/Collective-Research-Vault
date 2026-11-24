@@ -27,7 +27,7 @@ export default function AccessView() {
   return (
     <PublicShell wide>
       <StatePanel title="Your paper" tone="success">
-        {paper && <p className="m-0 font-medium">{paper.title}</p>}
+        {paper && <p className="m-0 max-w-full min-w-0 font-medium">{paper.title}</p>}
         {fileUrl ? (
           <>
             <iframe
