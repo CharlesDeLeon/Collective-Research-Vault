@@ -335,6 +335,14 @@
   box-shadow: var(--shadow-modal);
 }
 
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /*
  * In light mode, gold is an accent (chips, CTAs, the logo) but not a text
  * color on light surfaces. Legacy gold text therefore adopts the gallery

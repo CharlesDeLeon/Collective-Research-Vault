@@ -67,10 +67,10 @@ export default function FileDropzone({ file, error, onChange }) {
         />
 
         {file ? (
-          <div className="flex max-w-full items-center gap-3 rounded-xl border border-white/15 bg-white/5 py-2 pl-4 pr-2">
+          <div className="flex max-w-full min-w-0 items-center gap-3 rounded-xl border border-white/15 bg-white/5 py-2 pl-4 pr-2">
             <DocIcon className="size-6 shrink-0 text-gold" />
             <div className="min-w-0 text-left">
-              <p className="truncate text-sm font-medium">{file.name}</p>
+              <p className="wrap-break-word text-sm font-medium">{file.name}</p>
               <p className="text-xs text-white/50">{formatSize(file.size)}</p>
             </div>
             <button

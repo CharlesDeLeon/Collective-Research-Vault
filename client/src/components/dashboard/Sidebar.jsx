@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import useForum from '../../context/useForum'
 import ProfileTrigger from '../profile/ProfileTrigger'
 import { ROUTES } from './constants'
 import Logo from '../Logo'
 import ThemeToggle from '../gallery/ThemeToggle'
-import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon, DocIcon, CommentIcon, UserIcon, FilterIcon, FlagIcon, AlertIcon } from './icons'
+import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon, DocIcon, CommentIcon, UserIcon, FilterIcon, FlagIcon, AlertIcon, CloseIcon, MenuIcon } from './icons'
 
 export const STUDENT_NAV = [
   { label: 'Home', to: ROUTES.home, icon: HomeIcon, end: true },
@@ -15,14 +16,6 @@ export const STUDENT_NAV = [
   { label: 'Groups', to: ROUTES.groups, icon: UsersIcon },
   { label: 'Gallery', to: ROUTES.gallery, icon: BookIcon },
   { label: 'Notifications', to: ROUTES.history, icon: BellIcon },
-]
-
-export const STUDENT_BOTTOM = [
-  { label: 'Feed', to: ROUTES.forum, icon: CommentIcon },
-  { label: 'My Papers', to: ROUTES.myPapers, icon: DocIcon },
-  { label: 'Groups', to: ROUTES.groups, icon: UsersIcon },
-  { label: 'Alerts', to: ROUTES.history, icon: BellIcon },
-  { label: 'Profile', to: ROUTES.profile, icon: UserIcon },
 ]
 
 export const ADVISER_NAV = [
@@ -38,29 +31,12 @@ export const ADVISER_NAV = [
   { label: 'Profile', to: '/adviser/profile', icon: UserIcon },
 ]
 
-export const ADVISER_BOTTOM = [
-  { label: 'Dashboard', to: '/adviser/dashboard', icon: HomeIcon },
-  { label: 'Groups', to: '/adviser/groups', icon: UsersIcon },
-  { label: 'Reviews', to: '/adviser/reviews', icon: DocIcon },
-  { label: 'Inbox', to: '/adviser/inbox', icon: BellIcon },
-  { label: 'Panelists', to: '/adviser/panelists', icon: UsersIcon },
-  { label: 'Profile', to: '/adviser/profile', icon: UserIcon },
-]
-
 export const PANELIST_NAV = [
   { label: 'Dashboard', to: '/panelist/dashboard', icon: HomeIcon, end: true },
   { label: 'Groups', to: '/panelist/groups', icon: UsersIcon },
   { label: 'Forum', to: '/panelist/forum', icon: CommentIcon },
   { label: 'Gallery', to: '/gallery', icon: BookIcon },
   { label: 'Notifications', to: '/panelist/notifications', icon: BellIcon },
-  { label: 'Profile', to: '/panelist/profile', icon: UserIcon },
-]
-
-export const PANELIST_BOTTOM = [
-  { label: 'Dashboard', to: '/panelist/dashboard', icon: HomeIcon },
-  { label: 'Groups', to: '/panelist/groups', icon: UsersIcon },
-  { label: 'Forum', to: '/panelist/forum', icon: CommentIcon },
-  { label: 'Alerts', to: '/panelist/notifications', icon: BellIcon },
   { label: 'Profile', to: '/panelist/profile', icon: UserIcon },
 ]
 
@@ -89,7 +65,7 @@ export default function Sidebar({ user, onLogout, navItems = STUDENT_NAV, roleLa
   const onForum = pathname.startsWith(ROUTES.forum)
 
   return (
-    <aside className="sticky top-6 hidden h-[calc(100dvh-3rem)] w-64 shrink-0 self-start flex-col overflow-y-auto rounded-3xl border border-white/10 bg-panel p-6 font-display shadow-lg shadow-black/20 backdrop-blur-sm lg:flex xl:w-72">
+    <aside className="scrollbar-none sticky top-6 hidden h-[calc(100dvh-3rem)] w-64 shrink-0 self-start flex-col overflow-y-auto rounded-3xl border border-white/10 bg-panel p-6 font-display shadow-lg shadow-black/20 backdrop-blur-sm lg:flex xl:w-72">
       <div className="flex items-center gap-3 pb-10 pt-1">
         <Logo className="size-10 sm:size-11 shrink-0 text-gold" />
         <span className="text-2xl font-bold tracking-wide">
@@ -160,36 +136,10 @@ export default function Sidebar({ user, onLogout, navItems = STUDENT_NAV, roleLa
   )
 }
 
-export function MobileNav({
-  homeTo = ROUTES.home,
-  user,
-  onLogout,
-  profileTo = ROUTES.profile,
-  roleLabel = 'Student',
-}) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef(null)
-  const name = user?.name ?? user?.full_name ?? 'Student'
-
-  useEffect(() => {
-    if (!menuOpen) return undefined
-    const onDown = (e) => {
-      if (!menuRef.current?.contains(e.target)) setMenuOpen(false)
-    }
-    const onKey = (e) => {
-      if (e.key === 'Escape') setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [menuOpen])
-
+export function MobileNav({ homeTo = ROUTES.home, onOpenMenu }) {
   return (
     <div className="flex items-center justify-between font-display lg:hidden">
-      <NavLink to={homeTo} end onClick={() => setMenuOpen(false)} className="flex items-center gap-2" aria-label="Home">
+      <NavLink to={homeTo} end className="flex items-center gap-2" aria-label="Home">
         <Logo className="size-10 sm:size-11 shrink-0 text-gold" />
         <span className="text-lg font-bold tracking-wide">
           CORE <span className="text-gold">V</span>
@@ -197,75 +147,129 @@ export function MobileNav({
       </NavLink>
       <div className="flex items-center gap-2">
         <ThemeToggle />
-        <NavLink
-          to={ROUTES.gallery}
-          onClick={() => setMenuOpen(false)}
-          className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 transition hover:text-white"
+        <button
+          type="button"
+          onClick={onOpenMenu}
+          aria-label="Open menu"
+          className="grid size-10 shrink-0 place-items-center rounded-full border border-white/15 text-white/80 transition hover:bg-white/10"
         >
-          Gallery
-        </NavLink>
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setMenuOpen((open) => !open)}
-            aria-label="Open profile menu"
-            aria-expanded={menuOpen}
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-gold text-sm font-bold text-ink"
-          >
-            {initials(name)}
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-white/10 bg-modal p-2 shadow-xl shadow-black/30">
-              <div className="px-3 py-2">
-                <p className="truncate text-sm font-semibold">{name}</p>
-                <p className="text-xs text-white/50">{roleLabel}</p>
-              </div>
-              <NavLink
-                to={profileTo}
-                onClick={() => setMenuOpen(false)}
-                className="block rounded-xl px-3 py-2 text-sm text-white/80 transition hover:bg-white/10"
-              >
-                Profile
-              </NavLink>
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false)
-                  onLogout?.()
-                }}
-                className="block w-full rounded-xl px-3 py-2 text-left text-sm text-danger-ink transition hover:bg-white/10"
-              >
-                Logout
-              </button>
-            </div>
-          )}
-        </div>
+          <MenuIcon className="size-5" />
+        </button>
       </div>
     </div>
   )
 }
 
-export function BottomNav({ items = STUDENT_BOTTOM }) {
-  return (
-    <nav
-      aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 grid border-t border-white/10 bg-navy-900/95 px-1 pb-[env(safe-area-inset-bottom)] font-display backdrop-blur-md lg:hidden"
-      style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
-    >
-      {items.map(({ label, to, icon: Icon }) => (
-        <NavLink
-          key={to}
-          to={to}
-          className={({ isActive }) =>
-            `flex min-h-14 flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-medium transition ${
-              isActive ? 'text-gold' : 'text-white/60'
-            }`
-          }
-        >
-          <Icon className="size-5" />
-          {label}
-        </NavLink>
-      ))}
-    </nav>
+export function MobileDrawer({
+  open,
+  onClose,
+  user,
+  onLogout,
+  navItems = STUDENT_NAV,
+  roleLabel = 'Student',
+  profileTo = ROUTES.profile,
+  homeTo = ROUTES.home,
+}) {
+  const closeRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    const previous = document.activeElement
+    const overflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    closeRef.current?.focus()
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = overflow
+      if (previous instanceof HTMLElement) previous.focus()
+    }
+  }, [open, onClose])
+
+  if (!open) return null
+
+  const name = user?.name ?? user?.full_name ?? 'Student'
+  const hasGallery = navItems.some((item) => item.to === ROUTES.gallery)
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 font-display text-white lg:hidden">
+      <div aria-hidden="true" onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation"
+        className="scrollbar-none absolute inset-y-0 left-0 flex w-[min(20rem,85vw)] flex-col overflow-y-auto border-r border-white/10 bg-navy-900 p-5 shadow-2xl shadow-black/40"
+      >
+        <div className="flex items-center justify-between pb-6">
+          <NavLink to={homeTo} end onClick={onClose} className="flex items-center gap-2" aria-label="Home">
+            <Logo className="size-10 sm:size-11 shrink-0 text-gold" />
+            <span className="text-lg font-bold tracking-wide">
+              CORE <span className="text-gold">V</span>
+            </span>
+          </NavLink>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Close menu"
+            className="grid size-10 shrink-0 place-items-center rounded-full border border-white/15 text-white/80 transition hover:bg-white/10"
+          >
+            <CloseIcon className="size-4" />
+          </button>
+        </div>
+
+        <nav className="flex flex-col gap-1.5">
+          {navItems.map(({ label, to, icon: Icon, end, disabled }) =>
+            disabled ? (
+              <span key={label} aria-disabled="true" title="Coming soon" className={`${itemBase} cursor-not-allowed text-white/30`}>
+                <Icon className="size-5" />
+                {label}
+              </span>
+            ) : (
+              <NavLink key={to} to={to} end={end} onClick={onClose} className={({ isActive }) => linkCls({ isActive })}>
+                <Icon className="size-5" />
+                {label}
+              </NavLink>
+            )
+          )}
+          {!hasGallery && (
+            <NavLink to={ROUTES.gallery} onClick={onClose} className={({ isActive }) => linkCls({ isActive })}>
+              <BookIcon className="size-5" />
+              Gallery
+            </NavLink>
+          )}
+        </nav>
+
+        <div className="mt-auto pt-6">
+          <NavLink
+            to={profileTo}
+            onClick={onClose}
+            className="flex items-center gap-3 rounded-2xl px-1 py-1 text-left transition hover:bg-white/5"
+          >
+            <div className="grid size-10 shrink-0 place-items-center rounded-full bg-gold text-sm font-bold text-ink">
+              {initials(name)}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{name}</p>
+              <p className="text-xs text-white/50">{roleLabel}</p>
+            </div>
+          </NavLink>
+          <button
+            type="button"
+            onClick={() => {
+              onClose()
+              onLogout?.()
+            }}
+            className="mt-4 w-full rounded-xl border border-white/15 py-2 text-xs font-semibold text-white/70 transition hover:border-white/30 hover:text-white"
+          >
+            Logout
+          </button>
+        </div>
+      </aside>
+    </div>,
+    document.body
   )
 }
