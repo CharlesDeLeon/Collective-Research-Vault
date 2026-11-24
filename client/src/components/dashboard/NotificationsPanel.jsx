@@ -9,8 +9,10 @@ const TYPE_STYLES = {
   system: { Icon: AlertIcon, cls: 'bg-amber-500/20 text-amber-300' },
 }
 
-export default function NotificationsPanel({ notifications, limit = 3, onViewAll }) {
-  const items = notifications.slice(0, limit)
+export default function NotificationsPanel({ notifications, limit = 3, onViewAll, error }) {
+  const items = [...notifications]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, limit)
 
   return (
     <section aria-labelledby="notif-heading" className="min-w-0">
@@ -22,6 +24,11 @@ export default function NotificationsPanel({ notifications, limit = 3, onViewAll
       </h2>
 
       <div className={`${glass} p-4 sm:p-5`}>
+        {error && (
+          <p role="alert" className="m-0 mb-3 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
+            {error}
+          </p>
+        )}
         {items.length === 0 ? (
           <p className="py-6 text-center text-sm text-white/50">You&apos;re all caught up.</p>
         ) : (

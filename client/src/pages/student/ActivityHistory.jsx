@@ -20,24 +20,38 @@ function Alert({ children }) {
 }
 
 export default function ActivityHistory() {
-  const { unread, past, loading, error, actionError, markRead, markAllRead } = useNotifications()
+  const { unread, past, loading, refreshing, error, actionError, markRead, markAllRead, refresh } = useNotifications()
   const [filter, setFilter] = useState('all')
-  const showUnread = filter !== 'read'
-  const showPast = filter !== 'unread'
+
+  const all = [...unread, ...past].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  const visible = filter === 'unread' ? unread : filter === 'read' ? past : all
+  const title = filter === 'unread' ? 'Unread Notifications' : filter === 'read' ? 'Past notifications' : 'All notifications'
+  const empty = filter === 'unread' ? "You're all caught up." : filter === 'read' ? 'No past notifications yet.' : 'No notifications yet.'
+  const HeadingIcon = filter === 'unread' ? BellIcon : ClockIcon
 
   return (
     <div className="space-y-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-2xl font-bold sm:text-3xl">Notifications</h1>
-        <button
-          type="button"
-          onClick={markAllRead}
-          disabled={unread.length === 0}
-          className="flex items-center gap-2 rounded-xl border border-danger bg-danger/20 px-5 py-2.5 text-sm font-bold text-danger-ink transition enabled:hover:bg-danger/30 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <CloseIcon className="size-4 text-danger" strokeWidth={2.4} />
-          Mark all as seen
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={refreshing}
+            className="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-bold text-white/80 transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {refreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
+          <button
+            type="button"
+            onClick={markAllRead}
+            disabled={unread.length === 0}
+            className="flex items-center gap-2 rounded-xl border border-danger bg-danger/20 px-5 py-2.5 text-sm font-bold text-danger-ink transition enabled:hover:bg-danger/30 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <CloseIcon className="size-4 text-danger" strokeWidth={2.4} />
+            Mark all as seen
+          </button>
+        </div>
       </header>
 
       <div role="tablist" aria-label="Filter notifications" className="flex gap-2">
@@ -70,31 +84,21 @@ export default function ActivityHistory() {
           <div className="h-32 animate-pulse rounded-2xl bg-panel" />
         </div>
       ) : (
-        <>
-          {showUnread && <NotificationSection id="unread-heading" icon={BellIcon} title="Unread Notifications">
-            {unread.length === 0 ? (
-              <EmptyState>You&apos;re all caught up.</EmptyState>
-            ) : (
-              <ul className="space-y-8">
-                {unread.map((n) => (
-                  <NotificationRow key={n.id} notification={n} onDismiss={markRead} />
-                ))}
-              </ul>
-            )}
-          </NotificationSection>}
-
-          {showPast && <NotificationSection id="past-heading" icon={ClockIcon} title="Past notifications">
-            {past.length === 0 ? (
-              <EmptyState>No past notifications yet.</EmptyState>
-            ) : (
-              <ul className="space-y-7">
-                {past.map((n) => (
-                  <NotificationRow key={n.id} notification={n} />
-                ))}
-              </ul>
-            )}
-          </NotificationSection>}
-        </>
+        <NotificationSection id="notifications-heading" icon={HeadingIcon} title={title}>
+          {visible.length === 0 ? (
+            <EmptyState>{empty}</EmptyState>
+          ) : (
+            <ul className="space-y-8">
+              {visible.map((n) => (
+                <NotificationRow
+                  key={n.id ?? `${n.createdAt}-${n.message}`}
+                  notification={n}
+                  onDismiss={n.isRead ? undefined : markRead}
+                />
+              ))}
+            </ul>
+          )}
+        </NotificationSection>
       )}
     </div>
   )

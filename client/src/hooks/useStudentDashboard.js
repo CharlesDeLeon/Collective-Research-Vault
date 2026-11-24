@@ -1,23 +1,28 @@
 import { useEffect, useState } from 'react'
 import { getMyPapers } from '../services/paperService'
-import { fetchNotifications } from '../services/notificationService'
+import { useNotifications } from './useNotifications'
 
 export function useStudentDashboard() {
   const [papers, setPapers] = useState([])
-  const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const { unread, past, error: notificationError } = useNotifications()
+  const notifications = [...unread, ...past].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  )
 
   useEffect(() => {
     let cancelled = false
 
     const load = async () => {
-      const [p, n] = await Promise.allSettled([getMyPapers(), fetchNotifications()])
-      if (cancelled) return
-      if (p.status === 'fulfilled') setPapers(p.value)
-      else setError(p.reason?.response?.data?.message || 'Could not load your research. Check that the API address is set.')
-      if (n.status === 'fulfilled') setNotifications(n.value)
-      setLoading(false)
+      try {
+        const data = await getMyPapers()
+        if (!cancelled) setPapers(data)
+      } catch (e) {
+        if (!cancelled) setError(e.response?.data?.message || 'Could not load your research. Check that the API address is set.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
 
     load()
@@ -26,5 +31,5 @@ export function useStudentDashboard() {
     }
   }, [])
 
-  return { papers, notifications, loading, error }
+  return { papers, notifications, loading, error, notificationError }
 }

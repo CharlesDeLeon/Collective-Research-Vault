@@ -20,7 +20,13 @@ export default function PanelistLayout() {
             profileTo="/panelist/profile"
           />
           <div className="min-w-0 flex-1">
-            <MobileNav homeTo="/panelist/dashboard" />
+            <MobileNav
+              homeTo="/panelist/dashboard"
+              user={user}
+              onLogout={logout}
+              roleLabel="Panelist"
+              profileTo="/panelist/profile"
+            />
             <main className="mt-6 lg:mt-0">
               <Outlet />
             </main>

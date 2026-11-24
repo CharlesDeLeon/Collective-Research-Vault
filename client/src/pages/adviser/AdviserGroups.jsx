@@ -16,6 +16,10 @@ import { PlusIcon, PencilIcon, SearchIcon } from '../../components/dashboard/ico
 import Select, { Option } from '../../components/ui/Select'
 
 const STRANDS = ['STEM', 'ABM', 'HUMSS', 'GAS']
+const yearOptions = () => {
+  const start = new Date().getFullYear() - 3
+  return Array.from({ length: 6 }, (_, i) => `${start + i}-${start + i + 1}`)
+}
 const EMPTY_FORM = { group_name: '', strand: '', section: '', year_level: '', school_year: '' }
 
 const inputCls =
@@ -35,6 +39,7 @@ export default function AdviserGroups() {
   const [editTarget, setEditTarget] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [formError, setFormError] = useState('')
+  const [yearMode, setYearMode] = useState('')
   const [formAdviserName, setFormAdviserName] = useState('')
   const [saving, setSaving] = useState(false)
   const [modalMembers, setModalMembers] = useState([])
@@ -69,6 +74,7 @@ export default function AdviserGroups() {
     setEditTarget(null)
     setForm(EMPTY_FORM)
     setFormError('')
+    setYearMode('')
     setFormAdviserName(user?.name ?? user?.full_name ?? 'Adviser')
     setModalMembers([])
     setMembersLoading(false)
@@ -87,6 +93,7 @@ export default function AdviserGroups() {
       school_year: g.school_year || '',
     })
     setFormError('')
+    setYearMode(yearOptions().includes(g.school_year || '') ? '' : 'other')
     setFormAdviserName(g.adviser_name || '')
     setMemberSearch('')
     setMemberResults([])
@@ -110,6 +117,7 @@ export default function AdviserGroups() {
     setEditTarget(null)
     setForm(EMPTY_FORM)
     setFormError('')
+    setYearMode('')
     setFormAdviserName('')
     setModalMembers([])
     setMembersLoading(false)
@@ -386,15 +394,38 @@ export default function AdviserGroups() {
 
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-semibold text-white/70">School year</span>
-                <input
-                  value={form.school_year}
-                  onChange={(e) => setForm({ ...form, school_year: e.target.value.replace(/[^0-9-]/g, '').slice(0, 9) })}
-                  className={inputCls}
-                  placeholder="e.g. 2026-2027"
-                  inputMode="numeric"
-                  maxLength={9}
-                  pattern="[0-9]{4}-[0-9]{4}"
-                />
+                <Select
+                  value={yearMode === 'other' ? 'other' : form.school_year}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value === 'other') {
+                      setYearMode('other')
+                      setForm({ ...form, school_year: '' })
+                      return
+                    }
+                    setYearMode('')
+                    setForm({ ...form, school_year: value })
+                  }}
+                  className="border-white/15"
+                >
+                  <Option value="">Select school year</Option>
+                  {yearOptions().map((y) => (
+                    <Option key={y} value={y}>{y}</Option>
+                  ))}
+                  <Option value="other">Other (type a year)</Option>
+                </Select>
+                {yearMode === 'other' && (
+                  <input
+                    value={form.school_year}
+                    onChange={(e) => setForm({ ...form, school_year: e.target.value.replace(/[^0-9-]/g, '').slice(0, 9) })}
+                    className={`${inputCls} mt-1`}
+                    placeholder="e.g. 2026-2027"
+                    inputMode="numeric"
+                    maxLength={9}
+                    pattern="[0-9]{4}-[0-9]{4}"
+                    aria-label="Custom school year"
+                  />
+                )}
               </label>
 
               <div className="flex flex-col gap-1 sm:col-span-2">
