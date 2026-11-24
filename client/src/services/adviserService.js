@@ -78,6 +78,10 @@ export async function uploadSubmissionFile(id, file) {
   await api.post(`/coordinator/submissions/${id}/files`, body)
 }
 
+export async function deleteSubmissionFile(id, versionId) {
+  await api.delete(`/coordinator/submissions/${id}/files/${versionId}`)
+}
+
 export async function setSubmissionConsent(id, granted) {
   await api.post(`/coordinator/submissions/${id}/consent`, { granted })
 }

@@ -1,5 +1,6 @@
 const db = require('../config/db')
 const fs = require('fs')
+const path = require('path')
 
 async function ownsGroup(groupId, userId) {
   const [rows] = await db.query(
@@ -713,6 +714,72 @@ const uploadSubmissionFile = async (req, res) => {
   }
 }
 
+// DELETE /api/coordinator/submissions/:id/files/:versionId
+const deleteSubmissionFile = async (req, res) => {
+  const { id, versionId } = req.params
+  const userId = req.user.user_id
+  const role = String(req.user?.role || '').toLowerCase()
+
+  try {
+    const [subs] = await db.query(
+      `SELECT s.submission_id, s.status, s.file_path, rg.adviser_id, rg.created_by
+       FROM submissions s JOIN research_groups rg ON rg.group_id = s.group_id
+       WHERE s.submission_id = ?`, [id]
+    )
+    if (!subs.length) return res.status(404).json({ message: 'Submission not found' })
+    const sub = subs[0]
+    if (role === 'adviser' && sub.adviser_id !== userId && sub.created_by !== userId) {
+      return res.status(404).json({ message: 'Submission not found' })
+    }
+    if (sub.status === 'published') {
+      return res.status(409).json({ message: 'You cannot delete files from a published paper.' })
+    }
+
+    const [versions] = await db.query(
+      `SELECT version_id, file_path, file_name, file_data FROM document_versions WHERE version_id = ? AND submission_id = ?`,
+      [versionId, id]
+    )
+    if (!versions.length) return res.status(404).json({ message: 'File version not found' })
+    const v = versions[0]
+
+    // Delete the row
+    await db.query(`DELETE FROM document_versions WHERE version_id = ?`, [versionId])
+
+    // Best-effort remove the physical file from disk
+    try {
+      const abs = path.isAbsolute(v.file_path) ? v.file_path : path.join(__dirname, '..', v.file_path)
+      if (fs.existsSync(abs)) fs.unlinkSync(abs)
+    } catch (e) {
+      console.warn('deleteSubmissionFile: could not remove file from disk:', e.message)
+    }
+
+    // If the deleted version was the "current" file, repoint submissions to the
+    // next-latest version (or clear it if none remain).
+    if (sub.file_path && sub.file_path === v.file_path) {
+      const [remaining] = await db.query(
+        `SELECT file_path, file_name, file_data FROM document_versions
+         WHERE submission_id = ? ORDER BY version_number DESC LIMIT 1`, [id]
+      )
+      if (remaining.length) {
+        await db.query(
+          `UPDATE submissions SET file_path = ?, file_name = ?, file_data = ?, updated_at = NOW() WHERE submission_id = ?`,
+          [remaining[0].file_path, remaining[0].file_name, remaining[0].file_data, id]
+        )
+      } else {
+        await db.query(
+          `UPDATE submissions SET file_path = NULL, file_name = NULL, file_data = NULL, updated_at = NOW() WHERE submission_id = ?`,
+          [id]
+        )
+      }
+    }
+
+    res.json({ message: 'File deleted' })
+  } catch (err) {
+    console.error('deleteSubmissionFile error:', err)
+    res.status(500).json({ message: 'Failed to delete file' })
+  }
+}
+
 const publishSubmission = async (req, res) => {
   const { id } = req.params
   const { citation } = req.body
@@ -999,6 +1066,6 @@ module.exports = {
   getSubmissions, getSubmissionById,
   updateStage, updateStatus,
   getDashboardStats,
-  uploadSubmissionFile, publishSubmission, unpublishSubmission, setFeatured,
+  uploadSubmissionFile, deleteSubmissionFile, publishSubmission, unpublishSubmission, setFeatured,
   getReports, getAnalytics,
 }

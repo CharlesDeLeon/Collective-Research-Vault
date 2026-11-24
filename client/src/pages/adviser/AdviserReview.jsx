@@ -7,6 +7,7 @@ import {
   setSubmissionStatus,
   addFeedbackComment,
   uploadSubmissionFile,
+  deleteSubmissionFile,
   publishSubmission,
   unpublishSubmission,
 } from '../../services/adviserService'
@@ -153,6 +154,7 @@ export default function AdviserReview() {
   const [citation, setCitation] = useState('')
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [deletingVersion, setDeletingVersion] = useState(null)
   const [publishing, setPublishing] = useState(false)
   const [publishError, setPublishError] = useState(null)
   const [showPublish, setShowPublish] = useState(false)
@@ -201,7 +203,7 @@ export default function AdviserReview() {
       ? { file_name: paper.file_name || 'Paper file', file_path: paper.file_path }
       : null
   const files = versions.length
-    ? versions.map((v) => ({ file_name: v.file_name, file_path: v.file_path }))
+    ? versions.map((v) => ({ version_id: v.version_id, file_name: v.file_name, file_path: v.file_path }))
     : currentFile
       ? [currentFile]
       : []
@@ -257,6 +259,26 @@ export default function AdviserReview() {
       setUploading(false)
     }
   }
+
+  const handleDeleteFile = async (version) => {
+    if (!paper || isPublished) return
+    const versionId = version?.version_id ?? version?.id
+    if (!versionId) return
+    if (!window.confirm('Delete this file? This cannot be undone.')) return
+    setDeletingVersion(versionId)
+    setUpdateError(null)
+    try {
+      await deleteSubmissionFile(paper.submission_id, versionId)
+      toast('File deleted.')
+      fetchPaper()
+    } catch (e) {
+      setUpdateError(e.response?.data?.message || 'Failed to delete the file.')
+    } finally {
+      setDeletingVersion(null)
+    }
+  }
+
+  const handleCancelPendingFile = () => setFile(null)
 
   const handlePublish = async () => {
     setPublishing(true)
@@ -513,21 +535,37 @@ export default function AdviserReview() {
           <div className={`${glass} p-5 sm:p-6`}>
             <h2 className="mb-3 mt-0 text-lg font-bold">Paper files</h2>
             <ul className="m-0 list-none space-y-2 p-0">
-              {files.map((v, i) => (
-                <li key={i} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm">
-                  <span className="min-w-0 truncate">{v.file_name || v.fileName}</span>
-                  {(v.file_name || v.fileName) && (
-                    <a
-                      href={getFileDownloadUrl(v.file_path || v.filePath || v.file_name)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="shrink-0 text-xs font-semibold text-gold hover:underline"
-                    >
-                      Download
-                    </a>
-                  )}
-                </li>
-              ))}
+              {files.map((v, i) => {
+                const versionId = v.version_id ?? v.id ?? i
+                const isDeleting = deletingVersion === versionId
+                return (
+                  <li key={versionId} className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm">
+                    <span className="min-w-0 truncate">{v.file_name || v.fileName}</span>
+                    <div className="flex shrink-0 items-center gap-3">
+                      {(v.file_name || v.fileName) && (
+                        <a
+                          href={getFileDownloadUrl(v.file_path || v.filePath || v.file_name)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-semibold text-gold hover:underline"
+                        >
+                          Download
+                        </a>
+                      )}
+                      {!isPublished && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFile({ ...v, version_id: versionId })}
+                          disabled={isDeleting || isPublished}
+                          className="text-xs font-semibold text-danger-ink transition hover:underline disabled:opacity-60"
+                        >
+                          {isDeleting ? 'Deleting…' : 'Delete'}
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
               {!files.length && <li className="text-sm text-white/50">No files uploaded yet.</li>}
             </ul>
             <div className="mt-3 flex gap-2">
@@ -537,7 +575,7 @@ export default function AdviserReview() {
                 aria-label="Choose a paper file"
                 disabled={isPublished}
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="min-w-0 flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-white disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-white disabled:opacity-60"
               />
               <button
                 type="button"
@@ -547,6 +585,15 @@ export default function AdviserReview() {
               >
                 {uploading ? '…' : 'Upload'}
               </button>
+              {file && !uploading && (
+                <button
+                  type="button"
+                  onClick={handleCancelPendingFile}
+                  className="shrink-0 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-white/70 transition hover:bg-white/10"
+                >
+                  Cancel
+                </button>
+              )}
             </div>
             {!backendSupport.finalAndDefendedFiles && <p className="mb-0 mt-2 text-xs text-white/50">{unsupportedNote.finalAndDefendedFiles}</p>}
           </div>
