@@ -10,7 +10,7 @@ import { HomeIcon, UsersIcon, BookIcon, BellIcon, PlusIcon, DocIcon, CommentIcon
 
 export const STUDENT_NAV = [
   { label: 'Home', to: ROUTES.home, icon: HomeIcon, end: true },
-  { label: 'Feed', to: ROUTES.forum, icon: CommentIcon },
+  { label: 'Forum', to: ROUTES.forum, icon: CommentIcon },
   { label: 'My Papers', to: ROUTES.myPapers, icon: DocIcon },
   { label: 'My Access', to: '/student/access', icon: BookIcon },
   { label: 'Groups', to: ROUTES.groups, icon: UsersIcon },

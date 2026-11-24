@@ -22,7 +22,7 @@ import MyPapers from './pages/student/MyPapers'
 import MyAccess from './pages/student/MyAccess'
 import PaperDetail from './pages/student/PaperDetail'
 import ActivityHistory from './pages/student/ActivityHistory'
-import Feed from './pages/student/Feed'
+import Forum from './pages/student/Forum'
 import Groups from './pages/student/Groups'
 import GroupDetail from './pages/student/GroupDetail'
 import Profile from './pages/student/Profile'
@@ -100,12 +100,12 @@ function App() {
           <Route path="my-papers/:paperId/edit" element={<UploadForm />} />
           <Route path="access" element={<MyAccess />} />
           <Route path="paper/:paperId" element={<PaperDetail />} />
-          <Route path="feed" element={<Feed />} />
+          <Route path="forum" element={<Forum />} />
           <Route path="groups" element={<Groups />} />
           <Route path="groups/:groupId" element={<GroupDetail />} />
           <Route path="notifications" element={<ActivityHistory />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="forum" element={<Navigate to="/student/feed" replace />} />
+          <Route path="feed" element={<Navigate to="/student/forum" replace />} />
           <Route path="history" element={<Navigate to="/student/notifications" replace />} />
           <Route path="*" element={<NotFound />} />
         </Route>

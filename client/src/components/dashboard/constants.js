@@ -1,6 +1,6 @@
 export const ROUTES = {
   home: '/student',
-  forum: '/student/feed',
+  forum: '/student/forum',
   groups: '/student/groups',
   group: (id) => `/student/groups/${id}`,
   profile: '/student/profile',

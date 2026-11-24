@@ -7,7 +7,7 @@ export default function NotFound() {
     <StatePanel title="Page not found">
       <p>The page you’re looking for doesn’t exist or has moved.</p>
       <Link to={ROUTES.forum} className="mt-4 inline-block font-semibold text-gold">
-        Go to Feed
+        Go to Forum
       </Link>
     </StatePanel>
   )
