@@ -292,20 +292,28 @@ const serveFile = async (req, res) => {
 
     // Resolve file path
     const [versions] = await query(
-      `SELECT file_path, file_name, file_type FROM document_versions WHERE submission_id = ? ORDER BY uploaded_at DESC LIMIT 1`,
+      `SELECT file_path, file_name, file_type, file_data FROM document_versions WHERE submission_id = ? ORDER BY uploaded_at DESC LIMIT 1`,
       [l.submission_id]
     )
     let filePath = versions.length ? versions[0].file_path : null
     let fileName = (versions.length && versions[0].file_name) ? versions[0].file_name : 'paper.pdf'
     let fileType = versions.length ? versions[0].file_type : null
-    if (!filePath) {
-      const [subs] = await query(`SELECT file_path, file_name FROM submissions WHERE submission_id = ?`, [l.submission_id])
+    let fileData = versions.length ? versions[0].file_data : null
+    if (!filePath && !fileData) {
+      const [subs] = await query(`SELECT file_path, file_name, file_data FROM submissions WHERE submission_id = ?`, [l.submission_id])
       if (subs.length) {
         filePath = subs[0].file_path
         fileName = subs[0].file_name || fileName
+        fileData = subs[0].file_data || fileData
       }
     }
-    if (!filePath) return res.status(404).json({ message: 'No file available' })
+    if (!filePath && !fileData) return res.status(404).json({ message: 'No file available' })
+
+    if (fileData) {
+      if (fileType) res.setHeader('Content-Type', fileType)
+      res.setHeader('Content-Disposition', `inline; filename="${fileName}"`)
+      return res.send(fileData)
+    }
 
     const abs = path.isAbsolute(filePath) ? filePath : path.join(__dirname, '..', filePath)
     if (fileType) res.setHeader('Content-Type', fileType)

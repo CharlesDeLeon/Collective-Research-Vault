@@ -102,6 +102,7 @@ CREATE TABLE submissions (
   video_url         VARCHAR(2048)      DEFAULT NULL,
   file_path         VARCHAR(512)       DEFAULT NULL,
   file_name         VARCHAR(255)       DEFAULT NULL,
+  file_data         BYTEA              DEFAULT NULL,
   adviser_name      VARCHAR(150)       DEFAULT NULL,
   published_at      TIMESTAMPTZ        DEFAULT NULL,
   submitted_by      INT                NOT NULL REFERENCES users(user_id),
@@ -120,6 +121,7 @@ CREATE TABLE document_versions (
   file_name       VARCHAR(255) NOT NULL,
   file_size       INT          DEFAULT NULL,
   file_type       VARCHAR(50)  DEFAULT NULL,
+  file_data       BYTEA        DEFAULT NULL,
   uploaded_by     INT          NOT NULL REFERENCES users(user_id),
   uploaded_at     TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   UNIQUE (submission_id, version_number)

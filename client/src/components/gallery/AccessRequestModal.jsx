@@ -57,6 +57,7 @@ export default function AccessRequestModal({ paper, onClose }) {
         email: values.email.trim(),
         institution: values.institution.trim(),
         purpose: values.purpose.trim(),
+        consent: values.consent,
       })
       navigate(`/request/submitted?ref=${encodeURIComponent(ref)}`)
     } catch {

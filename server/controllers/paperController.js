@@ -1,4 +1,5 @@
 const pool = require('../config/db')
+const fs = require('fs')
 
 const ALLOWED_STUDENT_STATUSES = ['proposal', 'for_revision', 'needs_revision']
 
@@ -145,10 +146,11 @@ const uploadPaper = async (req, res) => {
     )
     const nextVersion = Number(versionRows[0].latest_version) + 1
 
+    const fileBuffer1 = fs.readFileSync(req.file.path)
     await connection.query(
-      `INSERT INTO document_versions (submission_id, file_path, file_name, file_size, file_type, version_number, uploaded_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [submissionId, `uploads/${req.file.filename}`, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId]
+      `INSERT INTO document_versions (submission_id, file_path, file_name, file_size, file_type, version_number, uploaded_by, file_data)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [submissionId, `uploads/${req.file.filename}`, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId, fileBuffer1]
     )
 
     await connection.query(
@@ -235,10 +237,11 @@ const uploadPaperVersion = async (req, res) => {
     )
     const nextVersion = Number(versionRows[0].latest_version) + 1
 
+    const fileBuffer2 = fs.readFileSync(req.file.path)
     await connection.query(
-      `INSERT INTO document_versions (submission_id, file_path, file_name, file_size, file_type, version_number, uploaded_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [paperId, `uploads/${req.file.filename}`, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId]
+      `INSERT INTO document_versions (submission_id, file_path, file_name, file_size, file_type, version_number, uploaded_by, file_data)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [paperId, `uploads/${req.file.filename}`, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId, fileBuffer2]
     )
 
     await connection.query(
@@ -581,9 +584,19 @@ const replacePaperFile = async (req, res) => {
     }
 
     const filePath = `uploads/${req.file.filename}`
+    const fileBuffer = fs.readFileSync(req.file.path)
     await pool.query(
       `UPDATE submissions SET file_path = ?, file_name = ?, updated_at = NOW() WHERE submission_id = ?`,
       [filePath, req.file.originalname, paperId]
+    )
+    // Keep the latest version row in sync (in-place replacement) and persist bytes for durable serving
+    await pool.query(
+      `UPDATE document_versions
+       SET file_path = ?, file_name = ?, file_size = ?, file_type = ?, file_data = ?, uploaded_at = NOW()
+       WHERE version_id = (
+         SELECT version_id FROM document_versions WHERE submission_id = ? ORDER BY version_number DESC LIMIT 1
+       )`,
+      [filePath, req.file.originalname, req.file.size || null, req.file.mimetype || null, fileBuffer, paperId]
     )
 
     res.status(200).json({ file: { fileName: req.file.originalname, filePath } })
