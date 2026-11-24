@@ -193,12 +193,18 @@ export default function AdviserReview() {
   const prevPaper = queueIndex > 0 ? queue[queueIndex - 1] : null
   const nextPaper = queueIndex >= 0 && queueIndex < queue.length - 1 ? queue[queueIndex + 1] : null
   const versions = Array.isArray(paper?.versions) ? paper.versions : []
-  const currentFile = paper?.file_path
-    ? { file_name: paper.file_name || 'Paper file', file_path: paper.file_path }
-    : versions.length
-      ? { file_name: versions[0].file_name || 'Paper file', file_path: versions[0].file_path }
+  // Prefer the latest version row (highest version_number) so an adviser's
+  // replacement upload shows up even if submissions.file_path is stale.
+  const currentFile = versions.length
+    ? { file_name: versions[0].file_name || 'Paper file', file_path: versions[0].file_path }
+    : paper?.file_path
+      ? { file_name: paper.file_name || 'Paper file', file_path: paper.file_path }
       : null
-  const files = currentFile ? [currentFile] : []
+  const files = versions.length
+    ? versions.map((v) => ({ file_name: v.file_name, file_path: v.file_path }))
+    : currentFile
+      ? [currentFile]
+      : []
   const consentAt = paper?.author_consent_at ?? null
   const isPublished = paper?.status === 'published'
   const generatedCitation = paper ? submissionCitation(paper) : ''

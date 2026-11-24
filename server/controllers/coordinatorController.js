@@ -406,7 +406,13 @@ const getSubmissionById = async (req, res) => {
     const role = String(req.user?.role || '').toLowerCase()
 
     const [[submission]] = await db.query(
-      `SELECT s.*, rg.group_name, rg.adviser_id, rg.created_by, u.name AS submitted_by_name
+      `SELECT s.submission_id, s.group_id, s.title, s.abstract, s.keywords, s.authors,
+              s.program, s.strand, s.section, s.year_level, s.school_year, s.stage, s.status,
+              s.is_published, s.public_visible, s.featured, s.slug, s.citation,
+              s.author_consent_at, s.consent_status, s.consent_at, s.video_url,
+              s.file_path, s.file_name, s.adviser_name, s.published_at, s.submitted_by,
+              s.created_at, s.updated_at,
+              rg.group_name, rg.adviser_id, rg.created_by, u.name AS submitted_by_name
        FROM submissions s
        JOIN research_groups rg ON s.group_id = rg.group_id
        JOIN users u ON s.submitted_by = u.user_id
@@ -419,7 +425,9 @@ const getSubmissionById = async (req, res) => {
     }
 
     const [versions] = await db.query(
-      `SELECT dv.*, u.name AS uploaded_by_name
+      `SELECT dv.version_id, dv.submission_id, dv.file_path, dv.file_name, dv.file_size,
+              dv.file_type, dv.version_number, dv.uploaded_by, dv.uploaded_at,
+              u.name AS uploaded_by_name
        FROM document_versions dv
        JOIN users u ON dv.uploaded_by = u.user_id
        WHERE dv.submission_id = ?
@@ -689,6 +697,13 @@ const uploadSubmissionFile = async (req, res) => {
       `INSERT INTO document_versions (submission_id, file_path, file_name, file_size, file_type, version_number, uploaded_by, file_data)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [id, `uploads/${req.file.filename}`, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId, fileBuffer]
+    )
+
+    // Keep the submission's "current file" in sync so the review page shows
+    // the newly uploaded file instead of the student's original one.
+    await db.query(
+      `UPDATE submissions SET file_path = ?, file_name = ?, file_data = ?, updated_at = NOW() WHERE submission_id = ?`,
+      [`uploads/${req.file.filename}`, req.file.originalname, fs.readFileSync(req.file.path), id]
     )
 
     res.status(201).json({ message: 'File uploaded', version: nextVersion, fileRole })
