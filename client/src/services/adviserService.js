@@ -3,11 +3,6 @@ import { backendSupport } from './backendSupport'
 
 const rows = (res) => (Array.isArray(res.data?.data) ? res.data.data : [])
 
-export async function getDashboard() {
-  const res = await api.get('/coordinator/groups/dashboard')
-  return res.data?.data ?? null
-}
-
 export async function getReports() {
   const res = await api.get('/coordinator/submissions/reports')
   return res.data?.data ?? null

@@ -9,7 +9,7 @@ INSERT INTO users (name, email, password, role, program) VALUES
   ('Eizen Rodriguez',             'student1@corev.test',    '$2b$10$o.ahri7SUGWeoxMa5gstWet5kIUGXGNB/3Qy.XXYEJEz7.NtubQ6C', 'student',     'BSIT'),
   ('Kenta Shimoda',               'student2@corev.test',    '$2b$10$o.ahri7SUGWeoxMa5gstWet5kIUGXGNB/3Qy.XXYEJEz7.NtubQ6C', 'student',     'BSCS'),
   ('Chelsea Garcia',              'student3@corev.test',    '$2b$10$o.ahri7SUGWeoxMa5gstWet5kIUGXGNB/3Qy.XXYEJEz7.NtubQ6C', 'student',     'BSIT'),
-  ('Robbi Perez',                 'student4@corev.test',    '$2b$10$o.ahri7SUGWeoxMa5gstWet5kIUGXGNB/3Qy.XXYEJEz7.NtubQ6C', 'student',     'BSIT'),
+  ('Robbi Perez',             ~~    'student4@corev.test',    '$2b$10$o.ahri7SUGWeoxMa5gstWet5kIUGXGNB/3Qy.XXYEJEz7.NtubQ6C', 'student',     'BSIT'),
   ('Prof. Denise Punzalan',       'faculty@corev.test',     '$2b$10$o.ahri7SUGWeoxMa5gstWet5kIUGXGNB/3Qy.XXYEJEz7.NtubQ6C', 'adviser',     NULL),
   ('Prof. Kenneth Bautista',      'faculty2@corev.test',    '$2b$10$o.ahri7SUGWeoxMa5gstWet5kIUGXGNB/3Qy.XXYEJEz7.NtubQ6C', 'adviser',     NULL),
   ('Coord. Reynaldo G. Bautista', 'coordinator@corev.test', '$2b$10$o.ahri7SUGWeoxMa5gstWet5kIUGXGNB/3Qy.XXYEJEz7.NtubQ6C', 'adviser',     NULL),
