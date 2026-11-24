@@ -41,7 +41,7 @@ export default function NotificationsPanel({ notifications, limit = 3, onViewAll
                     <Icon />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="warp-break-word text-sm leading-snug text-white/90">{n.message}</p>
+                    <p className="wrap-break-word text-sm leading-snug text-white/90">{n.message}</p>
                     <p className="mt-1 text-xs text-white/40">{timeAgo(n.createdAt)}</p>
                   </div>
                   {!n.isRead && (

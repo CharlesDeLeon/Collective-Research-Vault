@@ -243,7 +243,7 @@ export default function AdminUserDetail() {
                       {post.type === 'paper' && post.paperTitle ? post.paperTitle : post.text || '—'}
                     </p>
                     <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-white/50">
-                      {post.groupName && <span>{post.groupName}</span>}
+                      {post.groupName && <span className="truncate">{post.groupName}</span>}
                       {post.createdAt && <span>{longDate(post.createdAt)}</span>}
                     </p>
                   </li>

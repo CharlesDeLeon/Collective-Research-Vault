@@ -115,7 +115,7 @@ export default function AdminGroupDetail() {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="wrap-break-word text-2xl font-bold sm:text-3xl">{group.group_name}</h1>
-          {meta.length > 0 && <p className="mt-1 text-sm text-white/60">{meta.join(' · ')}</p>}
+          {meta.length > 0 && <p className="mt-1 truncate text-sm text-white/60">{meta.join(' · ')}</p>}
           <p className="mt-3 flex flex-wrap items-center gap-2 text-sm">
             <span className="text-white/55">Adviser</span>
             <AdviserChip name={group.adviser_name} />
@@ -161,7 +161,7 @@ export default function AdminGroupDetail() {
             <ul className="divide-y divide-white/10">
               {group.members.map((m) => (
                 <li key={m.user_id} className="py-3">
-                  <p className="text-sm font-semibold">{m.name}</p>
+                  <p className="truncate text-sm font-semibold">{m.name}</p>
                   <p className="truncate text-xs text-white/55">
                     {m.email}
                     {m.program ? ` · ${m.program}` : ''}
@@ -179,8 +179,8 @@ export default function AdminGroupDetail() {
             <ul className="divide-y divide-white/10">
               {group.panel.map((p) => (
                 <li key={p.assignment_id} className="py-3">
-                  <p className="text-sm font-semibold">{p.name}</p>
-                  <p className="truncate text-xs text-white/55">
+                  <p className="truncate text-sm font-semibold">{p.name}</p>
+                  <p className="max-w-full min-w-0 truncate text-xs text-white/55">
                     {p.email}
                     {p.role_in_panel ? ` · ${p.role_in_panel}` : ''}
                     {p.assigned_at ? ` · assigned ${fullDate(p.assigned_at)}` : ''}
@@ -201,7 +201,7 @@ export default function AdminGroupDetail() {
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <p className="wrap-break-word text-sm font-semibold">{p.paperTitle || p.text || 'Untitled paper'}</p>
-                  <p className="text-xs text-white/55">
+                  <p className="truncate text-xs text-white/55">
                     {p.authorName} · {timeAgo(p.createdAt)}
                   </p>
                 </div>

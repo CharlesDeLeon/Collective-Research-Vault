@@ -264,7 +264,7 @@ export default function AdminReports() {
                   {view.matches.map((g) => (
                     <li key={g.group_id} className="py-3">
                       <p className="wrap-break-word text-sm font-semibold">{g.group_name}</p>
-                      <p className="mt-1 text-xs text-white/55">
+                      <p className="mt-1 truncate text-xs text-white/55">
                         {[g.strand || g.program, g.section, g.year_level, g.school_year].filter(Boolean).join(' · ') || '—'}
                       </p>
                       <p className="mt-1 text-xs text-white/55">

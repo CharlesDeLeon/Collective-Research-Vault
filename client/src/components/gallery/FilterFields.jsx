@@ -22,7 +22,7 @@ export default function FilterFields({
                 onChange={() => onToggle(group.key, o.value)}
                 className={`m-0 accent-primary ${boxClass}`}
               />
-              <span className="flex-1">{o.value}</span>
+              <span className="min-w-0 flex-1">{o.value}</span>
               <span className="text-[0.8125rem] text-fg-subtle">{o.count}</span>
             </label>
           ))}
@@ -36,7 +36,7 @@ export default function FilterFields({
               key={value}
               type="button"
               onClick={() => onSearch(value)}
-              className="min-h-10 rounded-full border border-chip-off-line bg-chip-off-bg px-3.5 text-[0.8125rem] text-chip-off-fg transition-colors hover:bg-fg/10 sm:min-h-9"
+              className="max-w-full min-w-0 wrap-break-word min-h-10 rounded-full border border-chip-off-line bg-chip-off-bg px-3.5 text-[0.8125rem] text-chip-off-fg transition-colors hover:bg-fg/10 sm:min-h-9"
             >
               {value}
             </button>

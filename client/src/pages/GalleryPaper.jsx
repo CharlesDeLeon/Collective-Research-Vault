@@ -68,11 +68,11 @@ export default function GalleryPaper() {
           <>
             <div className="mt-4 flex flex-col items-start gap-8 lg:flex-row">
               <main className="w-full min-w-0 flex-1">
-                <span className="inline-block rounded-full bg-pill-bg px-3.5 py-1 text-[0.8125rem] font-semibold text-pill-fg">
+                <span className="inline-block max-w-full min-w-0 rounded-full bg-pill-bg px-3.5 py-1 text-[0.8125rem] font-semibold text-pill-fg">
                   {paper.strand} · {paper.section} · {paper.schoolYear}
                 </span>
                 <h1 className="mb-0 mt-4 text-[1.625rem] font-semibold leading-tight wrap-break-word text-heading sm:text-[2.5rem]">{paper.title}</h1>
-                <p className="mb-0 mt-4 text-base text-fg/85">{paper.authors.join(', ')}</p>
+                <p className="mb-0 mt-4 max-w-full min-w-0 text-base text-fg/85">{paper.authors.join(', ')}</p>
 
                 <section className="mt-9" aria-labelledby="abs-h">
                   <h2 id="abs-h" className="mb-3 mt-0 text-xl font-semibold text-heading">Abstract</h2>
@@ -86,7 +86,7 @@ export default function GalleryPaper() {
                       <Link
                         key={k}
                         to={`/gallery?q=${encodeURIComponent(k)}`}
-                        className="inline-flex min-h-9 items-center rounded-full border border-keyword-line bg-keyword-bg px-3.5 text-sm text-keyword-fg hover:bg-link/10"
+                        className="inline-flex max-w-full min-w-0 min-h-9 items-center rounded-full border border-keyword-line bg-keyword-bg px-3.5 text-sm text-keyword-fg hover:bg-link/10"
                       >
                         {k}
                       </Link>
@@ -111,19 +111,19 @@ export default function GalleryPaper() {
                   </div>
                   <div>
                     <dt className={dt}>Strand</dt>
-                    <dd className="m-0 mt-1 text-base">{paper.strand}</dd>
+                    <dd className="m-0 mt-1 truncate text-base">{paper.strand}</dd>
                   </div>
                   <div>
                     <dt className={dt}>Section</dt>
-                    <dd className="m-0 mt-1 text-base">{paper.section}</dd>
+                    <dd className="m-0 mt-1 truncate text-base">{paper.section}</dd>
                   </div>
                   <div>
                     <dt className={dt}>School year</dt>
-                    <dd className="m-0 mt-1 text-base">{paper.schoolYear}</dd>
+                    <dd className="m-0 mt-1 truncate text-base">{paper.schoolYear}</dd>
                   </div>
                   <div>
                     <dt className={dt}>Adviser</dt>
-                    <dd className="m-0 mt-1 text-base">{paper.adviser}</dd>
+                    <dd className="m-0 mt-1 truncate text-base">{paper.adviser}</dd>
                   </div>
                 </dl>
                 <button

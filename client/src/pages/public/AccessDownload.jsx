@@ -27,7 +27,7 @@ export default function AccessDownload() {
   return (
     <PublicShell>
       <StatePanel title="Your paper is ready" tone="success">
-        {paper && <p className="m-0 font-medium">{paper.title}</p>}
+        {paper && <p className="m-0 max-w-full min-w-0 font-medium">{paper.title}</p>}
         <p className="mb-0 mt-3 text-white/75">
           Use Download PDF below. Your browser may ask where to save the file.
         </p>

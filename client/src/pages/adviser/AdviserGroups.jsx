@@ -289,12 +289,12 @@ export default function AdviserGroups() {
 
               <div className="flex flex-wrap gap-2">
                 {(g.strand || g.program) && (
-                  <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">
+                  <span className="max-w-full min-w-0 truncate rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">
                     {g.strand || g.program}
                   </span>
                 )}
                 {g.section && (
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">{g.section}</span>
+                  <span className="max-w-full min-w-0 truncate rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">{g.section}</span>
                 )}
                 {g.year_level && (
                   <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
@@ -302,7 +302,7 @@ export default function AdviserGroups() {
                   </span>
                 )}
                 {g.school_year && (
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+                  <span className="max-w-full min-w-0 truncate rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
                     {g.school_year}
                   </span>
                 )}
@@ -463,7 +463,7 @@ export default function AdviserGroups() {
                           <button
                             type="button"
                             onClick={() => addMember(s)}
-                            className="block w-full px-3 py-2 text-left text-sm hover:bg-white/10"
+                            className="block w-full truncate px-3 py-2 text-left text-sm hover:bg-white/10"
                           >
                             {s.name} <span className="text-white/50">({s.email})</span>
                           </button>
@@ -474,13 +474,13 @@ export default function AdviserGroups() {
                   {modalMembers.length > 0 && (
                     <ul className="m-0 mt-2 flex list-none flex-wrap gap-2 p-0">
                       {modalMembers.map((m) => (
-                        <li key={m.user_id} className="flex items-center gap-2 rounded-full bg-gold/10 py-1 pl-3 pr-1 text-xs text-gold">
-                          {m.name}
+                        <li key={m.user_id} className="flex max-w-full min-w-0 items-center gap-2 rounded-full bg-gold/10 py-1 pl-3 pr-1 text-xs text-gold">
+                          <span className="min-w-0 truncate">{m.name}</span>
                           <button
                             type="button"
                             onClick={() => removeMember(m.user_id)}
                             aria-label={`Remove ${m.name}`}
-                            className="grid size-6 place-items-center rounded-full text-gold/70 hover:bg-gold/20 hover:text-gold"
+                            className="grid size-6 shrink-0 place-items-center rounded-full text-gold/70 hover:bg-gold/20 hover:text-gold"
                           >
                             ×
                           </button>
@@ -493,7 +493,7 @@ export default function AdviserGroups() {
             </div>
 
             {formError && (
-              <p role="alert" className="mb-0 mt-4 text-sm text-danger-ink">
+              <p role="alert" className="mb-0 mt-4 wrap-break-word text-sm text-danger-ink">
                 {formError}
               </p>
             )}

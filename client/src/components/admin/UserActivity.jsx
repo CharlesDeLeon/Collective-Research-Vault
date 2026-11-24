@@ -104,7 +104,7 @@ export default function UserActivity({ userId, refreshKey }) {
                 >
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold">{formatAction(entry.action)}</span>
-                    <span className="block text-xs text-white/55">
+                    <span className="block truncate text-xs text-white/55">
                       {mode === 'about'
                         ? `By ${entry.user_name || 'System'}`
                         : entry.target_type

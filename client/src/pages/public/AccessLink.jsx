@@ -48,7 +48,7 @@ export default function AccessLink() {
   return (
     <PublicShell>
       <StatePanel title="Your access link">
-        {paper && <p className="m-0 font-medium">{paper.title}</p>}
+        {paper && <p className="m-0 max-w-full min-w-0 font-medium">{paper.title}</p>}
         <p className="mb-0 mt-3">
           This link works once. After you choose how to open the paper, it can’t be used again.
         </p>

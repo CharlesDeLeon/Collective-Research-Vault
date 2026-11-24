@@ -103,7 +103,7 @@ export default function InviteAccept() {
           You have been invited as an External Panelist for CORE-V.
         </p>
         {invite?.email && (
-          <p className="text-xs text-white/50">Account email: {invite.email}</p>
+          <p className="truncate text-xs text-white/50">Account email: {invite.email}</p>
         )}
       </header>
 
@@ -149,7 +149,7 @@ export default function InviteAccept() {
           />
         </label>
 
-        {formError && <p className="text-xs text-rose-300">{formError}</p>}
+        {formError && <p className="max-w-full min-w-0 text-xs text-rose-300">{formError}</p>}
 
         <button
           type="submit"

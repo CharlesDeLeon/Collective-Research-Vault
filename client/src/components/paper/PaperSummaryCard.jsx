@@ -16,12 +16,12 @@ export default function PaperSummaryCard({ paper, children }) {
 
       <div className="mt-4 flex flex-wrap gap-2">
         {[paper.strand, paper.section, paper.schoolYear].filter(Boolean).map((v) => (
-          <span key={v} className="rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold">
+          <span key={v} className="max-w-full min-w-0 truncate rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold">
             {v}
           </span>
         ))}
       </div>
-      <p className="mb-0 mt-3 text-xs text-white/60">
+      <p className="mb-0 mt-3 wrap-break-word text-xs text-white/60">
         {paper.groupName}
         {paper.adviser ? ` · Adviser: ${paper.adviser}` : ''}
       </p>

@@ -14,7 +14,7 @@ import { timeAgo } from '../../utils/formatDate'
 import { backendSupport, unsupportedNote } from '../../services/backendSupport'
 
 const TABS = ['Feed', 'Papers', 'Members']
-const chip = 'rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70'
+const chip = 'max-w-full min-w-0 truncate rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70'
 const postHref = (p) => `/panelist/posts/${p.id}`
 
 export default function PanelistGroupDetail() {
@@ -95,12 +95,12 @@ export default function PanelistGroupDetail() {
       <header className={`${glass} space-y-3 p-5 sm:p-6`}>
         <h1 className="wrap-break-word text-2xl font-bold sm:text-3xl">{group.group_name}</h1>
         <div className="flex flex-wrap gap-2">
-          {strand && <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{strand}</span>}
+          {strand && <span className="max-w-full min-w-0 truncate rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{strand}</span>}
           {group.section && <span className={chip}>{group.section}</span>}
           {group.year_level && <span className={chip}>Grade {group.year_level}</span>}
           {group.school_year && <span className={chip}>{group.school_year}</span>}
         </div>
-        <p className="text-sm text-white/60">
+        <p className="wrap-break-word text-sm text-white/60">
           Adviser: {group.adviser_name || '—'} · {members.length} {members.length === 1 ? 'member' : 'members'}
         </p>
       </header>
@@ -148,7 +148,7 @@ export default function PanelistGroupDetail() {
                   <Link to={postHref(p)} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg px-2 py-3 transition hover:bg-white/5">
                     <span className="min-w-0">
                       <span className="block wrap-break-word text-sm font-semibold">{p.paperTitle || 'Untitled paper'}</span>
-                      <span className="block text-xs text-white/55">
+                      <span className="block truncate text-xs text-white/55">
                         {p.authorName} · {timeAgo(p.createdAt)}
                       </span>
                     </span>

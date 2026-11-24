@@ -38,7 +38,7 @@ export default function PostSummary({ post, lines = 3 }) {
           <span className="truncate text-sm font-semibold">{post.authorName}</span>
           <RoleBadge role={badgeRole(post.authorRole)} />
         </div>
-        <p className="mt-0.5 text-xs text-white/50">
+        <p className="mt-0.5 truncate text-xs text-white/50">
           {timeAgo(post.createdAt)}
           {post.groupName ? ` · ${post.groupName}` : ''}
         </p>

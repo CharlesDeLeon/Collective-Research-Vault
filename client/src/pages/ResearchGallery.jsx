@@ -99,7 +99,7 @@ export default function ResearchGallery() {
                 {g.chips.map((c) => (
                   <span
                     key={c.key}
-                    className="inline-flex min-h-9 items-center gap-1 rounded-full bg-filter-chip-bg py-0 pl-3.5 pr-1.5 text-sm font-medium text-filter-chip-fg ring-1 ring-inset ring-filter-chip-line"
+                    className="inline-flex max-w-full min-w-0 min-h-9 items-center gap-1 rounded-full bg-filter-chip-bg py-0 pl-3.5 pr-1.5 text-sm font-medium text-filter-chip-fg ring-1 ring-inset ring-filter-chip-line"
                   >
                     {c.label}
                     <button

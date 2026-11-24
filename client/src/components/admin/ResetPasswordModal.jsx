@@ -36,7 +36,7 @@ export default function ResetPasswordModal({ user, onClose, onDone }) {
     <ModalShell title="Reset password" icon={AlertIcon} onClose={onClose}>
       {temporaryPassword ? (
         <div className="mt-4 space-y-4 px-1 pb-1">
-          <p className="flex items-start gap-2 text-sm text-success-ink">
+          <p className="flex wrap-break-word items-start gap-2 text-sm text-success-ink">
             <CheckIcon className="mt-0.5 size-4 shrink-0" />
             {user.name} now has a new temporary password.
           </p>
@@ -58,13 +58,13 @@ export default function ResetPasswordModal({ user, onClose, onDone }) {
         </div>
       ) : (
         <div className="mt-4 space-y-5 px-1 pb-1">
-          <p className="text-sm text-white/75">
-            Reset the password for <span className="font-semibold text-white">{user.name}</span>? Their current password stops working right away.
+          <p className="wrap-break-word text-sm text-white/75">
+            Reset the password for <span className="max-w-full wrap-break-word font-semibold text-white">{user.name}</span>? Their current password stops working right away.
           </p>
           <p className="rounded-xl border border-warn/40 bg-warn/10 px-4 py-3 text-xs leading-relaxed text-warn-ink">
             The new temporary password is shown once after resetting. Share it through a secure channel. This change is recorded in the audit log.
           </p>
-          {error && <p role="alert" className="m-0 text-sm text-danger-ink">{error}</p>}
+          {error && <p role="alert" className="m-0 wrap-break-word text-sm text-danger-ink">{error}</p>}
           <div className="grid grid-cols-2 gap-3">
             <button type="button" onClick={onClose} className="h-11 rounded-xl border border-white/20 text-sm font-semibold text-white/80 transition hover:bg-white/10">
               Cancel
