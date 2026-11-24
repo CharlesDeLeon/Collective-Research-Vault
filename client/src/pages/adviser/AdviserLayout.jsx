@@ -21,7 +21,7 @@ export default function AdviserLayout() {
             showComposer={false}
             profileTo="/adviser/profile"
           />
-          <div className="min-w-0 flex-1">
+          <div className="max-w-full min-w-0 flex-1 overflow-x-clip">
             <MobileNav homeTo="/adviser/dashboard" onOpenMenu={() => setMenuOpen(true)} />
             <main className="mt-6 lg:mt-0">
               <Outlet />

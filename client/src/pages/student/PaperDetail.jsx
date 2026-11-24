@@ -225,7 +225,7 @@ export default function PaperDetail() {
               {paper.keywords?.length > 0 && (
                 <ul className="m-0 mt-4 flex list-none flex-wrap gap-2 border-t border-white/10 p-0 pt-4">
                   {paper.keywords.map((k) => (
-                    <li key={k} className="max-w-full min-w-0 truncate rounded-full border border-gold/60 px-3 py-1 text-xs text-[#FFD27F]">
+                    <li key={k} className="max-w-full min-w-0 wrap-break-word rounded-full border border-gold/60 px-3 py-1 text-xs text-[#FFD27F]">
                       {k}
                     </li>
                   ))}

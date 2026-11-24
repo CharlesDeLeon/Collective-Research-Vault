@@ -7,7 +7,7 @@ export default function StatusPill({ status, className = '' }) {
   }
   return (
     <span
-      className={`shrink-0 rounded-full border px-3 py-1 text-[0.625rem] font-bold uppercase tracking-wider ${s.cls} ${className}`}
+      className={`inline-flex max-w-full min-w-0 items-center justify-center rounded-full border px-3 py-1 text-center text-[0.625rem] font-bold uppercase leading-tight tracking-wider wrap-break-word ${s.cls} ${className}`}
     >
       {s.label}
     </span>

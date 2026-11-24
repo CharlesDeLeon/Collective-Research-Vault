@@ -38,7 +38,7 @@ const CONSENT_LABELS = {
 function ConsentPill({ consent }) {
   const status = ['granted', 'declined', 'pending'].includes(consent?.status) ? consent.status : 'pending'
   return (
-    <span className={`shrink-0 rounded-full border px-3 py-1 text-[0.625rem] font-bold uppercase tracking-wider ${CONSENT_STYLES[status]}`}>
+    <span className={`inline-flex max-w-full min-w-0 items-center justify-center rounded-full border px-3 py-1 text-center text-[0.625rem] font-bold uppercase leading-tight tracking-wider wrap-break-word ${CONSENT_STYLES[status]}`}>
       {CONSENT_LABELS[status]}
     </span>
   )

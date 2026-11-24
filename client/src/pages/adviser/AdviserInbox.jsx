@@ -37,7 +37,7 @@ const ghost = `${btn} border-white/15 text-white/75 enabled:hover:bg-white/10 en
 
 function StatusChip({ status }) {
   return (
-    <span className={`inline-block whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${STATUS_CLS[status] ?? STATUS_CLS.expired}`}>
+    <span className={`inline-flex max-w-full min-w-0 items-center justify-center rounded-full border px-2.5 py-0.5 text-center text-xs font-semibold capitalize leading-tight wrap-break-word ${STATUS_CLS[status] ?? STATUS_CLS.expired}`}>
       {String(status).replace(/_/g, ' ')}
     </span>
   )

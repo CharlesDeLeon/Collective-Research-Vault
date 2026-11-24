@@ -9,10 +9,11 @@ export default function FilterSheet({ open, onClose, g }) {
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', esc)
+    const overflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.removeEventListener('keydown', esc)
-      document.body.style.overflow = ''
+      document.body.style.overflow = overflow
     }
   }, [open, onClose])
 

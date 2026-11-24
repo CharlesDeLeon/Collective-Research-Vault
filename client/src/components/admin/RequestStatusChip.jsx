@@ -10,7 +10,7 @@ const TONES = {
 export function RequestStatusChip({ status }) {
   return (
     <span
-      className={`inline-block whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${
+      className={`inline-flex max-w-full min-w-0 items-center justify-center rounded-full border px-2.5 py-0.5 text-center text-xs font-semibold capitalize leading-tight wrap-break-word ${
         TONES[status] ?? 'border-white/15 bg-white/5 text-white/60'
       }`}
     >
