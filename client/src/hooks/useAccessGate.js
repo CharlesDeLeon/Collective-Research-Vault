@@ -15,8 +15,8 @@ export function useAccessGate(token, granted) {
     }
   }, [token, granted])
 
-  if (granted) return { phase: 'ok', paperSlug: granted.paperSlug }
+  if (granted) return { phase: 'ok', paperSlug: granted.paperSlug, paperTitle: granted.paperTitle || null }
   if (res.token !== token) return { phase: 'loading' }
-  if (res.data.state === 'valid') return { phase: 'confirm', paperSlug: res.data.paperSlug }
-  return { phase: 'blocked', state: res.data.state, paperSlug: res.data.paperSlug }
+  if (res.data.state === 'valid') return { phase: 'confirm', paperSlug: res.data.paperSlug, paperTitle: res.data.paperTitle || null }
+  return { phase: 'blocked', state: res.data.state, paperSlug: res.data.paperSlug, paperTitle: res.data.paperTitle || null }
 }

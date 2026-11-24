@@ -7,6 +7,7 @@ export function writeAccessGrant(token, grant) {
       keyFor(token),
       JSON.stringify({
         paperSlug: grant.paperSlug || '',
+        paperTitle: grant.paperTitle || '',
         fileUrl: grant.fileUrl || '',
       })
     )
@@ -25,6 +26,7 @@ export function readAccessGrant(token) {
     if (!data || typeof data !== 'object') return null
     return {
       paperSlug: typeof data.paperSlug === 'string' ? data.paperSlug : '',
+      paperTitle: typeof data.paperTitle === 'string' ? data.paperTitle : '',
       fileUrl: typeof data.fileUrl === 'string' ? data.fileUrl : '',
     }
   } catch {

@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import PublicShell from '../../components/public/PublicShell'
 import StatePanel, { outlineBtn } from '../../components/public/StatePanel'
 import AccessBlocked, { AccessLoading } from '../../components/public/AccessBlocked'
 import { useAccessGate } from '../../hooks/useAccessGate'
-import { getGalleryPaper } from '../../services/galleryService'
 import { readAccessGrant } from '../../utils/accessGrant'
 
 export default function AccessView() {
@@ -15,22 +14,11 @@ export default function AccessView() {
     return readAccessGrant(token)
   }, [state, token])
   const gate = useAccessGate(token, grant)
-  const [paperResult, setPaperResult] = useState({ slug: '', paper: null })
   const grantSlug = grant?.paperSlug || ''
+  const paperTitle = grant?.paperTitle || gate?.paperTitle || ''
   const fileUrl = grant?.fileUrl || ''
 
-  useEffect(() => {
-    if (!grantSlug) return undefined
-    let cancelled = false
-    getGalleryPaper(grantSlug).then((p) => {
-      if (!cancelled) setPaperResult({ slug: grantSlug, paper: p })
-    }).catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [grantSlug])
-
-  const paper = paperResult.slug === grantSlug ? paperResult.paper : null
+  const paper = paperTitle ? { title: paperTitle, slug: grantSlug } : null
 
   if (gate.phase === 'loading') return <AccessLoading />
   if (gate.phase === 'confirm') return <Navigate to={`/access/${token}`} replace />

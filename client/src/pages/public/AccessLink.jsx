@@ -33,8 +33,8 @@ export default function AccessLink() {
     setBusy(mode)
     const res = await consumeAccessLink(token)
     if (res.state === 'success') {
-      writeAccessGrant(token, { paperSlug: res.paperSlug, fileUrl: res.fileUrl })
-      navigate(`/access/${token}/${mode}`, { replace: true, state: { paperSlug: res.paperSlug, fileUrl: res.fileUrl } })
+      writeAccessGrant(token, { paperSlug: res.paperSlug, paperTitle: res.paperTitle, fileUrl: res.fileUrl })
+      navigate(`/access/${token}/${mode}`, { replace: true, state: { paperSlug: res.paperSlug, paperTitle: res.paperTitle, fileUrl: res.fileUrl } })
       return
     }
     setBusy('')
