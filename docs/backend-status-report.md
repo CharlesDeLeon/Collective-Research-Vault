@@ -144,4 +144,4 @@ If not yet run, execute the SQL in §1 (or the npm scripts). Verify with the per
 - Reports over submission statuses need a server report query.
 - Facets for large catalogs (500-row cap) needs a dedicated endpoint + frontend change.
 - `statusNote` UI collection.
-- `unpublishReasonStored` read path verification.
+- `unpublishReasonStored` read path verification.# deploy trigger
