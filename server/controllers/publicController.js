@@ -32,7 +32,14 @@ const normalizePaper = (row) => ({
 const listPapers = async (req, res) => {
   try {
     const { strand, section, year, q, featured, limit = 50, offset = 0 } = req.query
-    let sql = `SELECT s.*, u.name AS adviser_name
+    // Explicit column list (never SELECT s.*) so the BYTEA file_data column
+    // added for durable file serving is NOT dragged over the wire on every
+    // gallery load. Keep this list in sync with normalizePaper().
+    let sql = `SELECT s.submission_id, s.group_id, s.title, s.abstract, s.keywords,
+                      s.authors, s.program, s.strand, s.section, s.year_level,
+                      s.school_year, s.status, s.is_published, s.public_visible,
+                      s.featured, s.slug, s.citation, s.published_at, s.updated_at,
+                      s.created_at, u.name AS adviser_name
                FROM submissions s
                LEFT JOIN users u ON u.user_id = s.submitted_by
                WHERE (s.is_published = TRUE OR s.status = 'published')`
@@ -61,7 +68,11 @@ const getPaper = async (req, res) => {
   try {
     const { slug } = req.params
     const [rows] = await query(
-      `SELECT s.*, u.name AS adviser_name
+      `SELECT s.submission_id, s.group_id, s.title, s.abstract, s.keywords,
+              s.authors, s.program, s.strand, s.section, s.year_level,
+              s.school_year, s.status, s.is_published, s.public_visible,
+              s.featured, s.slug, s.citation, s.published_at, s.updated_at,
+              s.created_at, u.name AS adviser_name
        FROM submissions s
        LEFT JOIN users u ON u.user_id = s.submitted_by
        WHERE s.slug = ? AND (s.is_published = TRUE OR s.status = 'published')`,
@@ -177,13 +188,13 @@ const confirmLink = async (req, res) => {
     const hash = sha256(token)
     const [rows] = await query(
       `SELECT l.link_id, l.expires_at, l.used_at, l.revoked_at, l.submission_id,
-              s.slug AS paper_slug, s.is_published, s.status
+              s.slug AS paper_slug, s.title AS paper_title, s.is_published, s.status
        FROM paper_access_links l
        JOIN submissions s ON s.submission_id = l.submission_id
        WHERE l.token_hash = ?`,
       [hash]
     )
-    if (!rows.length) return res.json({ data: { state: 'invalid', paperSlug: null } })
+    if (!rows.length) return res.json({ data: { state: 'invalid', paperSlug: null, paperTitle: null } })
 
     const l = rows[0]
     const paperAvailable = !!(l.is_published || l.status === 'published')
@@ -192,7 +203,7 @@ const confirmLink = async (req, res) => {
     else if (l.used_at) state = 'used'
     else if (new Date(l.expires_at) < new Date()) state = 'expired'
 
-    res.json({ data: { state, paperSlug: l.paper_slug } })
+    res.json({ data: { state, paperSlug: l.paper_slug, paperTitle: l.paper_title } })
   } catch (err) {
     console.error('confirmLink error:', err)
     res.status(500).json({ message: 'Failed to confirm link' })
@@ -206,27 +217,27 @@ const consumeLink = async (req, res) => {
     const hash = sha256(token)
     const [rows] = await query(
       `SELECT l.link_id, l.request_id, l.submission_id, l.expires_at, l.used_at, l.revoked_at,
-              s.slug AS paper_slug, s.is_published, s.status
+              s.slug AS paper_slug, s.title AS paper_title, s.is_published, s.status
        FROM paper_access_links l
        JOIN submissions s ON s.submission_id = l.submission_id
        WHERE l.token_hash = ?`,
       [hash]
     )
-    if (!rows.length) return res.json({ data: { state: 'invalid', paperSlug: null, fileUrl: '' } })
+    if (!rows.length) return res.json({ data: { state: 'invalid', paperSlug: null, paperTitle: null, fileUrl: '' } })
 
     const l = rows[0]
     const paperAvailable = !!(l.is_published || l.status === 'published')
     if (l.revoked_at || !paperAvailable) {
       await logAccess(l, 'download_denied_revoked', req)
-      return res.json({ data: { state: 'revoked', paperSlug: l.paper_slug, fileUrl: '' } })
+      return res.json({ data: { state: 'revoked', paperSlug: l.paper_slug, paperTitle: l.paper_title, fileUrl: '' } })
     }
     if (l.used_at) {
       await logAccess(l, 'download_denied_used', req)
-      return res.json({ data: { state: 'used', paperSlug: l.paper_slug, fileUrl: '' } })
+      return res.json({ data: { state: 'used', paperSlug: l.paper_slug, paperTitle: l.paper_title, fileUrl: '' } })
     }
     if (new Date(l.expires_at) < new Date()) {
       await logAccess(l, 'download_denied_expired', req)
-      return res.json({ data: { state: 'expired', paperSlug: l.paper_slug, fileUrl: '' } })
+      return res.json({ data: { state: 'expired', paperSlug: l.paper_slug, paperTitle: l.paper_title, fileUrl: '' } })
     }
 
     // Mark used (single-use) — atomic
@@ -237,7 +248,7 @@ const consumeLink = async (req, res) => {
     if (!upd.length) {
       // Race condition: already used
       await logAccess(l, 'download_denied_used', req)
-      return res.json({ data: { state: 'used', paperSlug: l.paper_slug, fileUrl: '' } })
+      return res.json({ data: { state: 'used', paperSlug: l.paper_slug, paperTitle: l.paper_title, fileUrl: '' } })
     }
 
     // Issue a short-lived proxy URL instead of exposing the raw storage path
@@ -251,7 +262,7 @@ const consumeLink = async (req, res) => {
       [l.request_id]
     )
 
-    res.json({ data: { state: 'success', paperSlug: l.paper_slug, fileUrl } })
+    res.json({ data: { state: 'success', paperSlug: l.paper_slug, paperTitle: l.paper_title, fileUrl } })
   } catch (err) {
     console.error('consumeLink error:', err)
     res.status(500).json({ message: 'Failed to access paper' })

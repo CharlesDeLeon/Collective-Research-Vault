@@ -1,8 +1,42 @@
 import api from './api'
 
+// --- Lightweight client cache (SWR-style) ---------------------------------
+// Public gallery data changes rarely. Caching it in memory for a short TTL
+// makes route navigation feel instant and avoids hammering the (free-tier)
+// backend on every mount. The cache lives for the SPA session.
+const CACHE_TTL_MS = 30_000
+const cache = new Map()
+
+function cacheKey(prefix, value) {
+  return prefix + ':' + JSON.stringify(value ?? null)
+}
+
+function getCached(key) {
+  const entry = cache.get(key)
+  if (!entry) return undefined
+  if (entry.expiresAt <= Date.now()) {
+    cache.delete(key)
+    return undefined
+  }
+  return entry.data
+}
+
+function setCached(key, data) {
+  cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL_MS })
+}
+
+export function invalidateGalleryCache() {
+  cache.clear()
+}
+
 export async function fetchGalleryPapers(params = {}) {
+  const key = cacheKey('list', params)
+  const cached = getCached(key)
+  if (cached !== undefined) return cached
   const res = await api.get('/public/papers', { params })
-  return Array.isArray(res.data?.data) ? res.data.data : []
+  const data = Array.isArray(res.data?.data) ? res.data.data : []
+  setCached(key, data)
+  return data
 }
 
 export function normalizeGalleryPaper(row) {
@@ -24,8 +58,13 @@ export function normalizeGalleryPaper(row) {
 }
 
 export async function getGalleryPaper(slug) {
+  const key = cacheKey('paper', slug)
+  const cached = getCached(key)
+  if (cached !== undefined) return cached
   const res = await api.get(`/public/papers/${slug}`)
-  return res.data?.data ? normalizeGalleryPaper(res.data.data) : null
+  const data = res.data?.data ? normalizeGalleryPaper(res.data.data) : null
+  setCached(key, data)
+  return data
 }
 
 export function getRelatedPapers(papers, paper, limit = 3) {
