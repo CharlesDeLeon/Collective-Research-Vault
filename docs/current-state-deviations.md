@@ -33,13 +33,13 @@ AD-05 must be re-run under Reviews. AD-06 through AD-18 are still required befor
 
 ## Capability flags
 
-`client/src/services/backendSupport.js` currently has 31 flags `false` and 7 `true`.
+`client/src/services/backendSupport.js` now has 31 flags `true` and 7 `false`, after the strategy B pre-enable pass on 2026-11-24.
 
-**True:** `studentConsent`, `statusHistory`, `panelistInvite`, `changePassword`, `profileSync`, `panelistScopedGroups`, `panelistPaperList`.
+**False (real gaps, not gates):** `requestConsent`, `adviserAbstractEdit`, `finalAndDefendedFiles`, `adminEditRoles`, `adminDownloads`, `adminActiveUsers`, `adminReportStatuses`.
 
-**False:** all others, including every Admin-specific flag and `adminEditRoles`.
+**True:** all other flags, including adviser status notes and unpublish reasons, the stale group flags, the shared moderation flags, and the Admin flags listed in `docs/backend-status-report.md:113-130`.
 
-No flags were flipped during the current Adviser pass. Flags are flipped only after the matching area is fully verified, one area at a time. `adminEditRoles` stays `false` by design: `docs/handoff.md:318-322` specifies a read-only permission matrix with "optional later: editable matrix."
+Strategy B replaces "verify then flip" with "enable from code inspection, then confirm by test." A failed area is reverted to `false` and recorded as a gap. `adminEditRoles` stays `false` by design: `docs/handoff.md:318-322` specifies a read-only permission matrix with "optional later: editable matrix." Caveat strings remain in `unsupportedNote` but are gated by their flags, so they are hidden while enabled and can be restored immediately on revert.
 
 ## Frontend changes made in this pass
 
@@ -64,13 +64,14 @@ No flags were flipped during the current Adviser pass. Flags are flipped only af
 - Adviser moderation follows the current backend scope (vault-wide).
 - Shared moderation flags affect Admin UI when flipped; accepted.
 - Consumed requirement docs stay frozen; this deviations doc is the living record.
+- Strategy B: pre-enable code-backed flags so tests confirm rather than unlock; revert failed areas.
 - A dedicated cleanup phase follows all role Phase R work.
 - User runs all git commands; assistant does not.
 
 ## Outstanding work
 
 1. Re-run AD-05 under Reviews; complete AD-06 through AD-18.
-2. Apply verified flag flips, caveat removal, and checklist entries for Adviser.
+2. Confirm the pre-enabled areas by test; revert any failed area and add checklist entries for Adviser.
 3. Run Admin, External Panelist, and Public Reader Phase R.
 4. Backend fixes and migrations for the gaps listed above (owner-side).
 5. Dedicated cleanup phase, then final manual QA.
