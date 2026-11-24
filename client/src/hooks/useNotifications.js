@@ -7,6 +7,17 @@ import {
 
 const newestFirst = (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
 
+const backendReason = (err) => {
+  const value = err?.response?.data?.message ?? err?.response?.data?.error
+  if (typeof value !== 'string') return ''
+  return value.trim().replace(/[.!]+$/, '')
+}
+
+const failureMessage = (subject, err) => {
+  const reason = backendReason(err)
+  return reason ? `${subject}: ${reason}. Please try again.` : `${subject}. Please try again.`
+}
+
 export function useNotifications() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -58,13 +69,12 @@ export function useNotifications() {
   const markRead = async (id) => {
     const ids = new Set([id])
     setActionError(null)
-    setRead(ids, true)
     actionBusyRef.current = true
     try {
       await markNotificationRead(id)
-    } catch {
-      setRead(ids, false)
-      setActionError('Could not update that notification. Please try again.')
+      setRead(ids, true)
+    } catch (err) {
+      setActionError(failureMessage('Could not update that notification', err))
     } finally {
       actionBusyRef.current = false
     }
@@ -74,13 +84,12 @@ export function useNotifications() {
     const ids = new Set(unread.map((n) => n.id))
     if (ids.size === 0) return
     setActionError(null)
-    setRead(ids, true)
     actionBusyRef.current = true
     try {
       await markAllNotificationsRead()
-    } catch {
-      setRead(ids, false)
-      setActionError('Could not mark all as seen. Please try again.')
+      setRead(ids, true)
+    } catch (err) {
+      setActionError(failureMessage('Could not mark all as seen', err))
     } finally {
       actionBusyRef.current = false
     }

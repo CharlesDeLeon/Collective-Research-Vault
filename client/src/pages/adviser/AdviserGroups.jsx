@@ -18,7 +18,7 @@ import Select, { Option } from '../../components/ui/Select'
 const STRANDS = ['STEM', 'ABM', 'HUMSS', 'GAS']
 const yearOptions = () => {
   const start = new Date().getFullYear() - 3
-  return Array.from({ length: 6 }, (_, i) => `${start + i}-${start + i + 1}`)
+  return Array.from({ length: 11 }, (_, i) => `${start + i}-${start + i + 1}`)
 }
 const EMPTY_FORM = { group_name: '', strand: '', section: '', year_level: '', school_year: '' }
 

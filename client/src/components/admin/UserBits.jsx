@@ -4,7 +4,7 @@ import { roleLabel } from '../../utils/adminRoles'
 export function StatusBadge({ active }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${
+      className={`inline-flex max-w-full min-w-0 items-center justify-center gap-1.5 rounded-full border px-2.5 py-1 text-center text-xs font-semibold leading-tight wrap-break-word ${
         active ? 'border-success/40 bg-success/10 text-success-ink' : 'border-white/15 bg-white/5 text-white/55'
       }`}
     >
@@ -16,7 +16,7 @@ export function StatusBadge({ active }) {
 
 export function RoleBadge({ role }) {
   return (
-    <span className="inline-block whitespace-nowrap rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-xs font-semibold text-gold">
+    <span className="inline-flex max-w-full min-w-0 items-center justify-center rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-center text-xs font-semibold leading-tight wrap-break-word text-gold">
       {roleLabel(role)}
     </span>
   )

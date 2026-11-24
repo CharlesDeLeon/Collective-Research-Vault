@@ -8,8 +8,8 @@ const formatSize = (bytes) =>
 export function validateFile(file) {
   if (!file) return 'Please attach your research file.'
   const ext = file.name.split('.').pop().toLowerCase()
-  if (!ACCEPTED_EXTENSIONS.includes(ext)) return 'Only PDF, DOC or DOCX files are accepted.'
-  if (file.size > MAX_FILE_MB * 1048576) return `File is larger than ${MAX_FILE_MB}MB.`
+  if (!ACCEPTED_EXTENSIONS.includes(ext)) return 'Only PDF, Word .doc or Word .docx files are accepted.'
+  if (file.size > MAX_FILE_MB * 1048576) return `File is larger than ${MAX_FILE_MB} MB. Use a smaller PDF or Word file.`
   return ''
 }
 
@@ -86,7 +86,7 @@ export default function FileDropzone({ file, error, onChange }) {
           <>
             <UploadCloudIcon className="size-10 text-white/50" strokeWidth={1.5} />
             <p className="mt-2 text-sm text-white">Click to browse or drag and drop file here</p>
-            <p className="text-xs text-white/40">Maximum file size: {MAX_FILE_MB}MB</p>
+            <p className="text-xs text-white/40">Maximum file size: {MAX_FILE_MB} MB. PDF, Word .doc or .docx only.</p>
           </>
         )}
       </div>

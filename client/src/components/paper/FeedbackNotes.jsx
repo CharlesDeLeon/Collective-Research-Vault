@@ -21,7 +21,7 @@ function FeedbackNoteCard({ note, onDismiss, onResolve }) {
         <button
           type="button"
           onClick={() => onDismiss(note.id)}
-          className="flex items-center gap-2 rounded-full border border-rose-500 bg-rose-500/20 px-4 py-1.5 text-sm font-medium text-rose-100 transition hover:bg-rose-500/30"
+          className="flex items-center gap-2 rounded-full border border-rose-500 bg-rose-500/20 px-4 py-1.5 text-sm font-medium text-rose-100 shadow-none transition-colors hover:bg-rose-500/30 hover:shadow-none"
         >
           <CloseIcon className="size-3" />
           Dismiss
@@ -30,7 +30,7 @@ function FeedbackNoteCard({ note, onDismiss, onResolve }) {
           type="button"
           onClick={() => onResolve(note.id)}
           aria-pressed={note.resolved}
-          className="flex items-center gap-2 rounded-full border border-emerald-400 bg-emerald-500/20 px-4 py-1.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/30"
+          className="flex items-center gap-2 rounded-full border border-emerald-400 bg-emerald-500/20 px-4 py-1.5 text-sm font-medium text-emerald-300 shadow-none transition-colors hover:bg-emerald-500/30 hover:shadow-none"
         >
           <CheckIcon className="size-3" />
           {note.resolved ? 'Resolved' : 'Resolve'}

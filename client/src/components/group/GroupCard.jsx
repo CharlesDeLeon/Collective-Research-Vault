@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { glass } from '../dashboard/constants'
 
-const chip = 'rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70'
+const chip = 'max-w-full min-w-0 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70'
 
 export default function GroupCard({ group, to }) {
   const strand = group.strand || group.program
@@ -11,7 +11,7 @@ export default function GroupCard({ group, to }) {
     <Link to={to} className={`${glass} flex flex-col gap-3 p-5 transition hover:border-gold/40`}>
       <h2 className="m-0 wrap-break-word text-lg font-bold">{group.group_name}</h2>
       <div className="flex flex-wrap gap-2">
-        {strand && <span className="rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{strand}</span>}
+        {strand && <span className="max-w-full min-w-0 rounded-full bg-gold/10 px-3 py-1 text-xs font-semibold text-gold">{strand}</span>}
         {group.section && <span className={chip}>{group.section}</span>}
         {group.year_level && <span className={chip}>Grade {group.year_level}</span>}
         {group.school_year && <span className={chip}>{group.school_year}</span>}
