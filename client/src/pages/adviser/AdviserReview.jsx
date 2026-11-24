@@ -40,13 +40,16 @@ const uploadErrorMessage = (e) => {
   const status = e?.response?.status
   const raw = e?.response?.data?.message
   const message = raw && !GENERIC_UPLOAD_MESSAGES.includes(raw) ? raw : null
-  if (status === 400) return message || `That file was rejected. Use a PDF, Word (.doc/.docx) file under ${MAX_FILE_MB} MB.`
-  if (status === 401 || status === 403) return 'Your session cannot upload files for this paper.'
+  if (status === 413) return message || `That file is over the ${MAX_FILE_MB} MB limit. Choose a smaller PDF or Word file.`
+  if (status === 400) {
+    if (message && /size|large|mb|limit/i.test(message)) return message
+    return message || 'Only PDF, Word .doc, or Word .docx files can be uploaded.'
+  }
+  if (status === 401 || status === 403) return 'Your session cannot upload files for this paper. Sign in again and retry.'
   if (status === 404) return 'This paper was not found. Refresh the page and try again.'
-  if (status === 409) return message || 'Unpublish this paper before uploading a file.'
-  if (status === 413) return `The file is larger than ${MAX_FILE_MB} MB. Use a smaller PDF or Word file.`
-  if (status >= 500) return message || `The server could not save the file. Try again with a PDF or Word file under ${MAX_FILE_MB} MB.`
-  return message || 'The upload failed. Check the file and try again.'
+  if (status === 409) return message || 'Unpublish this paper before uploading a new file.'
+  if (status >= 500) return message || 'The server could not save that file right now. Try again in a moment.'
+  return message || 'The upload did not complete. Check the file and try again.'
 }
 
 const fieldCls =
@@ -380,7 +383,7 @@ export default function AdviserReview() {
   }
 
   return (
-    <div className="max-w-full min-w-0 space-y-6 overflow-x-clip sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-sm text-white/60">
         <button type="button" onClick={() => navigate('/adviser/reviews')} className="hover:text-white">
           Reviews
@@ -523,7 +526,7 @@ export default function AdviserReview() {
           </div>
         </div>
 
-        <aside className="scrollbar-none min-w-0 space-y-6 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:self-start lg:overflow-y-auto">
+        <aside className="min-w-0 space-y-6">
           <div className={`${glass} space-y-3 p-5 sm:p-6`}>
             <h2 className="m-0 text-lg font-bold">Review</h2>
             <label className="block">

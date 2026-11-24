@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listSubmissions } from '../../services/adviserService'
-import { glass } from '../../components/dashboard/constants'
+import { glass, STATUS_STYLES } from '../../components/dashboard/constants'
 import { SearchIcon } from '../../components/dashboard/icons'
-import StatusPill from '../../components/dashboard/StatusPill'
 import Select, { Option } from '../../components/ui/Select'
 import { timeAgo } from '../../utils/formatDate'
 
@@ -47,7 +46,7 @@ export default function AdviserSubmissions() {
   const open = (id) => navigate(`/adviser/reviews/${id}`)
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="max-w-full min-w-0 space-y-6 sm:space-y-8">
       <header>
         <h1 className="m-0 text-2xl font-bold tracking-tight sm:text-3xl">Review Queue</h1>
         <p className="mb-0 mt-1 text-sm text-white/60">
@@ -137,10 +136,12 @@ export default function AdviserSubmissions() {
                   <td className="px-4 py-3 text-white/70">{s.submitted_by_name || '—'}</td>
                   <td className="px-4 py-3 text-white/60">{s.group_name || '—'}</td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex max-w-[10rem] items-center justify-center rounded-full bg-white/10 px-2.5 py-0.5 text-center text-xs leading-tight wrap-break-word align-middle">{STAGE_LABELS[s.stage] || s.stage}</span>
+                    <span className="text-xs text-white/70 wrap-break-word">{STAGE_LABELS[s.stage] || s.stage || '—'}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <StatusPill status={s.status} />
+                    <span className="text-xs text-white/70 wrap-break-word">
+                      {STATUS_STYLES[s.status]?.label ?? String(s.status ?? '—').replace(/_/g, ' ')}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-white/60">{timeAgo(s.updated_at) || '—'}</td>
                   <td className="px-4 py-3 text-right">

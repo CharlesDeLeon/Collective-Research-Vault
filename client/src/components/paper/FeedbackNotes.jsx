@@ -1,4 +1,3 @@
-import { glass } from '../dashboard/constants'
 import { CheckIcon, CloseIcon, CommentIcon } from '../dashboard/icons'
 import Avatar from './Avatar'
 import SectionHeading from './SectionHeading'
@@ -6,7 +5,7 @@ import SectionHeading from './SectionHeading'
 function FeedbackNoteCard({ note, onDismiss, onResolve }) {
   return (
     <article
-      className={`${glass} flex flex-col gap-3 p-4 transition-opacity sm:p-5 ${note.resolved ? 'opacity-60' : ''}`}
+      className={`flex flex-col gap-3 rounded-2xl border border-white/10 bg-panel p-4 transition-opacity sm:p-5 ${note.resolved ? 'opacity-60' : ''}`}
     >
       <div className="flex items-center justify-between gap-3">
         <span className="min-w-0 truncate text-sm font-medium text-white/40">
@@ -21,7 +20,7 @@ function FeedbackNoteCard({ note, onDismiss, onResolve }) {
         <button
           type="button"
           onClick={() => onDismiss(note.id)}
-          className="flex items-center gap-2 rounded-full border border-rose-500 bg-rose-500/20 px-4 py-1.5 text-sm font-medium text-rose-100 shadow-none transition-colors hover:bg-rose-500/30 hover:shadow-none"
+          className="flex items-center gap-2 rounded-full border border-rose-500 bg-rose-500/20 px-4 py-1.5 text-sm font-medium text-rose-100 shadow-none transition-colors hover:bg-rose-600 hover:text-white hover:shadow-none"
         >
           <CloseIcon className="size-3" />
           Dismiss
@@ -30,7 +29,7 @@ function FeedbackNoteCard({ note, onDismiss, onResolve }) {
           type="button"
           onClick={() => onResolve(note.id)}
           aria-pressed={note.resolved}
-          className="flex items-center gap-2 rounded-full border border-emerald-400 bg-emerald-500/20 px-4 py-1.5 text-sm font-medium text-emerald-300 shadow-none transition-colors hover:bg-emerald-500/30 hover:shadow-none"
+          className="flex items-center gap-2 rounded-full border border-emerald-400 bg-emerald-500/20 px-4 py-1.5 text-sm font-medium text-emerald-300 shadow-none transition-colors hover:bg-emerald-600 hover:text-white hover:shadow-none"
         >
           <CheckIcon className="size-3" />
           {note.resolved ? 'Resolved' : 'Resolve'}
