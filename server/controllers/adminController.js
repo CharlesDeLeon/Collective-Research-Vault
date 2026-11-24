@@ -249,7 +249,7 @@ const updateUser = async (req, res) => {
     }
 
     if (req.body.status !== undefined) {
-      const isActive = String(req.body.status).toLowerCase() === 'active' ? 1 : 0
+      const isActive = String(req.body.status).toLowerCase() === 'active' ? true : false
       updates.push('is_active = ?')
       values.push(isActive)
     }
@@ -342,7 +342,7 @@ const createUser = async (req, res) => {
 
     const [result] = await pool.query(
       `INSERT INTO users (name, email, password, role, program, is_active)
-       VALUES (?, ?, ?, ?, ?, 1)
+       VALUES (?, ?, ?, ?, ?, TRUE)
        RETURNING user_id`,
       [
         String(name).trim(),

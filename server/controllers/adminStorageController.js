@@ -39,7 +39,7 @@ const getLargestFiles = async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit) || 10, 100)
     const [rows] = await query(
       `SELECT version_id AS id, version_id AS file_id, file_path AS path, file_name, file_name AS name,
-              file_size AS size, file_size AS size_bytes, file_type, uploaded_at, created_at, uploaded_at AS updated_at
+              file_size AS size, file_size AS size_bytes, file_type, uploaded_at, uploaded_at AS created_at, uploaded_at AS updated_at
        FROM document_versions
        ORDER BY file_size DESC NULLS LAST
        LIMIT ?`,
