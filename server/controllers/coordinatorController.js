@@ -782,7 +782,7 @@ const deleteSubmissionFile = async (req, res) => {
 
 const publishSubmission = async (req, res) => {
   const { id } = req.params
-  const { citation } = req.body
+  const { citation, featured } = req.body
 
   try {
     const [subs] = await db.query(
@@ -837,9 +837,9 @@ const publishSubmission = async (req, res) => {
     await db.query(
       `UPDATE submissions
        SET status = 'published', is_published = TRUE, public_visible = TRUE,
-           published_at = NOW(), citation = COALESCE(?, citation), slug = COALESCE(slug, ?), updated_at = NOW()
+           featured = ?, published_at = NOW(), citation = COALESCE(?, citation), slug = COALESCE(slug, ?), updated_at = NOW()
        WHERE submission_id = ?`,
-      [finalCitation || null, slug, id]
+      [featured === true || featured === 'true', finalCitation || null, slug, id]
     )
 
     await db.query(

@@ -9,6 +9,7 @@ import {
   uploadSubmissionFile,
   deleteSubmissionFile,
   publishSubmission,
+  setSubmissionFeatured,
   unpublishSubmission,
 } from '../../services/adviserService'
 import { MAX_FILE_MB } from '../../services/uploadService'
@@ -91,6 +92,16 @@ function UnpublishModal({ title, busy, error, onConfirm, onClose }) {
           {error}
         </p>
       )}
+      <label className="mt-4 flex items-center gap-2 px-1">
+        <input
+          type="checkbox"
+          checked={featured}
+          onChange={(e) => onToggleFeatured(e.target.checked)}
+          disabled={busy}
+          className="size-4 rounded border-white/30 bg-white/5"
+        />
+        <span className="text-sm text-white/80">Feature this paper on the gallery</span>
+      </label>
       <div className="mt-6 grid grid-cols-2 gap-3">
         <button
           type="button"
@@ -112,7 +123,7 @@ function UnpublishModal({ title, busy, error, onConfirm, onClose }) {
   )
 }
 
-function PublishModal({ paper, citation, consentAt, busy, error, onConfirm, onClose }) {
+function PublishModal({ paper, citation, consentAt, featured, onToggleFeatured, busy, error, onConfirm, onClose }) {
   return (
     <ModalShell title="Publish to gallery" icon={DocIcon} onClose={onClose}>
       <p className="mt-4 px-1 text-sm leading-relaxed text-white/75">
@@ -137,6 +148,16 @@ function PublishModal({ paper, citation, consentAt, busy, error, onConfirm, onCl
           {error}
         </p>
       )}
+      <label className="mt-4 flex items-center gap-2 px-1">
+        <input
+          type="checkbox"
+          checked={featured}
+          onChange={(e) => onToggleFeatured(e.target.checked)}
+          disabled={busy}
+          className="size-4 rounded border-white/30 bg-white/5"
+        />
+        <span className="text-sm text-white/80">Feature this paper on the gallery</span>
+      </label>
       <div className="mt-6 grid grid-cols-2 gap-3">
         <button
           type="button"
@@ -172,12 +193,14 @@ export default function AdviserReview() {
   const [updating, setUpdating] = useState(false)
   const [updateError, setUpdateError] = useState(null)
   const [citation, setCitation] = useState('')
+  const [publishFeatured, setPublishFeatured] = useState(false)
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [fileError, setFileError] = useState(null)
   const [deletingVersion, setDeletingVersion] = useState(null)
   const [pendingDelete, setPendingDelete] = useState(null)
   const [publishing, setPublishing] = useState(false)
+  const [featuring, setFeaturing] = useState(false)
   const [publishError, setPublishError] = useState(null)
   const [showPublish, setShowPublish] = useState(false)
   const [showUnpublish, setShowUnpublish] = useState(false)
@@ -320,7 +343,7 @@ export default function AdviserReview() {
     setPublishing(true)
     setPublishError(null)
     try {
-      await publishSubmission(paper.submission_id, { citation: finalCitation })
+      await publishSubmission(paper.submission_id, { citation: finalCitation, featured: publishFeatured })
       setShowPublish(false)
       toast('Published to the gallery.')
       fetchPaper()
@@ -328,6 +351,21 @@ export default function AdviserReview() {
       setPublishError(e.response?.data?.message || 'Failed to publish.')
     } finally {
       setPublishing(false)
+    }
+  }
+
+  const handleToggleFeatured = async () => {
+    if (!paper || !isPublished) return
+    setFeaturing(true)
+    setUpdateError(null)
+    try {
+      await setSubmissionFeatured(paper.submission_id, !paper.featured)
+      toast(paper.featured ? 'Removed from featured.' : 'Marked as featured.')
+      fetchPaper()
+    } catch (e) {
+      setUpdateError(e.response?.data?.message || 'Failed to update featured status.')
+    } finally {
+      setFeaturing(false)
     }
   }
 
@@ -705,7 +743,7 @@ export default function AdviserReview() {
             )}
             {publishError && !showPublish && <p className="m-0 text-xs text-danger-ink">{publishError}</p>}
 
-            <button type="button" onClick={() => { setPublishError(null); setShowPublish(true) }} disabled={!canPublish} className={goldBtn}>
+            <button type="button" onClick={() => { setPublishError(null); setPublishFeatured(Boolean(paper?.featured)); setShowPublish(true) }} disabled={!canPublish} className={goldBtn}>
               {isPublished ? 'Published' : 'Publish to Gallery'}
             </button>
             {isPublished && (
@@ -717,6 +755,16 @@ export default function AdviserReview() {
                 Unpublish
               </button>
             )}
+            {isPublished && (
+              <button
+                type="button"
+                onClick={handleToggleFeatured}
+                disabled={featuring}
+                className="h-10 w-full rounded-xl border border-gold/40 text-xs font-semibold text-gold transition hover:bg-gold/10 disabled:opacity-60"
+              >
+                {featuring ? 'Updating…' : paper?.featured ? '★ Featured — click to unfeature' : '☆ Mark as featured'}
+              </button>
+            )}
           </div>
         </aside>
       </div>
@@ -726,6 +774,8 @@ export default function AdviserReview() {
           paper={paper}
           citation={finalCitation}
           consentAt={consentAt}
+          featured={publishFeatured}
+          onToggleFeatured={setPublishFeatured}
           busy={publishing}
           error={publishError}
           onConfirm={handlePublish}

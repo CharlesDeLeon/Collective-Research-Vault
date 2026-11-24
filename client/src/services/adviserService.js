@@ -82,8 +82,12 @@ export async function deleteSubmissionFile(id, versionId) {
   await api.delete(`/coordinator/submissions/${id}/files/${versionId}`)
 }
 
-export async function publishSubmission(id, { citation }) {
-  await api.post(`/coordinator/submissions/${id}/publish`, { citation: citation || null })
+export async function publishSubmission(id, { citation, featured }) {
+  await api.post(`/coordinator/submissions/${id}/publish`, { citation: citation || null, featured: !!featured })
+}
+
+export async function setSubmissionFeatured(id, featured) {
+  await api.patch(`/coordinator/submissions/${id}/featured`, { featured: !!featured })
 }
 
 export async function unpublishSubmission(id, reason) {
