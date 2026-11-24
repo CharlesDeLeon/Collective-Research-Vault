@@ -5,6 +5,7 @@ import StatePanel, { primaryBtn, outlineBtn } from '../../components/public/Stat
 import { inputCls } from '../../components/upload/Field'
 import { getRequestStatus } from '../../services/accessRequestService'
 import { getGalleryPaper } from '../../services/galleryService'
+import { getFileDownloadUrl } from '../../utils/helpers'
 import { longDate } from '../../utils/formatDate'
 
 const STATUS_COPY = {
@@ -179,6 +180,11 @@ export default function RequestStatus() {
                 </dl>
 
                 <div className="mt-6 flex flex-wrap gap-3">
+                  {(data.status === 'approved' || data.status === 'accessed') && (
+                    <a href={getFileDownloadUrl(`/api/public/access-requests/${encodeURIComponent(data.ref)}/file`)} className={primaryBtn} target="_blank" rel="noreferrer">
+                      Download PDF
+                    </a>
+                  )}
                   {paperSlug && data.status !== 'pending' && (
                     <Link to={`/paper/${paperSlug}`} className={primaryBtn}>Request again</Link>
                   )}
