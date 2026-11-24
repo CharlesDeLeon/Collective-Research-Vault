@@ -153,13 +153,15 @@ export default function AdviserGroups() {
     if (!form.section.trim()) return 'Section is required.'
     if (!form.year_level) return 'Select a year level.'
     if (!form.school_year.trim()) return 'School year is required.'
+    if (!/^\d{4}-\d{4}$/.test(form.school_year.trim())) return 'Use a school year like 2026-2027.'
     const dupe = groups.some(
       (g) =>
         g.group_id !== editTarget?.group_id &&
         String(g.group_name).trim().toLowerCase() === form.group_name.trim().toLowerCase() &&
-        String(g.section ?? '').trim().toLowerCase() === form.section.trim().toLowerCase()
+        String(g.section ?? '').trim().toLowerCase() === form.section.trim().toLowerCase() &&
+        String(g.school_year ?? '').trim().toLowerCase() === form.school_year.trim().toLowerCase()
     )
-    if (dupe) return 'A group with this name already exists in this section.'
+    if (dupe) return 'A group with this name already exists in this section and school year.'
     return ''
   }
 
@@ -389,6 +391,9 @@ export default function AdviserGroups() {
                   onChange={(e) => setForm({ ...form, school_year: e.target.value })}
                   className={inputCls}
                   placeholder="e.g. 2026-2027"
+                  inputMode="numeric"
+                  maxLength={9}
+                  pattern="[0-9]{4}-[0-9]{4}"
                 />
               </label>
 
