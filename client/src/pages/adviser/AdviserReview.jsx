@@ -14,7 +14,7 @@ import {
 import { backendSupport, unsupportedNote } from '../../services/backendSupport'
 import useToast from '../../context/useToast'
 import { glass } from '../../components/dashboard/constants'
-import { CheckIcon, DocIcon, AlertIcon } from '../../components/dashboard/icons'
+import { CheckIcon, DocIcon, AlertIcon, CloseIcon } from '../../components/dashboard/icons'
 import StatusPill from '../../components/dashboard/StatusPill'
 import ModalShell from '../../components/ui/ModalShell'
 import Select, { Option } from '../../components/ui/Select'
@@ -557,9 +557,11 @@ export default function AdviserReview() {
                           type="button"
                           onClick={() => handleDeleteFile({ ...v, version_id: versionId })}
                           disabled={isDeleting || isPublished}
-                          className="text-xs font-semibold text-danger-ink transition hover:underline disabled:opacity-60"
+                          aria-label="Remove file"
+                          title="Remove file"
+                          className="grid size-6 place-items-center rounded-full text-white/60 transition hover:bg-white/10 hover:text-danger-ink disabled:opacity-60"
                         >
-                          {isDeleting ? 'Deleting…' : 'Delete'}
+                          {isDeleting ? '…' : <CloseIcon className="size-4" />}
                         </button>
                       )}
                     </div>
