@@ -137,7 +137,7 @@ export default function AdviserSubmissions() {
                   <td className="px-4 py-3 text-white/70">{s.submitted_by_name || '—'}</td>
                   <td className="px-4 py-3 text-white/60">{s.group_name || '—'}</td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center whitespace-nowrap rounded-full bg-white/10 px-2.5 py-0.5 text-xs">{STAGE_LABELS[s.stage] || s.stage}</span>
+                    <span className="inline-block max-w-[10rem] rounded-full bg-white/10 px-2.5 py-0.5 text-xs leading-tight wrap-break-word align-middle">{STAGE_LABELS[s.stage] || s.stage}</span>
                   </td>
                   <td className="px-4 py-3">
                     <StatusPill status={s.status} />

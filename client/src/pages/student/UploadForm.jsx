@@ -19,16 +19,16 @@ const border = (error) => (error ? 'border-danger' : 'border-white/15')
 
 function GroupSummary({ group }) {
   return (
-    <div className="rounded-xl border border-white/15 bg-white/5 p-4">
-      <p className="m-0 text-base font-semibold">{group.name}</p>
+    <div className="min-w-0 rounded-xl border border-white/15 bg-white/5 p-4">
+      <p className="m-0 wrap-break-word text-base font-semibold">{group.name}</p>
       <div className="mt-2 flex flex-wrap gap-2">
         {[group.strand, group.section, group.schoolYear].filter(Boolean).map((v) => (
-          <span key={v} className="rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold">
+          <span key={v} className="max-w-full min-w-0 rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-gold wrap-break-word">
             {v}
           </span>
         ))}
       </div>
-      {group.adviser && <p className="mb-0 mt-2 text-xs text-white/60">Adviser: {group.adviser}</p>}
+      {group.adviser && <p className="mb-0 mt-2 wrap-break-word text-xs text-white/60">Adviser: {group.adviser}</p>}
     </div>
   )
 }
@@ -136,7 +136,7 @@ function PaperFormBody({ groups, paper }) {
 
   return (
     <form onSubmit={submit} noValidate className={`${glass} mt-6 max-w-3xl p-5 sm:p-8`}>
-      <div className="grid gap-6">
+      <div className="grid min-w-0 gap-6">
         {groups.length === 0 ? (
           <p className="m-0 rounded-xl border border-warn/40 bg-warn/10 p-4 text-sm text-warn-ink">
             You are not part of a research group yet. Ask your adviser to add you before submitting a paper.
@@ -203,7 +203,7 @@ function PaperFormBody({ groups, paper }) {
           </span>
         </Field>
 
-        <div>
+        <div className="min-w-0">
           <Field label="Keywords" error={show('keywords')}>
             <input
               value={keywords}
@@ -215,7 +215,7 @@ function PaperFormBody({ groups, paper }) {
           {keywordList.length > 0 && (
             <ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">
               {keywordList.map((k) => (
-                <li key={k} className="rounded-full border border-gold/60 px-3 py-1 text-xs text-[#FFD27F]">
+                <li key={k} className="max-w-full min-w-0 rounded-full border border-gold/60 px-3 py-1 text-xs text-[#FFD27F] wrap-break-word">
                   {k}
                 </li>
               ))}
@@ -234,7 +234,7 @@ function PaperFormBody({ groups, paper }) {
           />
         </Field>
 
-        <div>
+        <div className="min-w-0">
           <Field label={editing ? 'Replace file (optional)' : 'Paper file (PDF/DOC/DOCX)'}>
             <FileDropzone
               file={file}

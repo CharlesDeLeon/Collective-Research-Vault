@@ -34,7 +34,7 @@ export default function StudentDashboard() {
         onQueryChange={setQuery}
       />
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(min-content,1fr)_minmax(18rem,22rem)]">
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
         <section aria-labelledby="research-heading" className="min-w-0">
           <h2
             id="research-heading"
