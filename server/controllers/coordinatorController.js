@@ -1,4 +1,5 @@
 const db = require('../config/db')
+const fs = require('fs')
 
 async function ownsGroup(groupId, userId) {
   const [rows] = await db.query(
@@ -683,10 +684,11 @@ const uploadSubmissionFile = async (req, res) => {
     )
     const nextVersion = Number(versionRows[0].latest_version) + 1
 
+    const fileBuffer = fs.readFileSync(req.file.path)
     await db.query(
-      `INSERT INTO document_versions (submission_id, file_path, file_name, file_size, file_type, version_number, uploaded_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, `uploads/${req.file.filename}`, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId]
+      `INSERT INTO document_versions (submission_id, file_path, file_name, file_size, file_type, version_number, uploaded_by, file_data)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, `uploads/${req.file.filename}`, req.file.originalname, req.file.size || null, req.file.mimetype || null, nextVersion, userId, fileBuffer]
     )
 
     res.status(201).json({ message: 'File uploaded', version: nextVersion, fileRole })
