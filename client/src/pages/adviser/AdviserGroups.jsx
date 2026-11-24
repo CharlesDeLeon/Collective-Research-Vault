@@ -388,7 +388,7 @@ export default function AdviserGroups() {
                 <span className="text-xs font-semibold text-white/70">School year</span>
                 <input
                   value={form.school_year}
-                  onChange={(e) => setForm({ ...form, school_year: e.target.value })}
+                  onChange={(e) => setForm({ ...form, school_year: e.target.value.replace(/[^0-9-]/g, '').slice(0, 9) })}
                   className={inputCls}
                   placeholder="e.g. 2026-2027"
                   inputMode="numeric"

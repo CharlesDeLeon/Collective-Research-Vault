@@ -45,7 +45,7 @@ No flags were flipped during the current Adviser pass. Flags are flipped only af
 
 - Deleted dead `client/src/components/paper/VersionHistory.jsx`.
 - Removed dead `getDashboard()` from `client/src/services/adviserService.js`.
-- `AdviserGroups.jsx` now requires `school_year` in `YYYY-YYYY` form (matching the field's existing `2026-2027` placeholder) and blocks letters.
+- `AdviserGroups.jsx` now restricts `school_year` typing to digits and hyphens (max 9 characters) and requires `YYYY-YYYY` form on save (matching the field's existing `2026-2027` placeholder). Letters can no longer be entered.
 - `AdviserGroups.jsx` client duplicate check now matches the server rule: name + section + school year.
 - Adviser `versions[0]` fallback in `AdviserReview.jsx:199` remains until AD-08 confirms a usable file path.
 
