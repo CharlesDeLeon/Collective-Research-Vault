@@ -7,6 +7,7 @@ export async function submitAccessRequest(paperSlug, payload) {
     email: payload.email,
     institution: payload.institution,
     purpose: payload.purpose,
+    consent: payload.consent === true,
   })
   return { ref: res.data?.data?.ref }
 }

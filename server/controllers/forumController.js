@@ -119,7 +119,6 @@ const listPosts = async (req, res) => {
     // Total count (same filters, without pagination)
     let countSql = `SELECT COUNT(*)::int AS total FROM forum_posts fp LEFT JOIN research_groups rg ON rg.group_id = fp.group_id WHERE 1=1`
     if (includeRemoved !== 'true') { countSql += ` AND fp.removed = FALSE` }
-    if (role === 'adviser') { countSql += ` AND (rg.adviser_id = ? OR rg.created_by = ? OR rg.group_id IS NULL)` }
     const countParams = []
     if (role === 'adviser') { countSql += ` AND (rg.adviser_id = ? OR rg.created_by = ? OR rg.group_id IS NULL)`; countParams.push(userId, userId) }
     if (groupId) { countSql += ` AND fp.group_id = ?`; countParams.push(groupId) }
