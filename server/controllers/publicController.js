@@ -330,6 +330,72 @@ const serveFile = async (req, res) => {
   }
 }
 
+
+// GET /api/public/access-requests/:ref/file  (download by reference code; fallback when email link unavailable)
+const serveFileByRef = async (req, res) => {
+  try {
+    const { ref } = req.params
+    const [rows] = await query(
+      `SELECT r.request_id, r.status, r.submission_id
+       FROM paper_access_requests r
+       WHERE r.reference_code = ?`,
+      [ref]
+    )
+    if (!rows.length) return res.status(404).json({ message: 'Request not found' })
+    const r = rows[0]
+    if (r.status !== 'approved' && r.status !== 'accessed') {
+      return res.status(403).json({ message: 'Access not approved' })
+    }
+    // Check latest link not revoked/expired
+    const [links] = await query(
+      `SELECT revoked_at, expires_at FROM paper_access_links WHERE request_id = ? ORDER BY created_at DESC LIMIT 1`,
+      [r.request_id]
+    )
+    if (links.length) {
+      const l = links[0]
+      if (l.revoked_at) return res.status(410).json({ message: 'Link revoked' })
+      if (new Date(l.expires_at) < new Date()) return res.status(410).json({ message: 'Link expired' })
+    }
+
+    const submissionId = r.submission_id
+    const [versions] = await query(
+      `SELECT file_path, file_name, file_type, file_data FROM document_versions WHERE submission_id = ? ORDER BY uploaded_at DESC LIMIT 1`,
+      [submissionId]
+    )
+    let filePath = versions.length ? versions[0].file_path : null
+    let fileName = (versions.length && versions[0].file_name) ? versions[0].file_name : 'paper.pdf'
+    let fileType = versions.length ? versions[0].file_type : null
+    let fileData = versions.length ? versions[0].file_data : null
+    if (!filePath && !fileData) {
+      const [subs] = await query(`SELECT file_path, file_name, file_data FROM submissions WHERE submission_id = ?`, [submissionId])
+      if (subs.length) {
+        filePath = subs[0].file_path
+        fileName = subs[0].file_name || fileName
+        fileData = subs[0].file_data || fileData
+      }
+    }
+    if (!filePath && !fileData) return res.status(404).json({ message: 'No file available' })
+
+    if (fileData) {
+      if (fileType) res.setHeader('Content-Type', fileType)
+      res.setHeader('Content-Disposition', `inline; filename="${fileName}"`)
+      return res.send(fileData)
+    }
+    const abs = path.isAbsolute(filePath) ? filePath : path.join(__dirname, '..', filePath)
+    if (fileType) res.setHeader('Content-Type', fileType)
+    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`)
+    res.sendFile(abs, (err) => {
+      if (err) {
+        console.error('serveFileByRef send error:', err)
+        if (!res.headersSent) res.status(404).json({ message: 'File not found' })
+      }
+    })
+  } catch (err) {
+    console.error('serveFileByRef error:', err)
+    res.status(500).json({ message: 'Failed to serve file' })
+  }
+}
+
 module.exports = {
-  listPapers, getPaper, submitAccessRequest, getRequestStatus, confirmLink, consumeLink, serveFile,
+  listPapers, getPaper, submitAccessRequest, getRequestStatus, confirmLink, consumeLink, serveFile, serveFileByRef,
 }
