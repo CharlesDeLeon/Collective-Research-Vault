@@ -7,7 +7,7 @@ export default function Feed() {
   const { openComposer } = useForum()
 
   return (
-    <div className="grid gap-x-8 gap-y-6 font-display xl:grid-cols-[minmax(0,1fr)_minmax(18rem,20rem)]">
+    <div className="grid gap-x-8 gap-y-6 font-display xl:grid-cols-[minmax(min-content,1fr)_minmax(18rem,20rem)]">
       <div className="min-w-0 space-y-6">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-3xl font-bold">Feed</h1>

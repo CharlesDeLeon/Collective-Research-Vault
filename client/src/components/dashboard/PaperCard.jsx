@@ -12,18 +12,18 @@ export default function PaperCard({ paper, onOpen, onMenu }) {
   return (
     <article
       onClick={() => onOpen?.(paper)}
-      className={`${glass} cursor-pointer p-4 transition hover:-translate-y-0.5 hover:border-white/25 sm:p-5`}
+      className={`${glass} flex h-full cursor-pointer flex-col p-4 transition hover:-translate-y-0.5 hover:border-white/25 sm:p-5`}
     >
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <StatusPill status={paper.status} />
         <span className="text-xs text-white/50">{meta}</span>
       </div>
 
-      <h3 className="mt-4 wrap-break-word text-base font-semibold leading-snug sm:text-lg">
+      <h3 className="mb-4 mt-4 wrap-break-word text-base font-semibold leading-snug sm:text-lg">
         {paper.title}
       </h3>
 
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
+      <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/10 pt-3">
         <span className="min-w-0 truncate text-xs text-white/60">{paper.groupName}</span>
         <button
           type="button"

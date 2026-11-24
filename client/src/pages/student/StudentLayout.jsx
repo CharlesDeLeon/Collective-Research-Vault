@@ -13,7 +13,7 @@ export default function StudentLayout() {
         <div className="min-h-dvh bg-linear-to-br/srgb from-navy-900 to-navy-500 p-4 pb-24 font-sans text-white sm:p-6 sm:pb-24 lg:flex lg:gap-6 lg:pb-6">
           <Sidebar user={user} onLogout={logout} />
           <div className="min-w-0 flex-1">
-            <MobileNav />
+            <MobileNav user={user} onLogout={logout} />
             <main className="mt-6 lg:mt-0">
               <Outlet />
             </main>

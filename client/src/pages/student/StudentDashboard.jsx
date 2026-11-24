@@ -9,12 +9,12 @@ import NotificationsPanel from '../../components/dashboard/NotificationsPanel'
 import { DocIcon } from '../../components/dashboard/icons'
 import { ROUTES } from '../../components/dashboard/constants'
 
-const GRID = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] items-start gap-4 sm:gap-5'
+const GRID = 'grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] items-stretch gap-4 sm:gap-5'
 
 export default function StudentDashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { papers, notifications, loading, error } = useStudentDashboard()
+  const { papers, notifications, loading, error, notificationError } = useStudentDashboard()
   const [query, setQuery] = useState('')
 
   const firstName = (user?.name ?? user?.full_name ?? 'Student').split(' ')[0]
@@ -34,7 +34,7 @@ export default function StudentDashboard() {
         onQueryChange={setQuery}
       />
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
+      <div className="grid gap-8 xl:grid-cols-[minmax(min-content,1fr)_minmax(18rem,22rem)]">
         <section aria-labelledby="research-heading" className="min-w-0">
           <h2
             id="research-heading"
@@ -77,6 +77,7 @@ export default function StudentDashboard() {
 
         <NotificationsPanel
           notifications={notifications}
+          error={notificationError}
           onViewAll={() => navigate(ROUTES.history)}
         />
       </div>

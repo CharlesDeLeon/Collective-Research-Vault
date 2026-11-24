@@ -17,6 +17,7 @@ import { glass } from '../../components/dashboard/constants'
 import { CheckIcon, DocIcon, AlertIcon, CloseIcon } from '../../components/dashboard/icons'
 import StatusPill from '../../components/dashboard/StatusPill'
 import ModalShell from '../../components/ui/ModalShell'
+import ConfirmModal from '../../components/ui/ConfirmModal'
 import Select, { Option } from '../../components/ui/Select'
 import { getFileDownloadUrl } from '../../utils/helpers'
 import { submissionCitation } from '../../utils/submissionCitation'
@@ -31,6 +32,21 @@ const STATUS_CHOICES = [
   { value: 'approved', label: 'Approved' },
   { value: 'rejected', label: 'Rejected' },
 ]
+
+const GENERIC_UPLOAD_MESSAGES = ['Failed to upload file', 'Failed to upload the file.']
+
+const uploadErrorMessage = (e) => {
+  const status = e?.response?.status
+  const raw = e?.response?.data?.message
+  const message = raw && !GENERIC_UPLOAD_MESSAGES.includes(raw) ? raw : null
+  if (status === 400) return message || 'That file was rejected. Use a PDF, DOC or DOCX file.'
+  if (status === 401 || status === 403) return 'Your session cannot upload files for this paper.'
+  if (status === 404) return 'This paper was not found. Refresh the page and try again.'
+  if (status === 409) return message || 'Unpublish this paper before uploading a file.'
+  if (status === 413) return 'The file is too large. Use a smaller PDF or Word file.'
+  if (status >= 500) return message || 'The server could not save the file. Try again with a smaller PDF or Word file.'
+  return message || 'The upload failed. Check the file and try again.'
+}
 
 const fieldCls =
   'w-full rounded-xl border border-white/15 bg-white/5 px-4 text-sm text-white outline-none placeholder:text-white/40 focus:border-gold/50 disabled:cursor-not-allowed disabled:opacity-50'
@@ -154,7 +170,9 @@ export default function AdviserReview() {
   const [citation, setCitation] = useState('')
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [fileError, setFileError] = useState(null)
   const [deletingVersion, setDeletingVersion] = useState(null)
+  const [pendingDelete, setPendingDelete] = useState(null)
   const [publishing, setPublishing] = useState(false)
   const [publishError, setPublishError] = useState(null)
   const [showPublish, setShowPublish] = useState(false)
@@ -167,6 +185,8 @@ export default function AdviserReview() {
   const fetchPaper = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setFileError(null)
+    setPendingDelete(null)
     try {
       const d = await getSubmission(id)
       setPaper(d)
@@ -247,32 +267,44 @@ export default function AdviserReview() {
   const handleUploadFile = async () => {
     if (!file || isPublished) return
     setUploading(true)
-    setUpdateError(null)
+    setFileError(null)
     try {
       await uploadSubmissionFile(paper.submission_id, file)
       setFile(null)
       toast('File uploaded.')
       fetchPaper()
     } catch (e) {
-      setUpdateError(e.response?.data?.message || 'Failed to upload the file.')
+      const message = uploadErrorMessage(e)
+      setFileError(message)
+      toast(message, 'error')
     } finally {
       setUploading(false)
     }
   }
 
-  const handleDeleteFile = async (version) => {
+  const handleDeleteFile = (version) => {
     if (!paper || isPublished) return
     const versionId = version?.version_id ?? version?.id
     if (!versionId) return
-    if (!window.confirm('Delete this file? This cannot be undone.')) return
-    setDeletingVersion(versionId)
-    setUpdateError(null)
+    setFileError(null)
+    setPendingDelete({ versionId, fileName: version.file_name || version.fileName || 'this file' })
+  }
+
+  const confirmDeleteFile = async () => {
+    const target = pendingDelete
+    if (!target || deletingVersion) return
+    setDeletingVersion(target.versionId)
     try {
-      await deleteSubmissionFile(paper.submission_id, versionId)
+      await deleteSubmissionFile(paper.submission_id, target.versionId)
+      setPendingDelete(null)
+      setFileError(null)
       toast('File deleted.')
       fetchPaper()
     } catch (e) {
-      setUpdateError(e.response?.data?.message || 'Failed to delete the file.')
+      const message = e.response?.data?.message || 'Failed to delete the file. Please try again.'
+      setPendingDelete(null)
+      setFileError(message)
+      toast(message, 'error')
     } finally {
       setDeletingVersion(null)
     }
@@ -534,6 +566,11 @@ export default function AdviserReview() {
 
           <div className={`${glass} p-5 sm:p-6`}>
             <h2 className="mb-3 mt-0 text-lg font-bold">Paper files</h2>
+            {fileError && (
+              <p role="alert" className="m-0 mb-3 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">
+                {fileError}
+              </p>
+            )}
             <ul className="m-0 list-none space-y-2 p-0">
               {files.map((v, i) => {
                 const versionId = v.version_id ?? v.id ?? i
@@ -576,7 +613,10 @@ export default function AdviserReview() {
                 accept=".pdf,.doc,.docx"
                 aria-label="Choose a paper file"
                 disabled={isPublished}
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  setFile(e.target.files?.[0] ?? null)
+                  setFileError(null)
+                }}
                 className="min-w-0 flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-white disabled:opacity-60"
               />
               <button
@@ -695,6 +735,16 @@ export default function AdviserReview() {
           error={unpublishError}
           onConfirm={handleUnpublish}
           onClose={() => setShowUnpublish(false)}
+        />
+      )}
+      {pendingDelete && (
+        <ConfirmModal
+          title="Delete file"
+          message={`Delete “${pendingDelete.fileName}”? This cannot be undone.`}
+          confirmLabel={deletingVersion === pendingDelete.versionId ? 'Deleting…' : 'Delete file'}
+          danger
+          onConfirm={confirmDeleteFile}
+          onClose={() => setPendingDelete(null)}
         />
       )}
     </div>

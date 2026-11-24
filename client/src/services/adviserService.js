@@ -82,10 +82,6 @@ export async function deleteSubmissionFile(id, versionId) {
   await api.delete(`/coordinator/submissions/${id}/files/${versionId}`)
 }
 
-export async function setSubmissionConsent(id, granted) {
-  await api.post(`/coordinator/submissions/${id}/consent`, { granted })
-}
-
 export async function publishSubmission(id, { citation }) {
   await api.post(`/coordinator/submissions/${id}/publish`, { citation: citation || null })
 }

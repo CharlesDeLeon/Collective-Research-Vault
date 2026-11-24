@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import useForum from '../../context/useForum'
 import ProfileTrigger from '../profile/ProfileTrigger'
@@ -159,10 +160,36 @@ export default function Sidebar({ user, onLogout, navItems = STUDENT_NAV, roleLa
   )
 }
 
-export function MobileNav({ homeTo = ROUTES.home }) {
+export function MobileNav({
+  homeTo = ROUTES.home,
+  user,
+  onLogout,
+  profileTo = ROUTES.profile,
+  roleLabel = 'Student',
+}) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+  const name = user?.name ?? user?.full_name ?? 'Student'
+
+  useEffect(() => {
+    if (!menuOpen) return undefined
+    const onDown = (e) => {
+      if (!menuRef.current?.contains(e.target)) setMenuOpen(false)
+    }
+    const onKey = (e) => {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
+
   return (
     <div className="flex items-center justify-between font-display lg:hidden">
-      <NavLink to={homeTo} end className="flex items-center gap-2" aria-label="Home">
+      <NavLink to={homeTo} end onClick={() => setMenuOpen(false)} className="flex items-center gap-2" aria-label="Home">
         <Logo className="size-10 sm:size-11 shrink-0 text-gold" />
         <span className="text-lg font-bold tracking-wide">
           CORE <span className="text-gold">V</span>
@@ -172,10 +199,47 @@ export function MobileNav({ homeTo = ROUTES.home }) {
         <ThemeToggle />
         <NavLink
           to={ROUTES.gallery}
+          onClick={() => setMenuOpen(false)}
           className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white/70 transition hover:text-white"
         >
           Gallery
         </NavLink>
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label="Open profile menu"
+            aria-expanded={menuOpen}
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-gold text-sm font-bold text-ink"
+          >
+            {initials(name)}
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-12 z-50 w-56 rounded-2xl border border-white/10 bg-modal p-2 shadow-xl shadow-black/30">
+              <div className="px-3 py-2">
+                <p className="truncate text-sm font-semibold">{name}</p>
+                <p className="text-xs text-white/50">{roleLabel}</p>
+              </div>
+              <NavLink
+                to={profileTo}
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-xl px-3 py-2 text-sm text-white/80 transition hover:bg-white/10"
+              >
+                Profile
+              </NavLink>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false)
+                  onLogout?.()
+                }}
+                className="block w-full rounded-xl px-3 py-2 text-left text-sm text-danger-ink transition hover:bg-white/10"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
