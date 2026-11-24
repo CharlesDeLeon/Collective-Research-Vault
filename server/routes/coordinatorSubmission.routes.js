@@ -35,7 +35,27 @@ router.patch('/:id/stage', updateStage)
 router.patch('/:id/status', updateStatus)
 
 // Adviser review / publish
-router.post('/:id/files', upload.single('file'), uploadSubmissionFile)
+const uploadSingle = (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'The file is too large. Please upload a file under 20 MB.' })
+      }
+      return res.status(400).json({ message: err.message || 'Invalid file upload.' })
+    }
+    // Server-side type validation (defense in depth beyond the client accept filter)
+    if (req.file) {
+      const allowed = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      if (!allowed.includes(req.file.mimetype)) {
+        // clean up the saved file
+        try { if (req.file.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path) } catch (e) {}
+        return res.status(400).json({ message: 'Only PDF or Word files can be uploaded.' })
+      }
+    }
+    next()
+  })
+}
+router.post('/:id/files', uploadSingle, uploadSubmissionFile)
 router.delete('/:id/files/:versionId', deleteSubmissionFile)
 router.post('/:id/publish', publishSubmission)
 router.post('/:id/unpublish', unpublishSubmission)

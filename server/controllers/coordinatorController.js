@@ -710,7 +710,10 @@ const uploadSubmissionFile = async (req, res) => {
     res.status(201).json({ message: 'File uploaded', version: nextVersion, fileRole })
   } catch (err) {
     console.error('uploadSubmissionFile error:', err)
-    res.status(500).json({ message: 'Failed to upload file' })
+    const msg = err && err.code === 'ENOENT'
+      ? 'The server could not save the file. Try again with a PDF or Word file under 20 MB.'
+      : 'Failed to upload the file. Please try again.'
+    res.status(500).json({ message: msg })
   }
 }
 

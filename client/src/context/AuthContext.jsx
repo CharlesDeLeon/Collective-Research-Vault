@@ -7,18 +7,28 @@ import { login as loginService } from '../services/authService'
 export const AuthContext = createContext()
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem('user')) || null
-  )
+  const readStoredUser = () => {
+    try {
+      const raw = localStorage.getItem('user') || sessionStorage.getItem('user')
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  }
+  const [user, setUser] = useState(readStoredUser())
   const navigate = useNavigate()
 
-  const login = async (email, password) => {
+  const login = async (email, password, remember = true) => {
     const data = await loginService(email, password)
     if (data.user?.is_active === 0) {
       throw new Error('INACTIVE_ACCOUNT')
     }
-    localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(data.user))
+    const store = remember ? localStorage : sessionStorage
+    // clear the other store to avoid stale sessions
+    localStorage.removeItem('token'); localStorage.removeItem('user')
+    sessionStorage.removeItem('token'); sessionStorage.removeItem('user')
+    store.setItem('token', data.token)
+    store.setItem('user', JSON.stringify(data.user))
     setUser(data.user)
 
     const role = data.user?.role?.toLowerCase()
@@ -30,9 +40,12 @@ export const AuthProvider = ({ children }) => {
     else navigate('/login')
   }
 
-  const setSession = (token, user) => {
-    localStorage.setItem('token', token)
-    localStorage.setItem('user', JSON.stringify(user))
+  const setSession = (token, user, remember = true) => {
+    const store = remember ? localStorage : sessionStorage
+    localStorage.removeItem('token'); localStorage.removeItem('user')
+    sessionStorage.removeItem('token'); sessionStorage.removeItem('user')
+    store.setItem('token', token)
+    store.setItem('user', JSON.stringify(user))
     setUser(user)
     const role = user?.role?.toLowerCase()
     if (role === 'student') navigate('/student')
@@ -45,7 +58,8 @@ export const AuthProvider = ({ children }) => {
   const updateUser = (patch) => {
     setUser((current) => {
       const next = { ...current, ...patch }
-      localStorage.setItem('user', JSON.stringify(next))
+      if (localStorage.getItem('user')) localStorage.setItem('user', JSON.stringify(next))
+      if (sessionStorage.getItem('user')) sessionStorage.setItem('user', JSON.stringify(next))
       return next
     })
   }
@@ -53,6 +67,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    sessionStorage.removeItem('token')
+    sessionStorage.removeItem('user')
     setUser(null)
     navigate('/login')
   }

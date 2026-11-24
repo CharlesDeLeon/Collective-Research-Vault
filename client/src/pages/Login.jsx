@@ -27,16 +27,19 @@ const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [remember, setRemember] = useState(true)
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleLogin = async (e) => {
     e.preventDefault()
     setError('')
+    setInfo('')
     setLoading(true)
 
     try {
-      const response = await login(email, password)
+      const response = await login(email, password, remember)
       if (response?.user?.status === 'deactivated' || response?.user?.isActive === false) {
         throw new Error('DEACTIVATED_ACCOUNT')
       }
@@ -175,13 +178,22 @@ const Login = () => {
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
-                    <label className="flex cursor-not-allowed items-center gap-2 text-white/80 opacity-50">
-                      <input type="checkbox" disabled className="size-4 rounded accent-gold" />
+                    <label className="flex items-center gap-2 text-white/80">
+                      <input
+                        type="checkbox"
+                        checked={remember}
+                        onChange={(e) => setRemember(e.target.checked)}
+                        className="size-4 rounded accent-gold"
+                      />
                       Remember me
                     </label>
-                    <span aria-disabled="true" className="cursor-not-allowed text-white/80 opacity-50">
+                    <button
+                      type="button"
+                      onClick={() => setInfo('Password reset is handled by your system administrator. Please contact them to reset your password.')}
+                      className="text-white/80 hover:text-gold focus:outline-none"
+                    >
                       Forgot password?
-                    </span>
+                    </button>
                   </div>
 
                   {error && (
@@ -190,6 +202,14 @@ const Login = () => {
                       className="rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-[0.8125rem] text-rose-200"
                     >
                       {error}
+                    </div>
+                  )}
+                  {info && (
+                    <div
+                      role="status"
+                      className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-[0.8125rem] text-white/80"
+                    >
+                      {info}
                     </div>
                   )}
 
